@@ -1,7 +1,6 @@
-'''Class for any balance without a computer interface'''
+'''Class for a balance without a computer interface'''
 
 from ..log import log
-from time import sleep
 
 class ManualBalance(object):
     def __init__(self, cfg, alias):
@@ -16,23 +15,62 @@ class ManualBalance(object):
         """
         self._record = cfg.database().equipment[alias]
         self._suffix = {'mg': 1e-3, 'g': 1, 'kg': 1e3}
+        self._unit = self.set_unit()
+
+    def set_unit(self):
+        """Prompts user to select the unit of mass from {mg, g, kg}"""
+        while True:
+            try:
+                unit = input('Please enter unit (mg, g, kg):')
+                suffix = self._suffix[unit]
+            except:
+                print("Invalid entry")
+                continue
+            else:
+                break
+        return unit
 
     def zero_bal(self):
         """Prompts user to zero balance with no mass on balance"""
+        input("Zero balance with no load, then press enter to continue.")
 
     def scale_adjust(self):
-        # TODO: check with Greg that C3 is the correct command to use and that there should be no mass on the balance
         """Prompts user to adjust scale using internal weights"""
+        input("Perform internal balance calibration, then press enter to continue.")
 
     def tare_bal(self):
         """Prompts user to tare balance with correct tare load"""
-        # TODO: Refer to equipment record to prompt user to check correct loading
+        input('Check that the balance has correct tare load, then press enter to continue.')
+        input("Tare balance, then press enter to continue.")
+
+    def load_bal(self, mass):
+        """Prompts user to load balance with specified mass"""
+        input('Load balance with mass '+mass+', then press enter to continue.')
+
+    def unload_bal(self, mass):
+        """Prompts user to remove specified mass from balance"""
+        input('Unload mass '+mass+' from balance, then press enter to continue.')
 
     def get_mass(self):
         """Asks user to enter mass from balance when reading is stable
-        # TODO: allow user to select unit
         Returns
         -------
         float
-            mass in grams
+            mass (in unit set for balance when initialised)
         """
+        while True:
+            try:
+                reading = float(input("Enter balance reading: "))
+                while True:
+                    print("Mass reading:", reading, self._unit)
+                    check = input('If correct, press any key. If not correct, re-enter balance reading')
+                    if len(check) < 2:
+                        break
+                    reading = float(check)
+            except ValueError:
+                print("Invalid entry")
+                continue
+            else:
+                break
+        log.info('Mass reading: '+str(reading)+' '+str(self._unit))
+        return reading
