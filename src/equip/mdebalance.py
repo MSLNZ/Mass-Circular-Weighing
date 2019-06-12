@@ -1,6 +1,7 @@
 '''Generic class for a balance without a computer interface'''
 
 from ..log import log
+from time import sleep
 
 class Balance(object):
     def __init__(self, cfg, alias):
@@ -16,6 +17,8 @@ class Balance(object):
         self._record = cfg.database().equipment[alias]
         self._suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
         self._unit = self.set_unit()
+        self.stable_wait = 5 # wait time in seconds for balance reading to stabilise
+        # TODO: allow stable_wait to be set in equipment register?
 
     @property
     def record(self):
@@ -55,8 +58,8 @@ class Balance(object):
         """Prompts user to remove specified mass from balance"""
         input('Unload mass '+mass+' from balance, then press enter to continue.')
 
-    def get_mass(self):
-        """Asks user to enter mass from balance when reading is stable
+    def get_mass_instant(self):
+        """Asks user to enter mass from balance
         Returns
         -------
         float
@@ -77,4 +80,10 @@ class Balance(object):
             else:
                 break
         log.info('Mass reading: '+str(reading)+' '+str(self._unit))
+        return reading
+
+    def get_mass_stable(self):
+        print('Waiting for stable reading')
+        sleep(self.stable_wait)
+        reading = self.get_mass_instant()
         return reading

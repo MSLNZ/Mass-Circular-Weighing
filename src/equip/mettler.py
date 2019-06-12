@@ -82,19 +82,6 @@ class MettlerToledo(Balance):
             return
         self._raise_error(m[0]+' '+m[1])
 
-    def get_mass_stable(self):
-        """Reads mass from balance when reading is stable
-
-        Returns
-        -------
-        float
-            mass in grams
-        """
-        m = self._query("S").split()
-        if m[1] == 'S':
-            return float(m[2])*self._suffix[m[3]]
-        self._raise_error(m[0]+' '+m[1])
-
     def get_mass_instant(self):
         """Reads instantaneous mass from balance
 
@@ -108,6 +95,19 @@ class MettlerToledo(Balance):
             return float(m[2])*self._suffix[m[3]]
         elif m[1] == 'D':
             log.info('Reading is nonstable (dynamic) weight value')
+            return float(m[2])*self._suffix[m[3]]
+        self._raise_error(m[0]+' '+m[1])
+
+    def get_mass_stable(self):
+        """Reads mass from balance when reading is stable
+
+        Returns
+        -------
+        float
+            mass in grams
+        """
+        m = self._query("S").split()
+        if m[1] == 'S':
             return float(m[2])*self._suffix[m[3]]
         self._raise_error(m[0]+' '+m[1])
 
