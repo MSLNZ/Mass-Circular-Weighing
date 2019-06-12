@@ -37,12 +37,9 @@ class HDF5Writer(object):
 
         """
         cal_log = h5py.File(filetocreate, mode=mode)
-        scheme = cal_log.create_group('Scheme')
-        scheme.create_group('MassSets')
-        cal_log.create_group('CircularWeighings')
-        cal_log.create_group('FinalMassCalculation')
-        cal_log.create_group('Equipment')
-        cal_log.create_group('Logging')
+        cal_log.create_group('1: Parameters')
+        cal_log.create_group('2: Circular Weighings')
+        cal_log.create_group('3: Final Mass Calculation')
         cal_log.close()
         return cal_log
 
