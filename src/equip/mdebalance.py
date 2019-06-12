@@ -14,7 +14,7 @@ class Balance(object):
             Key of balance in config file
         """
         self._record = cfg.database().equipment[alias]
-        self._suffix = {'mg': 1e-3, 'g': 1, 'kg': 1e3}
+        self._suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
         self._unit = self.set_unit()
 
     @property
@@ -25,7 +25,7 @@ class Balance(object):
         """Prompts user to select the unit of mass from {mg, g, kg}"""
         while True:
             try:
-                unit = input('Please enter unit (mg, g, kg):')
+                unit = input('Please enter unit (ug, mg, g, kg):')
                 suffix = self._suffix[unit]
             except:
                 print("Invalid entry")
