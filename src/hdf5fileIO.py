@@ -1,8 +1,15 @@
 import os
 import h5py
+from .log import log
 
 class HDF5Writer(object):
     def __init__(self, folder, filename, extn='.hdf5'):
+        """Initialises an hdf5 writer for a particular file"""
+        self.calfile = os.path.join(folder, filename + extn)  # concatenates to form full path
+        log.info('Calibration file is saved as '+os.path.join(folder, filename+extn))
+        self.cal_log = self.open_file()
+
+    def open_file(self):
         """HDF5 Writer to open or create a file to record results and parameters of a mass calibration
 
         Parameters
@@ -14,11 +21,13 @@ class HDF5Writer(object):
         extn : str
             optional, default is .hdf5
         """
-        self.calfile = os.path.join(folder, filename+extn)  # concatenates to form full path
         if not os.path.isfile(self.calfile):
             self.cal_log = self.create_h5_file(self.calfile)  # creates file if it does not exist
         else:
             self.cal_log = h5py.File(self.calfile, 'a')  # opens file if it does exist
+            # TODO: currently not working if file already exists...
+
+        return self.cal_log
 
     def create_h5_file(self, filetocreate, mode='a'):
         """Creates an hdf5 file for a given calibration run with pre-existing groups
@@ -36,12 +45,15 @@ class HDF5Writer(object):
             Scheme contains group MassSets.
 
         """
-        cal_log = h5py.File(filetocreate, mode=mode)
-        cal_log.create_group('1: Parameters')
-        cal_log.create_group('2: Circular Weighings')
-        cal_log.create_group('3: Final Mass Calculation')
-        cal_log.close()
-        return cal_log
+        self.cal_log = h5py.File(filetocreate, mode=mode)
+        self.cal_log.create_group('1: Parameters')
+        self.cal_log.create_group('2: Circular Weighings')
+        self.cal_log.create_group('3: Final Mass Calculation')
+
+        return self.cal_log
+
+    def get_item(self, item):
+        return self.cal_log[item]
 
     def create_group(self, parentgroup, subgroup):
         """Create group within an existing group
