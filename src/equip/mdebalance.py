@@ -1,8 +1,8 @@
-'''Class for a balance without a computer interface'''
+'''Generic class for a balance without a computer interface'''
 
 from ..log import log
 
-class ManualBalance(object):
+class Balance(object):
     def __init__(self, cfg, alias):
         """Initialise a balance which does not have a computer interface
 
@@ -16,6 +16,10 @@ class ManualBalance(object):
         self._record = cfg.database().equipment[alias]
         self._suffix = {'mg': 1e-3, 'g': 1, 'kg': 1e3}
         self._unit = self.set_unit()
+
+    @property
+    def record(self):
+        return self._record
 
     def set_unit(self):
         """Prompts user to select the unit of mass from {mg, g, kg}"""
@@ -68,7 +72,7 @@ class ManualBalance(object):
                         break
                     reading = float(check)
             except ValueError:
-                print("Invalid entry")
+                print("Invalid entry")  # TODO: add here options to pause or abort weighing?
                 continue
             else:
                 break
