@@ -1,9 +1,11 @@
 '''Class for Mettler Toledo Balance with computer interface'''
 
 from ..log import log
-from time import sleep
+from time import perf_counter
+from .mdebalance import Balance
+from msl.equipment import MSLTimeoutError
 
-class MettlerToledo(object):
+class MettlerToledo(Balance):
     def __init__(self, cfg, alias, reset=True):
         """Initialise Mettler Toledo Balance via computer interface
 
@@ -16,16 +18,20 @@ class MettlerToledo(object):
         reset : bool
             True if reset balance desired
         """
-        self._record = cfg.database().equipment[alias]
+        super().__init__(cfg, alias)
+        self.intcaltimeout = self.record.connection.properties.get('intcaltimeout',30)
         self.connection = self._record.connect()
         if reset:
             self.reset()
         assert self._record.serial == self.get_serial(), "Serial mismatch"  # prints error if false
-        self._suffix = {'mg': 1e-3, 'g': 1, 'kg': 1e3}
+
+    def _query(self, command):
+        self.connection.serial.flush()
+        return self.connection.query(command)
 
     def reset(self):
         log.info('Balance reset')
-        return self.connection.query("@")[6: -2]
+        return self._query("@")[6: -2]
 
     def get_serial(self):
         """Gets serial number of balance
@@ -35,37 +41,42 @@ class MettlerToledo(object):
         str
             serial number
         """
-        return self.connection.query("I4")[6: -2]
+        return self._query("I4")[6: -2]
 
     def zero_bal(self):
         """Zeroes balance: must ensure no mass on balance"""
-        m = self.connection.query("Z").split()
+        m = self._query("Z").split()
         if m[1] == 'A':
             log.info('Balance zeroed')
             return
         self._raise_error(m[0]+' '+m[1])
 
     def scale_adjust(self):
-        # TODO: check with Greg that C3 is the correct command to use and that there should be no mass on the balance
         """Adjusts scale using internal weights"""
-        m = self.connection.query("C3").split()
+        m = self._query("C3").split()
         if m[1] == 'B':
             log.info('Balance self-calibration commencing')
-            # TODO: How to wait for the balance to finish self-calibration?
-            c = 0
-            while c == 0:
+            t0 = perf_counter()
+            while True:
                 try:
-                    sleep(5)
                     c = self.connection.read().split()
                     if c[1] == 'A':
                         log.info('Balance self-calibration completed successfully')
-                    self._raise_error('C3 C')
+                        return
+                    elif c[1] == 'I':
+                        self._raise_error('C3 C')
+                except MSLTimeoutError:
+                    if perf_counter()-t0 > self.intcaltimeout:
+                        raise TimeoutError("Calibration took longer than expected")
+                    else:
+                        log.debug('Waiting for internal calibration to complete')
+
         self._raise_error(m[0]+' '+m[1])
 
     def tare_bal(self):
         """Tares balance after checking with user that tare load is correct"""
-        #TODO: Refer to equipment record to prompt user to check correct loading
-        m = self.connection.query("T").split()
+        input('Check that the balance has correct tare load, then press enter to continue.')
+        m = self._query("T").split()
         if m[1] == 'S':
             log.info('Balance tared with value '+m[2]+' '+m[3])
             return
@@ -79,7 +90,7 @@ class MettlerToledo(object):
         float
             mass in grams
         """
-        m = self.connection.query("S").split()
+        m = self._query("S").split()
         if m[1] == 'S':
             return float(m[2])*self._suffix[m[3]]
         self._raise_error(m[0]+' '+m[1])
@@ -92,7 +103,7 @@ class MettlerToledo(object):
         float
             mass in grams
         """
-        m = self.connection.query("SI").split()
+        m = self._query("SI").split()
         if m[1] == 'S':
             return float(m[2])*self._suffix[m[3]]
         elif m[1] == 'D':
@@ -101,7 +112,7 @@ class MettlerToledo(object):
         self._raise_error(m[0]+' '+m[1])
 
     def _raise_error(self, errorkey):
-        raise ValueError(ERRORCODES[errorkey])
+        raise ValueError(ERRORCODES.get(errorkey,'Unknown serial comms error'))
 
 
 
