@@ -24,6 +24,10 @@ class Balance(object):
     def record(self):
         return self._record
 
+    @property
+    def unit(self):
+        return str(self._unit)
+
     def set_unit(self):
         """Prompts user to select the unit of mass from {mg, g, kg}"""
         while True:
