@@ -16,7 +16,7 @@ class Balance(object):
         """
         self._record = cfg.database().equipment[alias]
         self._suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
-        self._unit = self.set_unit()
+        self.set_unit()
         self.stable_wait = 5 # wait time in seconds for balance reading to stabilise
         # TODO: allow stable_wait to be set in equipment register?
 
@@ -32,14 +32,14 @@ class Balance(object):
         """Prompts user to select the unit of mass from {mg, g, kg}"""
         while True:
             try:
-                unit = input('Please enter unit (ug, mg, g, kg):')
-                suffix = self._suffix[unit]
+                self._unit = input('Please enter unit (ug, mg, g, kg):')
+                suffix = self._suffix[self._unit]
             except:
                 print("Invalid entry")
                 continue
             else:
                 break
-        return unit
+        return self._unit
 
     def zero_bal(self):
         """Prompts user to zero balance with no mass on balance"""
