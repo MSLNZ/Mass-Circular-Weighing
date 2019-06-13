@@ -9,6 +9,14 @@ class HDF5Writer(object):
         log.info('Calibration file is saved as '+os.path.join(folder, filename+extn))
         self.cal_log = self.open_file()
 
+    def __del__(self):
+        self.close()
+
+    def close(self):
+        if self.cal_log is not None:
+            self.cal_log.close()
+            self.cal_log = None
+
     def open_file(self):
         """HDF5 Writer to open or create a file to record results and parameters of a mass calibration
 
@@ -24,7 +32,7 @@ class HDF5Writer(object):
         if not os.path.isfile(self.calfile):
             self.cal_log = self.create_h5_file(self.calfile)  # creates file if it does not exist
         else:
-            self.cal_log = h5py.File(self.calfile, 'a')  # opens file if it does exist
+            self.cal_log = h5py.File(self.calfile, mode='a')  # opens file if it does exist
             # TODO: currently not working if file already exists...
 
         return self.cal_log
