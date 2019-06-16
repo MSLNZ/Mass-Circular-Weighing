@@ -38,6 +38,7 @@ class CircWeigh(object):
         self.residuals = {}
         self.stdev = {}
         self.varcovar = {}
+        self.driftcoeffs = {}
 
     def generate_design_matrices(self, times=[]):
         """Sets up design matrices for linear, quadratic and cubic drift
@@ -113,14 +114,33 @@ class CircWeigh(object):
             var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (self.num_readings - self.num_wtgrps - self._driftorder[drift])
             print('variance, \u03C3\u00b2 = ',var.item(0))
             self.stdev[drift] = np.sqrt(var.item(0))
-            print('standard deviation, \u03C3 = ', self.stdev[drift])
+            print('residual standard deviation, \u03C3 = ', self.stdev[drift])
 
             self.varcovar[drift] = np.multiply(var, self.xTx_inv)
-            print('variance-covariance matrix, C = ')
-            print(self.varcovar[drift])
-            print('for', str(self.num_wtgrps),'item(s), and', drift, 'correction')
+            # print('variance-covariance matrix, C = ')
+            # print(self.varcovar[drift])
+            # print('for', str(self.num_wtgrps),'item(s), and', drift, 'correction')
 
         return min(self.stdev, key=self.stdev.get)
+
+    def drift_coeffs(self):
+        for drift, h in self._driftorder.items():
+            if h == 0:
+                pass
+            else:
+                driftcoeff = np.zeros((h, 2))
+                driftcoeff[:, 0] = self.b[drift][self.num_wtgrps:self.num_wtgrps + self._driftorder[drift]]
+
+                d = np.diagonal(self.varcovar[drift])
+                for i in range(h):
+                    driftcoeff[i, 1] = np.sqrt(d[i + self.num_wtgrps])
+
+                print('Matrix of drift coefficients and their standard deviations:')
+                print(driftcoeff)
+
+                self.driftcoeffs[drift] = driftcoeff
+
+        return self.driftcoeffs
 
 ''''''
 
