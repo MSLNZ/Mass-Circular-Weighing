@@ -2,12 +2,19 @@ import numpy as np
 from numpy.linalg import inv, multi_dot
 
 """ This class uses matrix least squares analysis for circular weighing measurement sequences
-For more information, see 'A General Approach to Comparisons in the Presence of Drift' """
+For more information, see 'A General Approach to Comparisons in the Presence of Drift'
+ 
+ Some outputs available within this class:
+   - The design matrix 'X', a column vector 'b' of expected values, and its variance-covariance matrix 'C'
+   - Estimates of item differences and their standard deviations
+   - Drift parameters and their standard deviations
+   """
 
 
 class CircWeigh(object):
     _sequences = {2: 5, 3: 4, 4: 3, 5: 3}  # key: number of weight groups in weighing, value: number of cycles
     _driftorder = {'no drift': 0, 'linear drift': 1, 'quadratic drift': 2, 'cubic drift': 3}
+    _orderdrift = {0: 'no drift', 1 : 'linear drift', 2 : 'quadratic drift', 3 : 'cubic drift'}
 
     def __init__(self, scheme_entry):
         """Initialises a circular weighing for a single weighing in the scheme
@@ -39,6 +46,7 @@ class CircWeigh(object):
         self.stdev = {}
         self.varcovar = {}
         self.driftcoeffs = {}
+        self.grpdiffs = {}
 
     def generate_design_matrices(self, times=[]):
         """Sets up design matrices for linear, quadratic and cubic drift
@@ -90,7 +98,7 @@ class CircWeigh(object):
 
         Returns
         -------
-        h : str
+        h : int
             Order of drift correction which gives the smallest standard deviation
 
         """
@@ -108,13 +116,13 @@ class CircWeigh(object):
 
             # calculate the residuals, variance and variance-covariance matrix:
             self.residuals[drift] = self.y_col - np.dot(self.matrices[drift], self.b[drift])
-            print('residuals = ')
-            print(self.residuals[drift])
+            #print('residuals for', drift, 'are:')
+            #print(self.residuals[drift])
 
             var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (self.num_readings - self.num_wtgrps - self._driftorder[drift])
-            print('variance, \u03C3\u00b2 = ',var.item(0))
-            self.stdev[drift] = np.sqrt(var.item(0))
-            print('residual standard deviation, \u03C3 = ', self.stdev[drift])
+            #print('variance, \u03C3\u00b2, for', drift, 'is:',var.item(0))
+            self.stdev[drift] = "{0:.5g}".format(np.sqrt(var.item(0)))
+            #print('residual standard deviation, \u03C3, for', drift, 'is:', self.stdev[drift])
 
             self.varcovar[drift] = np.multiply(var, self.xTx_inv)
             # print('variance-covariance matrix, C = ')
@@ -123,37 +131,70 @@ class CircWeigh(object):
 
         return min(self.stdev, key=self.stdev.get)
 
-    def drift_coeffs(self):
-        for drift, h in self._driftorder.items():
-            if h == 0:
-                pass
-            else:
-                driftcoeff = np.zeros((h, 2))
-                driftcoeff[:, 0] = self.b[drift][self.num_wtgrps:self.num_wtgrps + self._driftorder[drift]]
+    def drift_coeffs(self, drift):
+        """For non-zero drift correction, this method takes the variance-covariance matrix from determine_drift,
+        and outputs a dictionary of matrices of drift coefficients and their standard deviations.
 
-                d = np.diagonal(self.varcovar[drift])
-                for i in range(h):
-                    driftcoeff[i, 1] = np.sqrt(d[i + self.num_wtgrps])
+        Parameters
+        ----------
+        drift : str
+            choice of 'no drift', 'linear drift', 'quadratic drift', or 'cubic drift'
 
-                print('Matrix of drift coefficients and their standard deviations:')
-                print(driftcoeff)
+        Returns
+        -------
+        driftcoeffs : dict
+            keys are drift orders as strings. Could be 'linear drift', 'quadratic drift', and/or 'cubic drift'
+            values are matrices of drift coefficients and their standard deviations up to the maximum drift specified.
+        """
+        h = self._driftorder[drift]
+        if h == 0:
+            print('Optimal correction is for no drift')
+        else:
+            driftcoeff = np.zeros((h, 2))
+            driftcoeff[:, 0] = self.b[drift][self.num_wtgrps:self.num_wtgrps + self._driftorder[drift]]
 
-                self.driftcoeffs[drift] = driftcoeff
+            d = np.diagonal(self.varcovar[drift])
+            for i in range(h):
+                driftcoeff[i, 1] = np.sqrt(d[i + self.num_wtgrps])
+                self.driftcoeffs[self._orderdrift[i+1]] = "{0:.5g}".format(driftcoeff[i,0])+' ('+"{0:.3g}".format(driftcoeff[i,1])+')'
+
+            print('Matrix of drift coefficients and their standard deviations:')
+            print(driftcoeff)
 
         return self.driftcoeffs
 
-''''''
+    def item_diff(self, drift):
+        """Calculates differences between sequential groups of weights in the circular weighing
 
+        Parameters
+        ----------
+        drift : str
+            choice of 'no drift', 'linear drift', 'quadratic drift', or 'cubic drift'
 
+        Returns
+        -------
+        self.grpdiffs : dict
+            keys are weight groups by position e.g. grp1 - grp2; grp2 - grp3 etc
+            values are mass differences in set unit, with standard deviation in brackets
+        """
+        w_T = np.zeros((self.num_wtgrps, self.num_wtgrps + self._driftorder[drift]))
+        for pos in range(self.num_wtgrps-1):
+            w_T[pos, pos] = 1
+            w_T[pos, pos + 1] = -1
+        w_T[self.num_wtgrps - 1, self.num_wtgrps - 1] = 1
+        w_T[self.num_wtgrps-1, 0] = -1
 
-'''   
-Required inputs:
-    scheme_entry = number of independent items being compared
-    h = highest order of drift correction
-    y_col = column vector of measured values or comparator readings in order taken
-    t1 = row vector of times for each measurement
-Function outputs:
-    The design matrix 'X', a column vector 'b' of expected values, 
-    and its variance-covariance matrix 'C'
-    Estimates of item differences and their standard deviations
-    Drift parameters and their standard deviations '''
+        print(w_T)
+        w = w_T.T
+        diffab = np.dot(w_T, self.b[drift])
+        vardiffab = multi_dot([w_T, self.varcovar[drift], w])
+        stdev_diffab = np.sqrt(np.diag(vardiffab))
+
+        for pos in range(self.num_wtgrps - 1):
+            key = 'grp'+str(pos+1)+' - grp'+str(pos+2)
+            value = "{0:.5g}".format(diffab[pos])+' ('+"{0:.3g}".format(stdev_diffab[pos])+')'
+            self.grpdiffs[key] = value
+
+        self.grpdiffs['grp'+str(self.num_wtgrps)+' - grp1'] = "{0:.5g}".format(diffab[self.num_wtgrps-1])+' ('+"{0:.3g}".format(stdev_diffab[self.num_wtgrps-1])+')'
+
+        return self.grpdiffs
