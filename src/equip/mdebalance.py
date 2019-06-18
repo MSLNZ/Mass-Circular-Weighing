@@ -18,7 +18,7 @@ class Balance(object):
         self._suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
         self.set_unit()
         self.stable_wait = 5 # wait time in seconds for balance reading to stabilise
-        # TODO: allow stable_wait to be set in equipment register?
+        # TODO: allow stable_wait to be set in equipment register or by user at start of mmt
 
     @property
     def record(self):

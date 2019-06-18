@@ -33,7 +33,6 @@ class HDF5Writer(object):
             self.cal_log = self.create_h5_file(self.calfile)  # creates file if it does not exist
         else:
             self.cal_log = h5py.File(self.calfile, mode='a')  # opens file if it does exist
-            # TODO: currently not working if file already exists...
 
         return self.cal_log
 
@@ -49,8 +48,11 @@ class HDF5Writer(object):
         Returns
         -------
         h5py file object
-            root contains groups Scheme, CircularWeighings, FinalMassCalculation, Equipment, Logging.
-            Scheme contains group MassSets.
+            root contains groups Parameters, Circular Weighings, and Final Mass Calculation.
+            - Parameters will contain scheme with mass sets and balances used.
+            - Circular Weighings will contain subgroups with measurement and analysis data for each weighing.
+            - Final Mass Calculation will include a compilation of the weighing data from each balance,
+              and the results of the matrix least squares calculation.
 
         """
         self.cal_log = h5py.File(filetocreate, mode=mode)
@@ -83,7 +85,7 @@ class HDF5Writer(object):
 
         return self.cal_log[subgroup]
 
-    def save_data(self, dataset, group, data):
+    '''def save_data(self, dataset, group, data):
         """Saves data as dataset in group
 
         Parameters
@@ -126,6 +128,7 @@ class HDF5Writer(object):
             obj.attrs[key] = value
 
         return obj
+        '''
 
     #def check_equipment_record(self):
         # TODO: get a list of equipment from cfg, check if new equipment is being used, if so, add to equipment dataset
