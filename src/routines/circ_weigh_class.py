@@ -5,11 +5,10 @@ from numpy.linalg import inv, multi_dot
 For more information, see 'A General Approach to Comparisons in the Presence of Drift'
  
  Some outputs available within this class:
-   - The design matrix 'X', a column vector 'b' of expected values, and its variance-covariance matrix 'C'
+   - The design matrices, expected values, and variance-covariance matrix
    - Estimates of item differences and their standard deviations
    - Drift parameters and their standard deviations
-   """
-
+"""
 
 class CircWeigh(object):
     _sequences = {2: 5, 3: 4, 4: 3, 5: 3}  # key: number of weight groups in weighing, value: number of cycles
@@ -68,8 +67,10 @@ class CircWeigh(object):
         """
         if times == [] or not all(times):  # Fill time as simple ascending array, [0,1,2,3...]
             times = np.arange(self.num_readings)
+            self.trend = 'reading'
         else:  # Ensure that time is a numpy array object.
             times = np.array(times)
+            self.trend = 'minute'
 
         # Prepare matrices for each order of drift correction
         id = np.identity(self.num_wtgrps)
@@ -158,8 +159,8 @@ class CircWeigh(object):
                 driftcoeff[i, 1] = np.sqrt(d[i + self.num_wtgrps])
                 self.driftcoeffs[self._orderdrift[i+1]] = "{0:.5g}".format(driftcoeff[i,0])+' ('+"{0:.3g}".format(driftcoeff[i,1])+')'
 
-            print('Matrix of drift coefficients and their standard deviations:')
-            print(driftcoeff)
+            #print('Matrix of drift coefficients and their standard deviations:')
+            #print(driftcoeff)
 
         return self.driftcoeffs
 
@@ -184,17 +185,23 @@ class CircWeigh(object):
         w_T[self.num_wtgrps - 1, self.num_wtgrps - 1] = 1
         w_T[self.num_wtgrps-1, 0] = -1
 
-        print(w_T)
         w = w_T.T
         diffab = np.dot(w_T, self.b[drift])
         vardiffab = multi_dot([w_T, self.varcovar[drift], w])
         stdev_diffab = np.sqrt(np.diag(vardiffab))
 
         for pos in range(self.num_wtgrps - 1):
-            key = 'grp'+str(pos+1)+' - grp'+str(pos+2)
-            value = "{0:.5g}".format(diffab[pos])+' ('+"{0:.3g}".format(stdev_diffab[pos])+')'
+            key = 'Position ' + str(pos + 1) + ' - Position ' + str(pos + 2)
+            value = "{0:.5g}".format(diffab[pos]) + ' (' + "{0:.3g}".format(stdev_diffab[pos]) + ')'
             self.grpdiffs[key] = value
 
-        self.grpdiffs['grp'+str(self.num_wtgrps)+' - grp1'] = "{0:.5g}".format(diffab[self.num_wtgrps-1])+' ('+"{0:.3g}".format(stdev_diffab[self.num_wtgrps-1])+')'
+        self.grpdiffs['Position '+str(self.num_wtgrps)+' - Position 1'] = "{0:.5g}".format(diffab[self.num_wtgrps-1])+' ('+"{0:.3g}".format(stdev_diffab[self.num_wtgrps-1])+')'
 
-        return self.grpdiffs
+        analysis = np.empty((self.num_wtgrps,), dtype =[('+ weight group', 'S30'), ('- weight group', 'S30'), ('mass difference', 'float64'), ('std deviation', 'float64')])
+
+        analysis['+ weight group'] = self.wtgrps
+        analysis['- weight group'] = np.roll(self.wtgrps,-1)
+        analysis['mass difference'] = diffab
+        analysis['std deviation'] = stdev_diffab
+
+        return analysis
