@@ -12,7 +12,7 @@ bal = Balance(cfg, alias)
 scheme1 = "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb"  # pressure calibration example
 # "1 1s 0.5+0.5s" # "1a 1b 1c 1d"
 identifier = 'run1'
-new_weighing = False
+new_weighing = False # select true to enter new data into weighing
 # specify where to save data
 folder = r'C:\Users\r.hawke\PycharmProjects\Test_h5files'
 filename = 'PressureStandards1'
@@ -44,8 +44,9 @@ for key, value in metadata.items():
     weighdata.attrs[key] = value
 
 # do circular weighing:
-times = []
+
 if new_weighing == True:
+    times = []
     t0 = perf_counter()
     for cycle in range(weighing.num_cycles):
         for pos in range(weighing.num_wtgrps):
@@ -58,9 +59,11 @@ if new_weighing == True:
             # TODO: does Greg want the times in this array or are they ok as an attribute?
             bal.unload_bal(mass)
 
-    times -= times[0]
+    times -= times[0]  # TODO: check this syntax is ok
     weighdata.attrs['Timestamps'] = times
     # TODO: format times sensibly...
+else:
+    times = weighdata.attrs['Timestamps']
 
 # analyse circular weighing
 weighing.generate_design_matrices(times)
@@ -84,7 +87,7 @@ print(weighing.grpdiffs)
 # save analysis to h5 dataset
 weighanalysis = scheme1folder.require_dataset('analysis_'+identifier,
     data=analysis, shape=(weighing.num_wtgrps, 1),
-    dtype=[('+ weight group', 'S30'), ('- weight group', 'S30'), ('mass difference', 'float64'), ('std deviation', 'float64')])
+    dtype=[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('std deviation', 'float64')])
 
 weighanalysis.attrs['Residual std devs, \u03C3'] = str(weighing.stdev)
 weighanalysis.attrs['Optimal drift'] = drift
