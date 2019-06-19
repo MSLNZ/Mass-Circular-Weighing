@@ -12,6 +12,7 @@ bal = Balance(cfg, alias)
 scheme1 = "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb"  # pressure calibration example
 # "1 1s 0.5+0.5s" # "1a 1b 1c 1d"
 identifier = 'run1'
+new_weighing = False
 # specify where to save data
 folder = r'C:\Users\r.hawke\PycharmProjects\Test_h5files'
 filename = 'PressureStandards1'
@@ -43,25 +44,27 @@ for key, value in metadata.items():
     weighdata.attrs[key] = value
 
 # do circular weighing:
-t0 = perf_counter()
 times = []
-for cycle in range(weighing.num_cycles):
-    for pos in range(weighing.num_wtgrps):
-        mass = weighing.wtgrps[pos]
-        bal.load_bal(mass)
-        reading = bal.get_mass_stable()
-        time = (perf_counter() - t0)/60  # elapsed time in minutes
-        times.append(time)
-        weighdata[cycle,pos] = reading
-        # TODO: does Greg want the times in this array or are they ok as an attribute?
-        bal.unload_bal(mass)
+if new_weighing == True:
+    t0 = perf_counter()
+    for cycle in range(weighing.num_cycles):
+        for pos in range(weighing.num_wtgrps):
+            mass = weighing.wtgrps[pos]
+            bal.load_bal(mass)
+            reading = bal.get_mass_stable()
+            time = (perf_counter() - t0)/60  # elapsed time in minutes
+            times.append(time)
+            weighdata[cycle,pos] = reading
+            # TODO: does Greg want the times in this array or are they ok as an attribute?
+            bal.unload_bal(mass)
 
-weighdata.attrs['Timestamps'] = times - times[0]
-# TODO: format times sensibly...
+    times -= times[0]
+    weighdata.attrs['Timestamps'] = times
+    # TODO: format times sensibly...
 
 # analyse circular weighing
-weighing.generate_design_matrices(times=[])
-# TODO: check if works when including times here
+weighing.generate_design_matrices(times)
+# TODO: check if works when including actual times here
 drift = weighing.determine_drift(weighdata[:,:]) # allows program to select optimum drift correction
 
 print()
