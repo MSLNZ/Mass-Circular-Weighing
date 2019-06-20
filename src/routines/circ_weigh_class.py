@@ -197,7 +197,7 @@ class CircWeigh(object):
 
         self.grpdiffs['Position '+str(self.num_wtgrps)+' - Position 1'] = "{0:.5g}".format(diffab[self.num_wtgrps-1])+' ('+"{0:.3g}".format(stdev_diffab[self.num_wtgrps-1])+')'
 
-        analysis = np.empty((self.num_wtgrps,), dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('std deviation', 'float64')])
+        analysis = np.empty((self.num_wtgrps,), dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('residual', 'float64'), ('bal uncert', 'float64')])
 
         analysis['+ weight group'] = self.wtgrps
         analysis['- weight group'] = np.roll(self.wtgrps,-1)

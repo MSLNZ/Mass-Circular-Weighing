@@ -23,6 +23,10 @@ print(scheme_check)
 num_unknowns = num_client_masses + num_stds + num_check_masses
 print('Number of unknowns =', num_unknowns)
 
+with open('data.txt', 'w') as outfile:
+    json.dump(jsonData, outfile, sort_keys=True, indent=4,
+              ensure_ascii=False)
+
 # import data
 num_circweighings = 8  # 25 differences
 

@@ -1,4 +1,5 @@
 from src.hdf5fileIO import HDF5Writer
+# TODO: change to using json file structure
 from msl.equipment import Config
 from src.equip.mdebalance import Balance
 from src.routines.circ_weigh_class import CircWeigh
@@ -9,7 +10,8 @@ from time import perf_counter
 cfg = Config(r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\config.xml')
 alias = 'MDE-demo'
 bal = Balance(cfg, alias)
-scheme1 = "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb"  # pressure calibration example
+scheme1 = "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example
+nominal_mass = 4000 # nominal mass in g
 # "1 1s 0.5+0.5s" # "1a 1b 1c 1d"
 identifier = 'run1'
 new_weighing = False # select true to enter new data into weighing
@@ -79,12 +81,15 @@ print('Optimal drift correction for', drift, '(in', bal.unit, 'per reading):')
 print(weighing.drift_coeffs(drift))
 
 analysis = weighing.item_diff(drift)
+# TODO: add here the balance uncertainty in final column (same for all) - depends on value of nominal_mass and balance combination as per acceptance criteria
+# TODO: check circular weighing against acceptance criteria for the balance
 
 print()
 print('Differences (in', bal.unit+'):')
 print(weighing.grpdiffs)
 
 # save analysis to h5 dataset
+# TODO: change to json
 weighanalysis = scheme1folder.require_dataset('analysis_'+identifier,
     data=analysis, shape=(weighing.num_wtgrps, 1),
     dtype=[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('std deviation', 'float64')])
