@@ -110,9 +110,9 @@ class CircWeigh(object):
 
         # calculate vector of expected values
         for drift, xT in self.t_matrices.items():
-            self.xTx_inv = inv(np.dot(xT, self.matrices[drift]))
-            log.debug('xTx_inv = ', self.xTx_inv, 'for', drift)
-            self.b[drift] = multi_dot([self.xTx_inv, xT, self.y_col])
+            xTx_inv = inv(np.dot(xT, self.matrices[drift]))
+            log.debug('xTx_inv = ', xTx_inv, 'for', drift)
+            self.b[drift] = multi_dot([xTx_inv, xT, self.y_col])
             log.debug('b = ', self.b, 'for', drift)
 
             # calculate the residuals, variance and variance-covariance matrix:
@@ -124,7 +124,7 @@ class CircWeigh(object):
             self.stdev[drift] = "{0:.5g}".format(np.sqrt(var.item(0)))
             log.debug('residual standard deviation, \u03C3, for', drift, 'is:', self.stdev[drift])
 
-            self.varcovar[drift] = np.multiply(var, self.xTx_inv)
+            self.varcovar[drift] = np.multiply(var, xTx_inv)
             log.debug('variance-covariance matrix, C =', self.varcovar[drift],
                       'for', str(self.num_wtgrps),'item(s), and', drift, 'correction')
 

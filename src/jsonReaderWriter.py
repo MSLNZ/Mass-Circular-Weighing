@@ -25,6 +25,7 @@ class jsonReaderWriter(object):
 
     def add_metadata(self, metadata, level1folder='root', level2folder=None):
         # adds metadata to a folder or to the root if the folder is not specified
+        # TODO: check that this works for a level1folder but no level2folder
         if level1folder == 'root':
             try:
                 for key, value in metadata.items():
@@ -45,8 +46,7 @@ class jsonReaderWriter(object):
         self.save_file()
 
     def add_dataset(self, dataset, jsondict='root'):
-        # adds data to a folder or to the root if the folder is not specified
-        # data is added to a 'Data' folder, which is created if it does not yet exist
+        # adds data to a folder or to a 'Data' folder in the root directory if the folder is not specified
         if jsondict == 'root':
             try:
                 for key, value in dataset.items():
@@ -58,11 +58,11 @@ class jsonReaderWriter(object):
         else:
             try:
                 for key, value in dataset.items():
-                    self.root[jsondict]['Data'][key] = value
+                    self.root[jsondict][key] = value
             except:
-                self.root[jsondict]['Data'] = dict()
+                self.root[jsondict] = dict()
                 for key, value in dataset.items():
-                    self.root[jsondict]['Data'][key] = value
+                    self.root[jsondict][key] = value
 
         self.save_file()
 

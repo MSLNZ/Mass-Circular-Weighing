@@ -1,3 +1,4 @@
+from datetime import datetime
 import numpy as np
 from src.jsonReaderWriter import jsonReaderWriter
 import pprint
@@ -7,7 +8,7 @@ from src.log import log
 # initialisation
 finalmasscalc = jsonReaderWriter('finalmasscalcdemo1.json')
 
-metadata = {'date': '2019-06-21', "Client": 'Hort Research'}
+metadata = {'Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'), "Client": 'Hort Research'}
 finalmasscalc.add_metadata(metadata)
 
 finalmasscalc.create_subgroup('1: Mass Sets')
@@ -73,7 +74,7 @@ finalmasscalc.add_metadata(scheme_std, '1: Mass Sets', 'Standard')
 
 num_unknowns = num_client_masses + num_stds + num_check_masses
 print('Number of unknowns =', num_unknowns)
-allmassIDs = [scheme_client['client weight ID']+scheme_check['check weight ID']+scheme_std['std weight ID']]
+allmassIDs = scheme_client['client weight ID']+scheme_check['check weight ID']+scheme_std['std weight ID']
 print('List of masses:', allmassIDs)
 final_mass_values['All masses'] = allmassIDs
 
@@ -111,17 +112,17 @@ for weighing in weighings:
         grp1 = entry[0].split('+')
         for m in range(len(grp1)):
             #log.debug('mass '+grp1[m]+' is in position '+str(allmassIDs[0].index(grp1[m])))
-            designmatrix[rowcounter, allmassIDs[0].index(grp1[m])] = 1
+            designmatrix[rowcounter, allmassIDs.index(grp1[m])] = 1
         grp2 = entry[1].split('+')
         for m in range(len(grp2)):
             #log.debug('mass '+grp2[m]+' is in position '+str(allmassIDs[0].index(grp2[m])))
-            designmatrix[rowcounter, allmassIDs[0].index(grp2[m])] = -1
+            designmatrix[rowcounter, allmassIDs.index(grp2[m])] = -1
         differences[rowcounter] = entry[2]
         residuals[rowcounter] = entry[3]
         uncerts[rowcounter] = entry[4]
         rowcounter += 1
 for std in scheme_std['std weight ID']:
-    designmatrix[rowcounter, allmassIDs[0].index(std)] = 1
+    designmatrix[rowcounter, allmassIDs.index(std)] = 1
     rowcounter += 1
 
 # Check
@@ -135,8 +136,8 @@ print(differences)
 print(residuals)
 print(uncerts)
 
-# calculate
-# Following the mathcad example in Tech proc MSLT.M.001.007.
+# Calculate least squares solution
+# Following the mathcad example in Tech proc MSLT.M.001.008
 
 x = designmatrix
 xT = designmatrix.T
@@ -149,12 +150,33 @@ psi_b_inv = np.linalg.multi_dot([xT, psi_y_inv, x])
 psi_b = np.linalg.inv(psi_b_inv)
 
 b = np.linalg.multi_dot([psi_b, xT, psi_y_inv, differences])
-log.info('b = '+str(b))
+log.info('Mass values are: '+str(b))
 
+    # calculate the residuals, variance and variance-covariance matrix:
 r0 = (differences - np.dot(x, b))*1e6 # convert from g to ug
 log.info('R0 = '+str(r0))
 
+# TODO: do something akin to buoyancy correction...
 
+summarytable = np.empty((num_unknowns, 5), object)
+for i in range(num_unknowns):
+    summarytable[i, 0] = allmassIDs[i]
+    if i < num_client_masses:
+        summarytable[i, 1] = 'Client'
+    elif i >= num_client_masses + num_check_masses:
+        summarytable[i, 1] = 'Standard'
+    else:
+        summarytable[i, 1] = 'Check'
+
+    summarytable[i, 2] = b[i]
+    #summarytable[i, 3] = r0[i] # nope, not the residual
+
+print(summarytable)
+
+final_mass_values['Mass values from least squares solution'] = summarytable.tolist()
+
+finalmasscalc.create_subgroup('2: Least Squares Data')
+finalmasscalc.add_dataset(final_mass_values, '2: Least Squares Data')
 
 '''
 
@@ -163,7 +185,7 @@ xTx_inv = np.linalg.inv(np.dot(xT, self.matrices[drift]))
 
 
 
-# calculate the residuals, variance and variance-covariance matrix:
+
 residuals[drift] = self.y_col - np.dot(self.matrices[drift], self.b[drift])
 
 
