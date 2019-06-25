@@ -97,16 +97,42 @@ weighing6 = np.asarray([('2', '2s', -0.00006477, 0.0, 0.5), ('2s', '2d', -0.0000
 weighing7 = np.asarray([('1', '1s', 0.00007601, -0.182, 0.5), ('1s', '1w', -0.000057911, 0.343, 0.5), ('1', '1s', 0.000076501, 0.309, 0.5), ('1s', '1w', -0.000058598, -0.344, 0.5)], dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('residual', 'float64'), ('bal uncert', 'float64')])
 weighings = [weighing1, weighing2, weighing3, weighing4, weighing5, weighing6, weighing7]
 
+designmatrix = np.zeros((num_obs,num_unknowns))  # could use sparse matrix but probably not big enough to worry!
+differences = np.empty(num_obs - num_stds)
+residuals = np.empty(num_obs - num_stds)
+uncerts = np.empty(num_obs - num_stds)
+
+rowcounter = 0
 for weighing in weighings:
     for entry in weighing:
-        print(entry)
+        #log.info(entry)
         grp1 = entry[0].split('+')
         for m in range(len(grp1)):
-            print('mass', grp1[m], 'is in position', allmassIDs[0].index(grp1[m]))
+            #log.debug('mass '+grp1[m]+' is in position '+str(allmassIDs[0].index(grp1[m])))
+            designmatrix[rowcounter, allmassIDs[0].index(grp1[m])] = 1
         grp2 = entry[1].split('+')
         for m in range(len(grp2)):
-            print('mass', grp2[m], 'is in position', allmassIDs[0].index(grp2[m]))
+            #log.debug('mass '+grp2[m]+' is in position '+str(allmassIDs[0].index(grp2[m])))
+            designmatrix[rowcounter, allmassIDs[0].index(grp2[m])] = -1
+        differences[rowcounter] = entry[2]
+        residuals[rowcounter] = entry[3]
+        uncerts[rowcounter] = entry[4]
+
+        rowcounter += 1
+
+for std in scheme_std['std weight ID']:
+    designmatrix[rowcounter, allmassIDs[0].index(std)] = 1
+    rowcounter += 1
+
+print(designmatrix)
 
 
+differences = np.append(differences, scheme_std['std mass values'])
+residuals = np.append(residuals, scheme_std['std residuals'])
+uncerts = np.append(uncerts, scheme_std['std uncerts'])
 
+print(differences)
 
+print(residuals)
+
+print(uncerts)
