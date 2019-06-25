@@ -97,11 +97,13 @@ weighing6 = np.asarray([('2', '2s', -0.00006477, 0.0, 0.5), ('2s', '2d', -0.0000
 weighing7 = np.asarray([('1', '1s', 0.00007601, -0.182, 0.5), ('1s', '1w', -0.000057911, 0.343, 0.5), ('1', '1s', 0.000076501, 0.309, 0.5), ('1s', '1w', -0.000058598, -0.344, 0.5)], dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('residual', 'float64'), ('bal uncert', 'float64')])
 weighings = [weighing1, weighing2, weighing3, weighing4, weighing5, weighing6, weighing7]
 
+# initialise design matrix (final mass calculation part)
 designmatrix = np.zeros((num_obs,num_unknowns))  # could use sparse matrix but probably not big enough to worry!
 differences = np.empty(num_obs - num_stds)
 residuals = np.empty(num_obs - num_stds)
 uncerts = np.empty(num_obs - num_stds)
 
+# Create design matrix
 rowcounter = 0
 for weighing in weighings:
     for entry in weighing:
@@ -117,22 +119,62 @@ for weighing in weighings:
         differences[rowcounter] = entry[2]
         residuals[rowcounter] = entry[3]
         uncerts[rowcounter] = entry[4]
-
         rowcounter += 1
-
 for std in scheme_std['std weight ID']:
     designmatrix[rowcounter, allmassIDs[0].index(std)] = 1
     rowcounter += 1
 
+# Check
 print(designmatrix)
 
-
-differences = np.append(differences, scheme_std['std mass values'])
-residuals = np.append(residuals, scheme_std['std residuals'])
-uncerts = np.append(uncerts, scheme_std['std uncerts'])
+differences = np.append(differences, scheme_std['std mass values'])     # corresponds to Y, in g
+residuals = np.append(residuals, scheme_std['std residuals'])           # not used for the following calculation
+uncerts = np.append(uncerts, scheme_std['std uncerts'])                 # balance uncertainties in ug
 
 print(differences)
-
 print(residuals)
-
 print(uncerts)
+
+# calculate
+# Following the mathcad example in Tech proc MSLT.M.001.007.
+
+x = designmatrix
+xT = designmatrix.T
+
+psi_y = np.diag(uncerts**2) # variance-covariance matrix
+# TODO: work out what this is for sure!
+psi_y_inv = np.linalg.inv(psi_y)
+
+psi_b_inv = np.linalg.multi_dot([xT, psi_y_inv, x])
+psi_b = np.linalg.inv(psi_b_inv)
+
+b = np.linalg.multi_dot([psi_b, xT, psi_y_inv, differences])
+log.info('b = '+str(b))
+
+r0 = (differences - np.dot(x, b))*1e6 # convert from g to ug
+log.info('R0 = '+str(r0))
+
+
+
+'''
+
+xTx_inv = np.linalg.inv(np.dot(xT, self.matrices[drift]))
+
+
+
+
+# calculate the residuals, variance and variance-covariance matrix:
+residuals[drift] = self.y_col - np.dot(self.matrices[drift], self.b[drift])
+
+
+var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (self.num_readings - self.num_wtgrps - self._driftorder[drift])
+log.debug('variance, \u03C3\u00b2, for', drift, 'is:',var.item(0))
+self.stdev[drift] = "{0:.5g}".format(np.sqrt(var.item(0)))
+log.debug('residual standard deviation, \u03C3, for', drift, 'is:', self.stdev[drift])
+
+self.varcovar[drift] = np.multiply(var, xTx_inv)
+log.debug('variance-covariance matrix, C =', self.varcovar[drift],
+          'for', str(self.num_wtgrps),'item(s), and', drift, 'correction')
+          
+          
+          '''

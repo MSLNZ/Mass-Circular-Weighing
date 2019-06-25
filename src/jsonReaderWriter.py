@@ -12,7 +12,7 @@ class jsonReaderWriter(object):
 
     def save_file(self):
         with open(self.f, 'w') as outfile:
-            json.dump(self.root, outfile, sort_keys=True, indent=4)
+            json.dump(self.root, outfile, indent=4)
 
     def create_subgroup(self, subgroup, jsondict='root'):
         # adds a new group to a group or to the root if the folder is not specified
@@ -23,10 +23,9 @@ class jsonReaderWriter(object):
 
         self.save_file()
 
-    def add_metadata(self, metadata, jsondict='root'):
+    def add_metadata(self, metadata, level1folder='root', level2folder=None):
         # adds metadata to a folder or to the root if the folder is not specified
-        # metadata is added to an 'Attributes' folder, which is created if it does not yet exist
-        if jsondict == 'root':
+        if level1folder == 'root':
             try:
                 for key, value in metadata.items():
                     self.root['0: '+self.f][key] = value
@@ -37,11 +36,11 @@ class jsonReaderWriter(object):
         else:
             try:
                 for key, value in metadata.items():
-                    self.root[jsondict]['Attributes'][key] = value
+                    self.root[level1folder][level2folder][key] = value
             except:
-                self.root[jsondict]['Attributes'] = dict()
+                self.root[level1folder][level2folder] = dict()
                 for key, value in metadata.items():
-                    self.root[jsondict]['Attributes'][key] = value
+                    self.root[level1folder][level2folder][key] = value
 
         self.save_file()
 
