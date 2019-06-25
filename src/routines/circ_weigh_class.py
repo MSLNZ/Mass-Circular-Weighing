@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.linalg import inv, multi_dot
 
+from ..log import log
+
 """ This class uses matrix least squares analysis for circular weighing measurement sequences
 For more information, see 'A General Approach to Comparisons in the Presence of Drift'
  
@@ -109,26 +111,22 @@ class CircWeigh(object):
         # calculate vector of expected values
         for drift, xT in self.t_matrices.items():
             self.xTx_inv = inv(np.dot(xT, self.matrices[drift]))
-            # print('xTx_inv = ')
-            # print(self.xTx_inv)
+            log.debug('xTx_inv = ', self.xTx_inv, 'for', drift)
             self.b[drift] = multi_dot([self.xTx_inv, xT, self.y_col])
-            # print('b = ')
-            # print(self.b)
+            log.debug('b = ', self.b, 'for', drift)
 
             # calculate the residuals, variance and variance-covariance matrix:
             self.residuals[drift] = self.y_col - np.dot(self.matrices[drift], self.b[drift])
-            #print('residuals for', drift, 'are:')
-            #print(self.residuals[drift])
+            log.debug('residuals for', drift, 'are', self.residuals[drift])
 
             var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (self.num_readings - self.num_wtgrps - self._driftorder[drift])
-            #print('variance, \u03C3\u00b2, for', drift, 'is:',var.item(0))
+            log.debug('variance, \u03C3\u00b2, for', drift, 'is:',var.item(0))
             self.stdev[drift] = "{0:.5g}".format(np.sqrt(var.item(0)))
-            #print('residual standard deviation, \u03C3, for', drift, 'is:', self.stdev[drift])
+            log.debug('residual standard deviation, \u03C3, for', drift, 'is:', self.stdev[drift])
 
             self.varcovar[drift] = np.multiply(var, self.xTx_inv)
-            # print('variance-covariance matrix, C = ')
-            # print(self.varcovar[drift])
-            # print('for', str(self.num_wtgrps),'item(s), and', drift, 'correction')
+            log.debug('variance-covariance matrix, C =', self.varcovar[drift],
+                      'for', str(self.num_wtgrps),'item(s), and', drift, 'correction')
 
         return min(self.stdev, key=self.stdev.get)
 
@@ -159,8 +157,8 @@ class CircWeigh(object):
                 driftcoeff[i, 1] = np.sqrt(d[i + self.num_wtgrps])
                 self.driftcoeffs[self._orderdrift[i+1]] = "{0:.5g}".format(driftcoeff[i,0])+' ('+"{0:.3g}".format(driftcoeff[i,1])+')'
 
-            #print('Matrix of drift coefficients and their standard deviations:')
-            #print(driftcoeff)
+            log.debug('Matrix of drift coefficients and their standard deviations:')
+            log.debug(driftcoeff)
 
         return self.driftcoeffs
 
