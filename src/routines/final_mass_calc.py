@@ -1,44 +1,49 @@
 from datetime import datetime
 import numpy as np
-from src.jsonReaderWriter import jsonReaderWriter
-import pprint
+from msl.io import JSONWriter
 from src.log import log
 
 
 # initialisation
-finalmasscalc = jsonReaderWriter('finalmasscalcdemo1.json')
-
 metadata = {'Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'), "Client": 'Hort Research'}
-finalmasscalc.add_metadata(metadata)
 
-finalmasscalc.create_subgroup('1: Mass Sets')
-finalmasscalc.create_subgroup('Client', finalmasscalc.root['1: Mass Sets'])
-finalmasscalc.create_subgroup('Check', finalmasscalc.root['1: Mass Sets'])
-finalmasscalc.create_subgroup('Standard', finalmasscalc.root['1: Mass Sets'])
+finalmasscalc = JSONWriter('finalmasscalc_msl-io1.json', metadata=metadata)
 
-scheme_client = {}
-scheme_std = {}
-scheme_check = {}
+mass_sets = finalmasscalc.create_group('1: Mass Sets')
+scheme_client = mass_sets.create_group('Client')
+scheme_check = mass_sets.create_group('Check')
+scheme_std = mass_sets.create_group('Standard')
+
 collated_data = {}
 final_mass_values = {}
 
 # import lists of masses from scheme info
 num_client_masses = 9
-scheme_client['Number of masses'] = num_client_masses
-scheme_client['client weight ID'] = ['100', '50', '20', '20d', '10', '5', '2', '2d', '1']
-log.info('Client masses: '+str(scheme_client))
-finalmasscalc.add_metadata(scheme_client, '1: Mass Sets', 'Client')
+client_wt_IDs = ['100', '50', '20', '20d', '10', '5', '2', '2d', '1']
+scheme_client.add_metadata(**{
+    'Number of masses': num_client_masses,
+    'client weight ID': client_wt_IDs
+})
+log.info('Client masses: '+str(client_wt_IDs))
+
 
 num_check_masses = 2
-scheme_check['Number of masses'] = num_check_masses
-scheme_check['check weight ID'] = ['5w', '1w']
-log.info('Check masses: '+str(scheme_check))
-finalmasscalc.add_metadata(scheme_check, '1: Mass Sets', 'Check')
+check_wt_IDs = ['5w', '1w']
+scheme_check.add_metadata(**{
+    'Number of masses': num_check_masses,
+    'check weight ID': check_wt_IDs
+})
+log.info('Check masses: '+str(check_wt_IDs))
+
 
 num_stds = 7
-scheme_std['Number of masses'] = num_stds
-scheme_std['std weight ID'] = ['100s', '50s', '20s', '10s', '5s', '2s', '1s']
-scheme_std['std mass values'] = [
+
+std_masses = np.empty(num_stds, dtype={
+    'names': ('std weight ID', 'std mass values', 'std residuals', 'std uncerts'),
+    'formats': (object, np.float, np.float, np.float)})
+
+std_masses['std weight ID'] = ['100s', '50s', '20s', '10s', '5s', '2s', '1s']
+std_masses['std mass values'] = [
     100.000059108,
     50.000053126,
     19.999998346,
@@ -47,7 +52,7 @@ scheme_std['std mass values'] = [
     1.999996291,
     0.999956601
 ]
-scheme_std['std residuals'] = [
+std_masses['std residuals'] = [
     -2.779,
     3.305,
     -1.368,
@@ -56,7 +61,7 @@ scheme_std['std residuals'] = [
     -0.33,
     0.575
 ]
-scheme_std['std uncerts'] = [
+std_masses['std uncerts'] = [
     4.008,
     2.624,
     2.088,
@@ -65,21 +70,20 @@ scheme_std['std uncerts'] = [
     0.806,
     0.752
 ]
-# print as nice array?
-# scheme_std['std weights'] = [scheme_std['std weight ID'], scheme_std['std mass values'], scheme_std['std residuals'], scheme_std['std uncerts']]
 
-log.info('Standards: '+str(scheme_std))
-finalmasscalc.add_metadata(scheme_std, '1: Mass Sets', 'Standard')
+scheme_std.add_metadata(**{'Number of masses': num_stds})
+scheme_std.create_dataset('std mass values', data=std_masses)
+log.info('Standards:\n'+str(std_masses))
 
 
 num_unknowns = num_client_masses + num_stds + num_check_masses
-print('Number of unknowns =', num_unknowns)
-allmassIDs = scheme_client['client weight ID']+scheme_check['check weight ID']+scheme_std['std weight ID']
-print('List of masses:', allmassIDs)
+log.info('Number of unknowns = '+str(num_unknowns))
+allmassIDs = np.append(client_wt_IDs + check_wt_IDs, std_masses['std weight ID'])  # note that stds are grouped last
+#print('List of masses:', allmassIDs)
 final_mass_values['All masses'] = allmassIDs
 
 # import data
-num_circweighings = 7
+#num_circweighings = 7
 num_obs = 25 # get this from the circular weighing scheme - here 18 circ weighing entries and 7 standards
 
 # test data
@@ -97,44 +101,54 @@ weighing5 = np.asarray([('5', '5s', -0.000069925, -0.665, 5.0), ('5s', '5w', -0.
 weighing6 = np.asarray([('2', '2s', -0.00006477, 0.0, 0.5), ('2s', '2d', -0.000041124, 0.127, 0.5), ('2d', '1+1s', 0.000049755, 0.127, 0.5)], dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('residual', 'float64'), ('bal uncert', 'float64')])
 weighing7 = np.asarray([('1', '1s', 0.00007601, -0.182, 0.5), ('1s', '1w', -0.000057911, 0.343, 0.5), ('1', '1s', 0.000076501, 0.309, 0.5), ('1s', '1w', -0.000058598, -0.344, 0.5)], dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('residual', 'float64'), ('bal uncert', 'float64')])
 weighings = [weighing1, weighing2, weighing3, weighing4, weighing5, weighing6, weighing7]
+inputdata = np.empty(num_obs-num_stds,
+    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('residual', 'float64'), ('bal uncert', 'float64')])
+i = 0
+for weighing in weighings:
+    for entry in weighing:
+        inputdata[i] = entry
+        i+=1
 
 # initialise design matrix (final mass calculation part)
-designmatrix = np.zeros((num_obs,num_unknowns))  # could use sparse matrix but probably not big enough to worry!
-differences = np.empty(num_obs - num_stds)
-residuals = np.empty(num_obs - num_stds)
-uncerts = np.empty(num_obs - num_stds)
+designmatrix = np.zeros((num_obs,num_unknowns))     # could use sparse matrix but probably not big enough to worry!
+differences = np.empty(num_unknowns)
+#residuals = np.empty(num_unknowns)                 # actually an output of the calculation
+uncerts = np.empty(num_unknowns)
 
 # Create design matrix
 rowcounter = 0
-for weighing in weighings:
-    for entry in weighing:
-        #log.info(entry)
-        grp1 = entry[0].split('+')
-        for m in range(len(grp1)):
-            #log.debug('mass '+grp1[m]+' is in position '+str(allmassIDs[0].index(grp1[m])))
-            designmatrix[rowcounter, allmassIDs.index(grp1[m])] = 1
-        grp2 = entry[1].split('+')
-        for m in range(len(grp2)):
-            #log.debug('mass '+grp2[m]+' is in position '+str(allmassIDs[0].index(grp2[m])))
-            designmatrix[rowcounter, allmassIDs.index(grp2[m])] = -1
-        differences[rowcounter] = entry[2]
-        residuals[rowcounter] = entry[3]
-        uncerts[rowcounter] = entry[4]
-        rowcounter += 1
-for std in scheme_std['std weight ID']:
-    designmatrix[rowcounter, allmassIDs.index(std)] = 1
+
+log.info('Input data: \n+ weight group, - weight group, mass difference, residual, bal uncert\n'+str(inputdata))
+for entry in inputdata:
+    #log.debug(entry)
+    grp1 = entry[0].split('+')
+    for m in range(len(grp1)):
+        #log.debug('mass '+grp1[m]+' is in position '+str(np.where(allmassIDs == grp1[m])[0][0]))
+        designmatrix[rowcounter, np.where(allmassIDs == grp1[m])] = 1
+    grp2 = entry[1].split('+')
+    for m in range(len(grp2)):
+        #log.debug('mass '+grp2[m]+' is in position '+str(np.where(allmassIDs == grp2[m])[0][0]))
+        designmatrix[rowcounter, np.where(allmassIDs == grp2[m])] = -1
+    differences[rowcounter] = entry[2]
+    #residuals[rowcounter] = entry[3]               # actually an output of the calculation
+    uncerts[rowcounter] = entry[4]
+    rowcounter += 1
+for std in std_masses['std weight ID']:
+    designmatrix[rowcounter, np.where(allmassIDs == std)] = 1
     rowcounter += 1
 
-# Check
-print(designmatrix)
 
-differences = np.append(differences, scheme_std['std mass values'])     # corresponds to Y, in g
-residuals = np.append(residuals, scheme_std['std residuals'])           # not used for the following calculation
-uncerts = np.append(uncerts, scheme_std['std uncerts'])                 # balance uncertainties in ug
 
-print(differences)
-print(residuals)
-print(uncerts)
+# Check data entered correctly:
+#print(designmatrix)
+
+differences = np.append(differences, std_masses['std mass values'])     # corresponds to Y, in g
+#residuals = np.append(residuals, std_masses['std residuals'])           # actually an output of the calculation
+uncerts = np.append(uncerts, std_masses['std uncerts'])                 # balance uncertainties in ug
+
+#log.info('Differences: '+str(differences))
+#print(residuals)
+#print(uncerts)
 
 # Calculate least squares solution
 # Following the mathcad example in Tech proc MSLT.M.001.008
@@ -142,21 +156,50 @@ print(uncerts)
 x = designmatrix
 xT = designmatrix.T
 
-psi_y = np.diag(uncerts**2) # variance-covariance matrix
-# TODO: work out what this is for sure!
-psi_y_inv = np.linalg.inv(psi_y)
+# Hadamard product: element-wise multiplication
+uumeas = np.vstack(uncerts) * np.hstack(uncerts)    # becomes square matrix dim num_obs
+rmeas = np.identity(num_obs)                        # Add off-diagonal terms for correlations
 
-psi_b_inv = np.linalg.multi_dot([xT, psi_y_inv, x])
-psi_b = np.linalg.inv(psi_b_inv)
+psi_y_hadamard = np.zeros((num_obs, num_obs))       # Hadamard product is element-wise multiplication
+for i in range(num_obs):
+    for j in range(num_obs):
+        psi_y_hadamard[i, j] = uumeas[i, j] * rmeas[i, j]
 
-b = np.linalg.multi_dot([psi_b, xT, psi_y_inv, differences])
-log.info('Mass values are: '+str(b))
+psi_y_inv = np.linalg.inv(psi_y_hadamard)
 
-    # calculate the residuals, variance and variance-covariance matrix:
-r0 = (differences - np.dot(x, b))*1e6 # convert from g to ug
-log.info('R0 = '+str(r0))
+psi_bmeas_inv = np.linalg.multi_dot([xT, psi_y_inv, x])
+psi_bmeas = np.linalg.inv(psi_bmeas_inv)
 
-# TODO: do something akin to buoyancy correction...
+b = np.linalg.multi_dot([psi_bmeas, xT, psi_y_inv, differences])
+#log.info('Mass values are: '+str(b))
+
+r0 = (differences - np.dot(x, b))*1e6               # residuals, converted from g to ug
+sum_residues_squared = np.dot(r0,r0)
+#log.info('R0 = '+str(r0))
+#print('residuals = ', residuals)
+#for i in range(num_obs):
+#    print('residuals == r0?', residuals[i], np.round(r0[i],3), residuals[i] == np.round(r0[i],3))
+
+# uncertainty due to no buoyancy correction
+cmx1 = np.ones(num_client_masses+num_check_masses)  # from above, stds are added last
+cmx1 = np.append(cmx1, np.zeros(num_stds))          # 1's for unknowns, 0's for reference stds
+
+reluncert = 0.10                                    # relative uncertainty in ppm for no buoyancy correction
+rnbc = np.identity(num_unknowns)                    # Add off-diagonal terms for correlations
+unbc = reluncert * b * cmx1                         # vector of length num_unknowns. TP wrongly has * 1e-6
+
+uunbc = np.vstack(unbc) * np.hstack(unbc)           # square matrix of dim num_obs
+
+psi_nbc_hadamard = np.zeros((num_unknowns, num_unknowns))
+for i in range(num_unknowns):                       # Here the Hadamard product is taking the diagonal of the matrix
+    for j in range(num_unknowns):
+        psi_nbc_hadamard[i, j] = uunbc[i, j] * rnbc[i, j]
+
+psi_b = psi_bmeas + psi_nbc_hadamard
+std_uncert_b = np.sqrt(np.diag(psi_b))
+det_varcovar = np.linalg.det(psi_b)
+
+
 
 summarytable = np.empty((num_unknowns, 5), object)
 for i in range(num_unknowns):
@@ -168,30 +211,34 @@ for i in range(num_unknowns):
     else:
         summarytable[i, 1] = 'Check'
 
-    summarytable[i, 2] = b[i]
-    #summarytable[i, 3] = r0[i] # nope, not the residual
+    summarytable[i, 2] = np.round(b[i], 9)
+    summarytable[i, 3] = np.round(std_uncert_b[i], 3)
+    summarytable[i, 4] = np.round(2*std_uncert_b[i],3)
 
-print(summarytable)
-
-final_mass_values['Mass values from least squares solution'] = summarytable.tolist()
-
-finalmasscalc.create_subgroup('2: Least Squares Data')
-finalmasscalc.add_dataset(final_mass_values, '2: Least Squares Data')
-
-'''
-
-xTx_inv = np.linalg.inv(np.dot(xT, self.matrices[drift]))
+log.info('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (ug), 95% CI\n'+str(summarytable))
 
 
 
+leastsq_data = finalmasscalc.create_group('2: Matrix Least Squares Analysis')
+leastsq_data.create_dataset('Input data', data=inputdata)
+leastsq_data.create_dataset('Mass values from least squares solution', data=summarytable)
+leastsq_data.add_metadata(**{
+    'Number of observations': num_obs,
+    'Number of unknowns': num_unknowns,
+    'Degrees of freedom': num_obs - num_unknowns,
+    'Determinant of var-covar': det_varcovar,
+    '(normalised) variance from analysis': '???',
+    'Relative uncertainty for no buoyancy correction (ppm)': reluncert,
+    'Sum of residues squared (ug^2)': np.round(sum_residues_squared, 6),
+})
+
+finalmasscalc.save(url='finalmasscalc_msl-io_final.json')
 
 
-residuals[drift] = self.y_col - np.dot(self.matrices[drift], self.b[drift])
+var = np.dot(r0.T, r0) / (num_obs - num_unknowns)
+log.debug('variance, \u03C3\u00b2, is:'+str(var.item(0)))
 
-
-var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (self.num_readings - self.num_wtgrps - self._driftorder[drift])
-log.debug('variance, \u03C3\u00b2, for', drift, 'is:',var.item(0))
-self.stdev[drift] = "{0:.5g}".format(np.sqrt(var.item(0)))
+'''self.stdev[drift] = "{0:.5g}".format(np.sqrt(var.item(0)))
 log.debug('residual standard deviation, \u03C3, for', drift, 'is:', self.stdev[drift])
 
 self.varcovar[drift] = np.multiply(var, xTx_inv)
