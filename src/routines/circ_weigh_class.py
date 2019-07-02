@@ -1,6 +1,4 @@
 import numpy as np
-from numpy.linalg import inv, multi_dot
-
 from ..log import log
 
 """ This class uses matrix least squares analysis for circular weighing measurement sequences
@@ -110,9 +108,9 @@ class CircWeigh(object):
 
         # calculate vector of expected values
         for drift, xT in self.t_matrices.items():
-            xTx_inv = inv(np.dot(xT, self.matrices[drift]))
+            xTx_inv = np.linalg.inv(np.dot(xT, self.matrices[drift]))
             log.debug('xTx_inv = ', xTx_inv, 'for', drift)
-            self.b[drift] = multi_dot([xTx_inv, xT, self.y_col])
+            self.b[drift] = np.linalg.multi_dot([xTx_inv, xT, self.y_col])
             log.debug('b = ', self.b, 'for', drift)
 
             # calculate the residuals, variance and variance-covariance matrix:
@@ -185,7 +183,7 @@ class CircWeigh(object):
 
         w = w_T.T
         diffab = np.dot(w_T, self.b[drift])
-        vardiffab = multi_dot([w_T, self.varcovar[drift], w])
+        vardiffab = np.linalg.multi_dot([w_T, self.varcovar[drift], w])
         stdev_diffab = np.sqrt(np.diag(vardiffab))
 
         for pos in range(self.num_wtgrps - 1):
