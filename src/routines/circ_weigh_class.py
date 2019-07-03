@@ -109,22 +109,22 @@ class CircWeigh(object):
         # calculate vector of expected values
         for drift, xT in self.t_matrices.items():
             xTx_inv = np.linalg.inv(np.dot(xT, self.matrices[drift]))
-            log.debug('xTx_inv = ', xTx_inv, 'for', drift)
+            log.debug('xTx_inv = '+str(xTx_inv)+' for '+drift)
             self.b[drift] = np.linalg.multi_dot([xTx_inv, xT, self.y_col])
-            log.debug('b = ', self.b, 'for', drift)
+            log.debug('b = '+str(self.b)+' for '+drift)
 
             # calculate the residuals, variance and variance-covariance matrix:
             self.residuals[drift] = self.y_col - np.dot(self.matrices[drift], self.b[drift])
-            log.debug('residuals for', drift, 'are', self.residuals[drift])
+            log.debug('residuals for '+drift+' are '+str(self.residuals[drift]))
 
             var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (self.num_readings - self.num_wtgrps - self._driftorder[drift])
-            log.debug('variance, \u03C3\u00b2, for', drift, 'is:',var.item(0))
+            log.debug('variance, \u03C3\u00b2, for '+drift+' is: '+str(var.item(0)))
             self.stdev[drift] = "{0:.5g}".format(np.sqrt(var.item(0)))
-            log.debug('residual standard deviation, \u03C3, for', drift, 'is:', self.stdev[drift])
+            log.debug('residual standard deviation, \u03C3, for '+drift+' is: '+str(self.stdev[drift]))
 
             self.varcovar[drift] = np.multiply(var, xTx_inv)
-            log.debug('variance-covariance matrix, C =', self.varcovar[drift],
-                      'for', str(self.num_wtgrps),'item(s), and', drift, 'correction')
+            log.debug('variance-covariance matrix, C = '+str(self.varcovar[drift])+
+                      ' for '+str(self.num_wtgrps)+' items and '+drift+' correction')
 
         return min(self.stdev, key=self.stdev.get)
 
@@ -155,8 +155,7 @@ class CircWeigh(object):
                 driftcoeff[i, 1] = np.sqrt(d[i + self.num_wtgrps])
                 self.driftcoeffs[self._orderdrift[i+1]] = "{0:.5g}".format(driftcoeff[i,0])+' ('+"{0:.3g}".format(driftcoeff[i,1])+')'
 
-            log.debug('Matrix of drift coefficients and their standard deviations:')
-            log.debug(driftcoeff)
+            log.debug('Matrix of drift coefficients and their standard deviations:\n'+str(driftcoeff))
 
         return self.driftcoeffs
 
@@ -193,11 +192,11 @@ class CircWeigh(object):
 
         self.grpdiffs['Position '+str(self.num_wtgrps)+' - Position 1'] = "{0:.5g}".format(diffab[self.num_wtgrps-1])+' ('+"{0:.3g}".format(stdev_diffab[self.num_wtgrps-1])+')'
 
-        analysis = np.empty((self.num_wtgrps,), dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('residual', 'float64'), ('bal uncert', 'float64')])
+        analysis = np.empty((self.num_wtgrps,), dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('residual', 'float64')])
 
         analysis['+ weight group'] = self.wtgrps
         analysis['- weight group'] = np.roll(self.wtgrps,-1)
         analysis['mass difference'] = diffab
-        analysis['std deviation'] = stdev_diffab
+        analysis['residual'] = stdev_diffab
 
         return analysis
