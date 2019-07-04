@@ -47,7 +47,7 @@ class CircWeigh(object):
         self.driftcoeffs = {}
         self.grpdiffs = {}
 
-    def generate_design_matrices(self, times=[]):
+    def generate_design_matrices(self, times):
         """Sets up design matrices for linear, quadratic and cubic drift
 
         Parameters
@@ -65,7 +65,7 @@ class CircWeigh(object):
         M3 : numpy array
             design matrix for cubic drift
         """
-        if times == [] or not all(times):  # Fill time as simple ascending array, [0,1,2,3...]
+        if len(times) < self.num_readings:  # Fill time as simple ascending array, [0,1,2,3...]
             times = np.arange(self.num_readings)
             self.trend = 'reading'
         else:  # Ensure that time is a numpy array object.
@@ -104,22 +104,22 @@ class CircWeigh(object):
 
         """
         # convert data array to 1D list
-        self.y_col = np.reshape(dataset, self.num_readings)
+        y_col = np.reshape(dataset, self.num_readings)
 
         # calculate vector of expected values
         for drift, xT in self.t_matrices.items():
             xTx_inv = np.linalg.inv(np.dot(xT, self.matrices[drift]))
             log.debug('xTx_inv = '+str(xTx_inv)+' for '+drift)
-            self.b[drift] = np.linalg.multi_dot([xTx_inv, xT, self.y_col])
+            self.b[drift] = np.linalg.multi_dot([xTx_inv, xT, y_col])
             log.debug('b = '+str(self.b)+' for '+drift)
 
             # calculate the residuals, variance and variance-covariance matrix:
-            self.residuals[drift] = self.y_col - np.dot(self.matrices[drift], self.b[drift])
+            self.residuals[drift] = y_col - np.dot(self.matrices[drift], self.b[drift])
             log.debug('residuals for '+drift+' are '+str(self.residuals[drift]))
 
             var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (self.num_readings - self.num_wtgrps - self._driftorder[drift])
             log.debug('variance, \u03C3\u00b2, for '+drift+' is: '+str(var.item(0)))
-            self.stdev[drift] = "{0:.5g}".format(np.sqrt(var.item(0)))
+            self.stdev[drift] = "{0:.8g}".format(np.sqrt(var.item(0)))
             log.debug('residual standard deviation, \u03C3, for '+drift+' is: '+str(self.stdev[drift]))
 
             self.varcovar[drift] = np.multiply(var, xTx_inv)
@@ -190,9 +190,13 @@ class CircWeigh(object):
             value = "{0:.5g}".format(diffab[pos]) + ' (' + "{0:.3g}".format(stdev_diffab[pos]) + ')'
             self.grpdiffs[key] = value
 
-        self.grpdiffs['Position '+str(self.num_wtgrps)+' - Position 1'] = "{0:.5g}".format(diffab[self.num_wtgrps-1])+' ('+"{0:.3g}".format(stdev_diffab[self.num_wtgrps-1])+')'
+        self.grpdiffs['Position '+str(self.num_wtgrps)+' - Position 1'] = \
+            "{0:.5g}".format(diffab[self.num_wtgrps-1])+' ('+"{0:.3g}".format(stdev_diffab[self.num_wtgrps-1])+')'
 
-        analysis = np.empty((self.num_wtgrps,), dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('residual', 'float64')])
+        analysis = np.empty((self.num_wtgrps,),
+                            dtype =[('+ weight group', object), ('- weight group', object),
+                                    ('mass difference', 'float64'), ('residual', 'float64')]
+                            )
 
         analysis['+ weight group'] = self.wtgrps
         analysis['- weight group'] = np.roll(self.wtgrps,-1)

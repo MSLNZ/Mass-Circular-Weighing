@@ -91,7 +91,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
         rowcounter += 1
 
     differences = np.append(differences, std_masses['std mass values (g)'])     # corresponds to Y, in g
-    uncerts = np.append(uncerts, std_masses['std uncertainties (ug)'])                 # balance uncertainties in ug
+    uncerts = np.append(uncerts, std_masses['std uncertainties (ug)'])          # balance uncertainties in ug
 
     # Calculate least squares solution, following the mathcad example in Tech proc MSLT.M.001.008
     x = designmatrix
@@ -112,14 +112,11 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     psi_bmeas = np.linalg.inv(psi_bmeas_inv)
 
     b = np.linalg.multi_dot([psi_bmeas, xT, psi_y_inv, differences])
-    #log.info('Mass values are: '+str(b))
+    log.info('Mass values are: '+str(b))
 
     r0 = (differences - np.dot(x, b))*1e6               # residuals, converted from g to ug
     sum_residues_squared = np.dot(r0, r0)
     log.info('Residuals:\n'+str(np.round(r0, 3)))
-    #print('residuals = ', residuals)
-    #for i in range(num_obs):
-    #    print('residuals == r0?', residuals[i], np.round(r0[i],3), residuals[i] == np.round(r0[i],3))
 
     # uncertainty due to no buoyancy correction
     cmx1 = np.ones(num_client_masses+num_check_masses)  # from above, stds are added last
@@ -170,7 +167,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     })
 
     finalmasscalc.save()
-    return
+    return finalmasscalc
 
 
 '''
