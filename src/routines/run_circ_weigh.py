@@ -1,177 +1,181 @@
 import os
 from msl.io import JSONWriter, read
-from msl.equipment import Config
-from src.equip.mdebalance import Balance
 from src.routines.circ_weigh_class import CircWeigh
 from time import perf_counter
 import numpy as np
 from ..log import log
 
 
-class RunCircWeigh(object):
+def check_for_existing_weighdata(folder, filename, se, run_id):
 
-    def __init__(self, client, balance, folder, filename, scheme_entry, identifier='run1', nominal_mass=None, ):
+    url = folder+"\\"+filename+'.json'
 
-        self.se = scheme_entry
-        self.weighing = CircWeigh(self.se)
+    if os.path.isfile(url):
+        existing_root = read(url)
+        new_index = len(os.listdir(folder + "\\backups\\"))
+        # TODO: create folder for scheme entry in backups folder, if it doesn't exist?
+        new_file = str(folder + "\\backups\\" + se + '_' + run_id + '_backup{}.json'.format(new_index))
+        existing_root.is_read_only = False
+        print(existing_root)
+        root = JSONWriter()
+        root.set_root(existing_root)
+        print(root)
+        root.save(root=existing_root, url=new_file, mode='w')
 
-        cfg = Config(balance[0])
-        alias = balance[1]
-        self.bal = Balance(cfg, alias)
-        self.metadata = {'Client': client, 'Balance': alias, 'Unit': self.bal.unit, 'Nominal mass': nominal_mass}
+    else:
+        print('Creating new file for weighing')
+        root = JSONWriter()
+        circularweighings = root.require_group('Circular Weighings')
+        circularweighings.require_group(se)
 
-        self.folder = folder
-        self.run_id = identifier
-        self.url = folder+"\\"+filename+'.json'
+    return root
 
-        self.root = JSONWriter()
-        self.schemefolder = self.check_for_existing_weighdata()
 
-    def check_for_existing_weighdata(self):
-        if os.path.isfile(self.url):
-            existing_root = read(self.url)
-            new_index = len(os.listdir(self.folder + "\\backups\\"))
-            new_file = str(self.folder + "\\backups\\" + self.run_id + '_backup{}.json'.format(new_index))
-            JSONWriter().save(root=existing_root, url=new_file, mode='w')
-            existing_root.is_read_only = False
-            self.root = existing_root
+def do_weighing(bal, se, root, url, run_id, **metadata):
 
-            schemefolder = self.root['Circular Weighings'][self.se]
+    ambient_pre = check_ambient_pre()
+    for key, value in ambient_pre.items():
+        metadata[key] = value
 
-        else:
-            print('Creating new file for weighing')
-            circularweighings = self.root.require_group('Circular Weighings')
-            schemefolder = circularweighings.require_group(self.se)
+    print("Beginning circular weighing for scheme entry", se)
+    weighing = CircWeigh(se)
+    print('Number of weight groups in weighing =', weighing.num_wtgrps)
+    print('Number of cycles =', weighing.num_cycles)
+    print('Weight groups are positioned as follows:')
+    for i in range(weighing.num_wtgrps):
+        print('Position', str(i + 1) + ':', weighing.wtgrps[i])
+        metadata['grp' + str(i + 1)] = weighing.wtgrps[i]
 
-        return schemefolder
+    data = np.empty(shape=(weighing.num_cycles, weighing.num_wtgrps, 2))
+    weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)
+    weighdata.add_metadata(**metadata)
 
-    def check_ambient_pre(self):
-        # check ambient conditions meet quality criteria for commencing weighing
-        ambient_pre = {'T': 20.0, 'RH': 50.0}  # TODO: link this to Omega logger
+    # do circular weighing:
+    times = []
+    t0 = 0
+    for cycle in range(weighing.num_cycles):
+        for pos in range(weighing.num_wtgrps):
+            mass = weighing.wtgrps[pos]
+            bal.load_bal(mass)
+            reading = bal.get_mass_stable()
+            if not times:
+                time = 0
+                t0 = perf_counter()
+            else:
+                time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
+            times.append(time)
+            weighdata[cycle, pos, :] = [time, reading]
+            root.save(url=url, mode='w')
+            bal.unload_bal(mass)
 
-        if 18.1 < ambient_pre['T'] < 21.9:
-            log.info('Ambient temperature OK for weighing')
-            self.metadata['T_pre (deg C)'] = ambient_pre['T']  # \xb0 is degree in unicode
-        else:
-            raise ValueError('Ambient temperature does not meet limits')
+    metadata['Timestamps'] = np.round(times, 3)
+    metadata['Time unit'] = 'min'
 
-        if 33 < ambient_pre['RH'] < 67:
-            log.info('Ambient humidity OK for weighing')
-            self.metadata['RH_pre (%)'] = ambient_pre['RH']
-        else:
-            raise ValueError('Ambient humidity does not meet limits')
+    ambient_post = check_ambient_post(ambient_pre)
+    for key, value in ambient_post.items():
+        metadata[key] = value
 
-    def check_ambient_post(self):
-        # check ambient conditions meet quality criteria during weighing
-        ambient_post = {'T': 20.3, 'RH': 44.9}  # TODO: get from Omega logger
-        self.metadata['T_post (deg C)'] = ambient_post['T']
-        self.metadata['RH_post (%)'] = ambient_post['RH']
+    print(metadata)
+    weighdata.add_metadata(**metadata)
+    root.save(url=url, mode='w')
 
-        if (self.metadata['T_pre (deg C)'] - ambient_post['T'])**2 > 0.25:
-            self.metadata['Quality'] = 'exclude'
-            log.warning('Ambient temperature change during weighing exceeds quality criteria')
-        elif (self.metadata['RH_pre (%)'] - ambient_post['RH'])**2 > 225:
-            self.metadata['Quality'] = 'exclude'
-            log.warning('Ambient humidity change during weighing exceeds quality criteria')
-        else:
-            log.info('Ambient conditions OK during weighing')
-            self.metadata['Quality'] = 'include'
+    print(weighdata[:, :, :])
 
-    def do_weighing(self):
-        self.check_ambient_pre()
+    return metadata['Quality']
 
-        # collect data and save as measurement dataset in scheme_entry group
-        #root = JSONWriter()
-        #circularweighings = root.require_group('Circular Weighings')
-        #schemefolder = circularweighings.require_group(self.se)
 
-        print("Beginning circular weighing for scheme entry", self.se)
+def check_ambient_pre():
+    # check ambient conditions meet quality criteria for commencing weighing
+    ambient_pre = {'T_pre (deg C)': 20.0, 'RH_pre (%)': 50.0}  # \xb0 is degree in unicode
+    # TODO: link this to Omega logger
 
-        print('Number of weight groups in weighing =', self.weighing.num_wtgrps)
-        print('Number of cycles =', self.weighing.num_cycles)
-        print('Weight groups are positioned as follows:')
-        for i in range(self.weighing.num_wtgrps):
-            print('Position', str(i + 1) + ':', self.weighing.wtgrps[i])
-            self.metadata['grp' + str(i + 1)] = self.weighing.wtgrps[i]
+    if 18.1 < ambient_pre['T_pre (deg C)'] < 21.9:
+        log.info('Ambient temperature OK for weighing')
+    else:
+        raise ValueError('Ambient temperature does not meet limits')
 
-        data = np.empty(shape=(self.weighing.num_cycles, self.weighing.num_wtgrps, 2))
-        weighdata = self.schemefolder.require_dataset('measurement_' + self.run_id, data=data)
-        weighdata.add_metadata(**self.metadata)
+    if 33 < ambient_pre['RH_pre (%)'] < 67:
+        log.info('Ambient humidity OK for weighing')
+    else:
+        raise ValueError('Ambient humidity does not meet limits')
 
-        # do circular weighing:
-        times = []
-        t0 = 0
-        for cycle in range(self.weighing.num_cycles):
-            for pos in range(self.weighing.num_wtgrps):
-                mass = self.weighing.wtgrps[pos]
-                self.bal.load_bal(mass)
-                reading = self.bal.get_mass_stable()
-                if times==[]:
-                    time = 0
-                    t0 = perf_counter()
-                else:
-                    time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
-                times.append(time)
-                weighdata[cycle, pos, :] = [time, reading]
-                JSONWriter().save(url=self.url, root=self.root, mode='w')
-                self.bal.unload_bal(mass)
-        weighdata.add_metadata(**{'Timestamps': np.round(times, 4)})
-        weighdata.add_metadata(**{'Time unit': 'min'})
-        JSONWriter().save(url=self.url, root=self.root, mode='w')
+    return ambient_pre
 
-        self.check_ambient_post()
-        JSONWriter().save(url=self.url, root=self.root, mode='w')
 
-        print(weighdata[:, :, 1])
+def check_ambient_post(ambient_pre):
+    # check ambient conditions meet quality criteria during weighing
+    ambient_post = {'T_post (deg C)': 20.3, 'RH_post (%)': 44.9}  # TODO: get from Omega logger
 
-    def analyse_weighing(self, timestamp=True, drift=None):
-        weighdata = self.schemefolder['measurement_' + self.run_id]
+    if (ambient_pre['T_pre (deg C)'] - ambient_post['T_post (deg C)']) ** 2 > 0.25:
+        ambient_post['Quality'] = False
+        log.warning('Ambient temperature change during weighing exceeds quality criteria')
+    elif (ambient_pre['RH_pre (%)'] - ambient_post['RH_post (%)']) ** 2 > 225:
+        ambient_post['Quality'] = False
+        log.warning('Ambient humidity change during weighing exceeds quality criteria')
+    else:
+        log.info('Ambient conditions OK during weighing')
+        ambient_post['Quality'] = True
 
-        if timestamp:
-            times=np.reshape(weighdata[:, :, 0], self.weighing.num_readings)
-            self.weighing.generate_design_matrices(times)
-        else:
-            self.weighing.generate_design_matrices(times=[])
+    return ambient_post
 
-        d = self.weighing.determine_drift(weighdata[:, :, 1])  # allows program to select optimum drift correction
 
-        if drift==None:
-            drift = d
+def analyse_weighing(folder, filename, se, run_id, timestamp=True, drift=None):
+    url = folder+"\\"+filename+'.json'
+    root = check_for_existing_weighdata(folder, filename, se, run_id)
+    schemefolder = root['Circular Weighings'][se]
+    weighdata = schemefolder['measurement_' + run_id]
+    massunit = weighdata.metadata.get('Unit')
+    flag = weighdata.metadata.get('Quality')
+    max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh (ug)')
+    print(flag, massunit, max_stdev_circweigh)
+    # max_stdev_circweigh = 30 # # in ug
+    #bal_stdev = 20 # in ug; upper limit for residuals is twice this number
 
-        print()
-        print('Residual std dev. for each drift order:')
-        print(self.weighing.stdev)
+    weighing = CircWeigh(se)
+    if timestamp:
+        times=np.reshape(weighdata[:, :, 0], weighing.num_readings)
+        weighing.generate_design_matrices(times)
+    else:
+        weighing.generate_design_matrices(times=[])
 
-        print()
-        print('Selected drift correction is', drift, '(in', self.bal.unit, 'per reading):')
-        print(self.weighing.drift_coeffs(drift))
+    d = weighing.determine_drift(weighdata[:, :, 1])  # allows program to select optimum drift correction
 
-        analysis = self.weighing.item_diff(drift)
-        # TODO: add here the balance uncertainty in final column (same for all)
-        #  - depends on value of nominal_mass and balance combination as per acceptance criteria
-        # TODO: check circular weighing against acceptance criteria for the balance
+    if not drift:
+        drift = d
 
-        print()
-        print('Differences (in', self.bal.unit+'):')
-        print(self.weighing.grpdiffs)
+    print()
+    print('Residual std dev. for each drift order:')
+    print(weighing.stdev)
 
-        # save analysis to json file
-        weighanalysis = self.schemefolder.require_dataset('analysis_'+self.run_id,
-            data=analysis, shape=(self.weighing.num_wtgrps, 1))
+    print()
+    print('Selected drift correction is', drift, '(in', massunit, 'per reading):')
+    print(weighing.drift_coeffs(drift))
 
-        analysis_meta = {
-            'Residual std devs, \u03C3': str(self.weighing.stdev),
-            'Selected drift': drift,
-            'Mass unit': self.bal.unit,
-            'Drift unit': self.bal.unit+' per '+self.weighing.trend,
-        }
+    analysis = weighing.item_diff(drift)
 
-        for key, value in self.weighing.driftcoeffs.items():
-            analysis_meta[key] = value
+    print()
+    print('Differences (in', massunit + '):')
+    print(weighing.grpdiffs)
 
-        weighanalysis.add_metadata(**analysis_meta)
+    # save analysis to json file
+    # TODO: probably want to overwrite? or save with new identifier if different?
+    weighanalysis = schemefolder.require_dataset(schemefolder.name+'/analysis_'+run_id,
+                                                 data=analysis, shape=(weighing.num_wtgrps, 1))
 
-        JSONWriter().save(url=self.url, root=self.root, mode='w')
+    analysis_meta = {
+        'Residual std devs, \u03C3': str(weighing.stdev),
+        'Selected drift': drift,
+        'Mass unit': massunit,
+        'Drift unit': massunit + ' per ' + weighing.trend,
+        'Acceptance met?': weighing.stdev[drift] < max_stdev_circweigh, # TODO - or 1.4 times this?
+    }
 
-        print()
-        print('Circular weighing complete')
+    for key, value in weighing.driftcoeffs.items():
+        analysis_meta[key] = value
+
+    weighanalysis.add_metadata(**analysis_meta)
+
+    root.save(url=url, mode='w')
+
+    print()
+    print('Circular weighing complete')

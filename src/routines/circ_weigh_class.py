@@ -119,7 +119,7 @@ class CircWeigh(object):
 
             var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (self.num_readings - self.num_wtgrps - self._driftorder[drift])
             log.debug('variance, \u03C3\u00b2, for '+drift+' is: '+str(var.item(0)))
-            self.stdev[drift] = "{0:.8g}".format(np.sqrt(var.item(0)))
+            self.stdev[drift] = np.round(np.sqrt(var.item(0)),8)
             log.debug('residual standard deviation, \u03C3, for '+drift+' is: '+str(self.stdev[drift]))
 
             self.varcovar[drift] = np.multiply(var, xTx_inv)
