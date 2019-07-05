@@ -6,7 +6,7 @@ from .mdebalance import Balance
 from msl.equipment import MSLTimeoutError
 
 class MettlerToledo(Balance):
-    def __init__(self, cfg, alias, reset=True):
+    def __init__(self, record, reset=True):
         """Initialise Mettler Toledo Balance via computer interface
 
         Parameters
@@ -18,12 +18,12 @@ class MettlerToledo(Balance):
         reset : bool
             True if reset balance desired
         """
-        super().__init__(cfg, alias)
+        super().__init__(record)
         self.intcaltimeout = self.record.connection.properties.get('intcaltimeout',30)
-        self.connection = self._record.connect()
+        self.connection = self.record.connect()
         if reset:
             self.reset()
-        assert self._record.serial == self.get_serial(), "Serial mismatch"  # prints error if false
+        assert self.record.serial == self.get_serial(), "Serial mismatch"  # prints error if false
 
     def _query(self, command):
         self.connection.serial.flush()

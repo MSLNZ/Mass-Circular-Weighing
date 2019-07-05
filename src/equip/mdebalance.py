@@ -4,7 +4,7 @@ from ..log import log
 from time import sleep
 
 class Balance(object):
-    def __init__(self, cfg, alias):
+    def __init__(self, record):
         """Initialise a balance which does not have a computer interface
 
         Parameters
@@ -14,15 +14,11 @@ class Balance(object):
         alias : str
             Key of balance in config file
         """
-        self._record = cfg.database().equipment[alias]
+        self.record = record
         self._suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
         self.set_unit()
-        self.stable_wait = 5 # wait time in seconds for balance reading to stabilise
-        # TODO: allow stable_wait to be set in equipment register or by user at start of mmt
-
-    @property
-    def record(self):
-        return self._record
+        self.stable_wait = record.user_defined['stable_wait']
+        # wait time in seconds for balance reading to stabilise
 
     @property
     def unit(self):
@@ -69,6 +65,7 @@ class Balance(object):
         float
             mass (in unit set for balance when initialised)
         """
+        reading = 0
         while True:
             try:
                 reading = float(input("Enter balance reading: "))
