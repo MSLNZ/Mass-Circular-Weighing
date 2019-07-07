@@ -16,7 +16,6 @@ class Application(object):
         # selects balance class and return balance instance
 
         mode = self.equipment[alias].user_defined['weighing_mode']
-        print(mode)
         bal = self.bal_class[mode](self.equipment[alias])
 
         return bal
