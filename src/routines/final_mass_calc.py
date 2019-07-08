@@ -5,7 +5,7 @@ from src.log import log
 
 
 def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata):
-    '''Calculates mass values using matrix least squares methods
+    """Calculates mass values using matrix least squares methods
 
     Parameters
     ----------
@@ -29,7 +29,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     -------
     json file containing structured array of weight IDs, mass values, and uncertainties,
     along with a record of the input data and other relevant information
-    '''
+    """
 
     # initialisation
     metadata = {'Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'), "Client": client}
@@ -116,7 +116,23 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
 
     r0 = (differences - np.dot(x, b))*1e6               # residuals, converted from g to ug
     sum_residues_squared = np.dot(r0, r0)
-    log.info('Residuals:\n'+str(np.round(r0, 3)))
+    log.info('Residuals:\n'+str(np.round(r0, 3)))       # also save as column with input data for checking
+
+    inputdatares = np.empty(
+        num_obs,
+        dtype =[('+ weight group', object), ('- weight group', object), ('mass difference (g)', 'float64'),
+                ('balance uncertainty (ug)', 'float64'), ('residual (ug)', 'float64')])
+    inputdatares['+ weight group'][0:len(inputdata)] = inputdata['+ weight group']
+    inputdatares['+ weight group'][len(inputdata):] = std_masses["std weight ID"]
+    inputdatares['- weight group'][0:len(inputdata)] = inputdata['- weight group']
+    inputdatares['mass difference (g)'] = differences
+    inputdatares['balance uncertainty (ug)'] = uncerts
+    inputdatares['residual (ug)'] = np.round(r0, 3)
+
+    flag = []
+    for entry in inputdatares:
+        if entry[4] > 2*entry[3]:
+            flag.append(entry[0] + ' - ' + entry[1])
 
     # uncertainty due to no buoyancy correction
     cmx1 = np.ones(num_client_masses+num_check_masses)  # from above, stds are added last
@@ -135,7 +151,9 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
 
     psi_b = psi_bmeas + psi_nbc_hadamard
     std_uncert_b = np.sqrt(np.diag(psi_b))
-    det_varcovar = np.linalg.det(psi_b)
+    #det_varcovar_bmeas = np.linalg.det(psi_bmeas)
+    #det_varcovar_nbc = np.linalg.det(psi_nbc_hadamard)
+    #det_varcovar_b = np.linalg.det(psi_b)
 
     summarytable = np.empty((num_unknowns, 5), object)
     for i in range(num_unknowns):
@@ -153,20 +171,23 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
 
     log.info('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (ug), 95% CI\n'+str(summarytable))
 
-    leastsq_data = finalmasscalc.create_group('2: Matrix Least Squares Analysis')
-    leastsq_data.create_dataset('Input data', data=inputdata)
-    leastsq_data.create_dataset('Mass values from least squares solution', data=summarytable)
-    leastsq_data.add_metadata(**{
+    leastsq_meta = {
         'Number of observations': num_obs,
         'Number of unknowns': num_unknowns,
         'Degrees of freedom': num_obs - num_unknowns,
-        'Determinant of var-covar': det_varcovar,
-        '(normalised) variance from analysis': '???',
+        #'Determinant of var-covar': [det_varcovar_bmeas, det_varcovar_nbc, det_varcovar_b],
+        #'(normalised) variance from analysis': '???',
         'Relative uncertainty for no buoyancy correction (ppm)': reluncert,
         'Sum of residues squared (ug^2)': np.round(sum_residues_squared, 6),
-    })
+    }
+    if flag:
+        leastsq_meta['Residuals greater than 2u'] = flag
 
-    finalmasscalc.save()
+    leastsq_data = finalmasscalc.create_group('2: Matrix Least Squares Analysis', metadata=leastsq_meta)
+    leastsq_data.create_dataset('Input data with least squares residuals', data=inputdatares)
+    leastsq_data.create_dataset('Mass values from least squares solution', data=summarytable)
+
+    finalmasscalc.save(mode='w')
     return finalmasscalc
 
 
