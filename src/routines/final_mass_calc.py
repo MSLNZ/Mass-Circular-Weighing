@@ -35,10 +35,10 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     metadata = {'Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'), "Client": client}
     finalmasscalc = JSONWriter(filesavepath, metadata=metadata)
 
-    mass_sets = finalmasscalc.create_group('1: Mass Sets')
-    scheme_client = mass_sets.create_group('Client')
-    scheme_check = mass_sets.create_group('Check')
-    scheme_std = mass_sets.create_group('Standard')
+    mass_sets = finalmasscalc.require_group('1: Mass Sets')
+    scheme_client = mass_sets.require_group('Client')
+    scheme_check = mass_sets.require_group('Check')
+    scheme_std = mass_sets.require_group('Standard')
 
     # import lists of masses from supplied info
     num_client_masses = len(client_wt_IDs)
@@ -155,7 +155,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     #det_varcovar_nbc = np.linalg.det(psi_nbc_hadamard)
     #det_varcovar_b = np.linalg.det(psi_b)
 
-    summarytable = np.empty((num_unknowns, 5), object)
+    summarytable = np.empty((num_unknowns, 5), object)  # add headers!
     for i in range(num_unknowns):
         summarytable[i, 0] = allmassIDs[i]
         if i < num_client_masses:
@@ -185,7 +185,8 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
 
     leastsq_data = finalmasscalc.create_group('2: Matrix Least Squares Analysis', metadata=leastsq_meta)
     leastsq_data.create_dataset('Input data with least squares residuals', data=inputdatares)
-    leastsq_data.create_dataset('Mass values from least squares solution', data=summarytable)
+    leastsq_data.create_dataset('Mass values from least squares solution', data=summarytable,
+                                metadata={'headers': ['Weight ID', 'Set ID', 'Mass value (g)', 'Uncertainty (ug)', '95% CI']})
 
     finalmasscalc.save(mode='w')
     return finalmasscalc
