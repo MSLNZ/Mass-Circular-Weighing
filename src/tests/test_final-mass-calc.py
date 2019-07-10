@@ -8,8 +8,8 @@ check_wt_IDs = ['5w', '1w']
 
 num_stds = 7
 std_masses = np.empty(num_stds, dtype={
-    'names': ('std weight ID', 'std mass values (g)', 'std uncertainties (ug)'),
-    'formats': (object, np.float, np.float)})
+    'names': ('std weight ID', 'nominal (g)', 'std mass values (g)', 'std uncertainties (ug)'),
+    'formats': (object, np.float, np.float, np.float)})
 
 std_masses['std weight ID'] = ['100s', '50s', '20s', '10s', '5s', '2s', '1s']
 std_masses['std mass values (g)'] = [
