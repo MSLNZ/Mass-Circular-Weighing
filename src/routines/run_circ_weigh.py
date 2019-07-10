@@ -2,6 +2,7 @@ import os
 from msl.io import JSONWriter, read
 from src.routines.circ_weigh_class import CircWeigh
 from time import perf_counter
+from datetime import datetime
 import numpy as np
 from ..log import log
 
@@ -12,8 +13,9 @@ def check_for_existing_weighdata(folder, filename, se, run_id):
 
     if os.path.isfile(url):
         existing_root = read(url)
+        if not os.path.exists(folder+"\\backups\\"):
+            os.makedirs(folder+"\\backups\\")
         new_index = len(os.listdir(folder + "\\backups\\"))
-        # TODO: create folder for scheme entry in backups folder, if it doesn't exist?
         new_file = str(folder + "\\backups\\" + se + '_' + run_id + '_backup{}.json'.format(new_index))
         existing_root.is_read_only = False
         print(existing_root)
@@ -23,12 +25,14 @@ def check_for_existing_weighdata(folder, filename, se, run_id):
         root.save(root=existing_root, url=new_file, mode='w')
 
     else:
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         print('Creating new file for weighing')
         root = JSONWriter()
         circularweighings = root.require_group('Circular Weighings')
         circularweighings.require_group(se)
 
-    return root
+    return root  # add here also the max run number
 
 
 def do_weighing(bal, se, root, url, run_id, **metadata):
@@ -68,8 +72,10 @@ def do_weighing(bal, se, root, url, run_id, **metadata):
             root.save(url=url, mode='w')
             bal.unload_bal(mass)
 
-    metadata['Timestamps'] = np.round(times, 3)
+    #metadata['Timestamps'] = np.round(times, 3)
     metadata['Time unit'] = 'min'
+
+    metadata['Mmt Timestamp'] = datetime.now().isoformat(sep=' ', timespec='minutes')
 
     ambient_post = check_ambient_post(ambient_pre)
     for key, value in ambient_post.items():
@@ -81,7 +87,7 @@ def do_weighing(bal, se, root, url, run_id, **metadata):
 
     print(weighdata[:, :, :])
 
-    return metadata['Quality']
+    return metadata['Ambient OK?']
 
 
 def check_ambient_pre():
@@ -104,35 +110,35 @@ def check_ambient_pre():
 
 def check_ambient_post(ambient_pre):
     # check ambient conditions meet quality criteria during weighing
-    ambient_post = {'T_post (deg C)': 20.3, 'RH_post (%)': 44.9}  # TODO: get from Omega logger
+    ambient_post = {'T_post (deg C)': 20.3, 'RH_post (%)': 44.9}
+    # TODO: get from Omega logger
 
     if (ambient_pre['T_pre (deg C)'] - ambient_post['T_post (deg C)']) ** 2 > 0.25:
-        ambient_post['Quality'] = False
+        ambient_post['Ambient OK?'] = False
         log.warning('Ambient temperature change during weighing exceeds quality criteria')
     elif (ambient_pre['RH_pre (%)'] - ambient_post['RH_post (%)']) ** 2 > 225:
-        ambient_post['Quality'] = False
+        ambient_post['Ambient OK?'] = False
         log.warning('Ambient humidity change during weighing exceeds quality criteria')
     else:
         log.info('Ambient conditions OK during weighing')
-        ambient_post['Quality'] = True
+        ambient_post['Ambient OK?'] = True
 
     return ambient_post
 
 
-def analyse_weighing(folder, filename, se, run_id, timestamp=True, drift=None):
+def analyse_weighing(folder, filename, se, run_id, timed=True, drift=None):
     url = folder+"\\"+filename+'.json'
     root = check_for_existing_weighdata(folder, filename, se, run_id)
     schemefolder = root['Circular Weighings'][se]
     weighdata = schemefolder['measurement_' + run_id]
-    massunit = weighdata.metadata.get('Unit')
-    flag = weighdata.metadata.get('Quality')
-    max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh (ug)')
-    print(flag, massunit, max_stdev_circweigh)
-    # max_stdev_circweigh = 30 # # in ug
-    #bal_stdev = 20 # in ug; upper limit for residuals is twice this number
+
+    flag = weighdata.metadata.get('Ambient OK?')
+    if not flag:
+        log.warning('Change in ambient conditions during weighing exceeded quality criteria')
+        return
 
     weighing = CircWeigh(se)
-    if timestamp:
+    if timed:
         times=np.reshape(weighdata[:, :, 0], weighing.num_readings)
         weighing.generate_design_matrices(times)
     else:
@@ -148,6 +154,7 @@ def analyse_weighing(folder, filename, se, run_id, timestamp=True, drift=None):
     print(weighing.stdev)
 
     print()
+    massunit = weighdata.metadata.get('Unit')
     print('Selected drift correction is', drift, '(in', massunit, 'per reading):')
     print(weighing.drift_coeffs(drift))
 
@@ -162,12 +169,14 @@ def analyse_weighing(folder, filename, se, run_id, timestamp=True, drift=None):
     weighanalysis = schemefolder.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
 
+    max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh (ug)')
     analysis_meta = {
-        'Residual std devs, \u03C3': str(weighing.stdev),
+        'Analysis Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'),
+        'Residual std devs': str(weighing.stdev),  # \u03C3 for sigma sign
         'Selected drift': drift,
         'Mass unit': massunit,
         'Drift unit': massunit + ' per ' + weighing.trend,
-        'Acceptance met?': weighing.stdev[drift] < max_stdev_circweigh, # TODO - or 1.4 times this?
+        'Acceptance met?': weighing.stdev[drift] < max_stdev_circweigh,  # TODO - or 1.4 times this?
     }
 
     for key, value in weighing.driftcoeffs.items():
@@ -179,3 +188,5 @@ def analyse_weighing(folder, filename, se, run_id, timestamp=True, drift=None):
 
     print()
     print('Circular weighing complete')
+
+    return weighanalysis
