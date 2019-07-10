@@ -1,19 +1,26 @@
 from msl.equipment import Config
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
+from .log import log
+import numpy as np
+
 
 class Application(object):
 
     def __init__(self, config):
 
-        self.cfg = Config(config)  # load cfg file
-        self.db = self.cfg.database()
-        self.equipment = self.db.equipment # loads subset of database with equipment being used
+        self.cfg = Config(config)               # loads cfg file
+        self.db = self.cfg.database()           # loads database
+        self.equipment = self.db.equipment      # loads subset of database with equipment being used
 
-        self.bal_class = {'mde': Balance, 'mw': MettlerToledo}
+        self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': MettlerToledo}
+        # TODO: add aw class for automatic loading balance
+
+        self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/path').text, 'std')
+        self.all_checks = load_stds_from_set_file(self.cfg.root.find('checks/path').text, 'check')
 
     def connect_bal(self, alias, strict=True):
-        # selects balance class and return balance instance
+        # selects balance class and returns balance instance
 
         mode = self.equipment[alias].user_defined['weighing_mode']
         bal = self.bal_class[mode](self.equipment[alias])
@@ -21,6 +28,20 @@ class Application(object):
         return bal
 
     def acceptance_criteria(self, alias, nominal_mass):
+        """Calculates acceptance criteria for a circular weighing
+
+        Parameters
+        ----------
+        alias : str
+            codename for balance
+        nominal_mass : int
+            nominal mass of weight group
+
+        Returns
+        -------
+        dict of {'Max stdev from CircWeigh (ug)': float,
+                 'Upper limit for residuals (ug)': float}
+        """
         record = self.equipment.get(alias)
         if not record:
             raise ValueError('No equipment record')
@@ -54,10 +75,62 @@ class Application(object):
         for row in store:
             if float(row[index_map['load min']]) <= nominal_mass <= float(row[index_map['load max']]):
                 return {'Max stdev from CircWeigh (ug)': float(row[index_map['acceptable']]),
-                        'Upper limit for residuals (ug)': float(row[index_map['residuals']])}
+                        'Stdev for balance (ug)': float(row[index_map['residuals']])/2}
 
         raise ValueError('Nominal mass out of range of balance')
 
 
+def load_stds_from_set_file(path, wtset):
+    """Collects relevant weight info from SET file for all weights in set
 
+    Parameters
+    ----------
+    path : path
+        location of where to find set file (e.g. cfg.root.find('standards/path').text)
+    wtset: str
+        specify if std or check weights
 
+    Returns
+    -------
+    dict
+        keys: 'Set Identifier', 'Calibrated', 'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (ug)'
+    """
+
+    stds = {}
+    for key in {'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (ug)'}:
+        stds[key] = []
+
+    with open(path, 'r') as fp:
+        if "WeightSetFile" in fp.readline():
+            set_name = fp.readline().strip('\n').strip('\"').split()
+            if set_name[0] == 'Mettler':
+                stds['Set Identifier'] = 'M'+set_name[1]
+            else:
+                stds['Set Identifier'] = set_name[0]
+            log.info(wtset + ' weights use identifier ' + stds['Set Identifier'])
+            stds['Calibrated'] = set_name[-1]
+            log.info(wtset + ' weights were last calibrated in ' + stds['Calibrated'])
+            fp.readline()
+
+            headerline = fp.readline().strip('\n')
+            if not headerline == '" nominal (g) "," weight identifier "," value(g) "," uncert (g) ","cov factor","density","dens uncert"':
+                print('File format has changed; data sorting may be incorrect')
+                print(headerline)
+
+            line = fp.readline()
+            while line:
+                line = line.strip('\n').split(', ')
+                for i, key in enumerate(['nominal (g)', 'mass values (g)', 'uncertainties (ug)']):
+                    value = line[i].strip(' ').strip('\"\",')
+                    if i == 0:
+                        stds['weight ID'].append(value + stds['Set Identifier'])  #
+                    stds[key].append(np.float(value))
+
+                line = fp.readline()
+        else:
+            log.error('Weight set file must begin WeightSetFile')
+
+    fp.close()
+    print(stds)
+
+    return stds
