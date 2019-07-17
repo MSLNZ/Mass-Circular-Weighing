@@ -23,7 +23,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
             'formats': (object, np.float, np.float)})
     inputdata : numpy structured array
         use format np.asarray(<data>, dtype =[('+ weight group', object), ('- weight group', object),
-        ('mass difference', 'float64'), ('bal uncert', 'float64')])
+        ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
 
     Returns
     -------
@@ -62,19 +62,20 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
 
     num_unknowns = num_client_masses + num_stds + num_check_masses
     log.info('Number of unknowns = '+str(num_unknowns))
-    allmassIDs = np.append(client_wt_IDs + check_wt_IDs, std_masses['std weight ID'])  # note that stds are grouped last
-    differences = np.empty(num_unknowns)
-    uncerts = np.empty(num_unknowns)
+    allmassIDs = np.append(np.append(client_wt_IDs, check_wt_IDs), std_masses['std weight ID'])  # note that stds are grouped last
+
 
     # Create design matrix and collect relevant data
     num_obs = len(inputdata)+num_stds
+    differences = np.empty(len(inputdata))
+    uncerts = np.empty(len(inputdata))
     designmatrix = np.zeros((num_obs, num_unknowns))
     rowcounter = 0
 
     log.info('Input data: \n+ weight group, - weight group, mass difference (g), balance uncertainty (ug)'
              '\n'+str(inputdata))
     for entry in inputdata:
-        #log.debug(entry)
+        #log.debug(str(entry[0])+str(entry[1])+str(entry[2])+str(entry[3]))
         grp1 = entry[0].split('+')
         for m in range(len(grp1)):
             #log.debug('mass '+grp1[m]+' is in position '+str(np.where(allmassIDs == grp1[m])[0][0]))
