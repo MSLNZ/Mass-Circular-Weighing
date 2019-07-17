@@ -40,7 +40,7 @@ class Application(object):
         Returns
         -------
         dict of {'Max stdev from CircWeigh (ug)': float,
-                 'Upper limit for residuals (ug)': float}
+                 'Stdev for balance (ug)': float}
         """
         record = self.equipment.get(alias)
         if not record:
@@ -131,6 +131,4 @@ def load_stds_from_set_file(path, wtset):
             log.error('Weight set file must begin WeightSetFile')
 
     fp.close()
-    print(stds)
-
     return stds
