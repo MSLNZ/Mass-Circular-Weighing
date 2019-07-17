@@ -7,21 +7,19 @@ import numpy as np
 from ..log import log
 
 
-def check_for_existing_weighdata(folder, filename, se, run_id):
-
-    url = folder+"\\"+filename+'.json'
+def check_for_existing_weighdata(folder, url, se):
 
     if os.path.isfile(url):
         existing_root = read(url)
         if not os.path.exists(folder+"\\backups\\"):
             os.makedirs(folder+"\\backups\\")
         new_index = len(os.listdir(folder + "\\backups\\"))
-        new_file = str(folder + "\\backups\\" + se + '_' + run_id + '_backup{}.json'.format(new_index))
+        new_file = str(folder + "\\backups\\" + se + '_backup{}.json'.format(new_index))
         existing_root.is_read_only = False
-        print(existing_root)
+        log.debug('Existing root is '+repr(existing_root))
         root = JSONWriter()
         root.set_root(existing_root)
-        print(root)
+        log.debug('Working root is '+repr(root))
         root.save(root=existing_root, url=new_file, mode='w')
 
     else:
@@ -35,13 +33,13 @@ def check_for_existing_weighdata(folder, filename, se, run_id):
     return root  # add here also the max run number
 
 
-def do_weighing(bal, se, root, url, run_id, **metadata):
+def do_circ_weighing(bal, se, root, url, run_id, **metadata):
 
     ambient_pre = check_ambient_pre()
     for key, value in ambient_pre.items():
         metadata[key] = value
 
-    print("Beginning circular weighing for scheme entry", se)
+    print("Beginning circular weighing for scheme entry", se, run_id)
     weighing = CircWeigh(se)
     print('Number of weight groups in weighing =', weighing.num_wtgrps)
     print('Number of cycles =', weighing.num_cycles)
@@ -87,7 +85,7 @@ def do_weighing(bal, se, root, url, run_id, **metadata):
 
     print(weighdata[:, :, :])
 
-    return metadata['Ambient OK?']
+    return root
 
 
 def check_ambient_pre():
@@ -126,20 +124,18 @@ def check_ambient_post(ambient_pre):
     return ambient_post
 
 
-def analyse_weighing(folder, filename, se, run_id, timed=True, drift=None):
-    url = folder+"\\"+filename+'.json'
-    root = check_for_existing_weighdata(folder, filename, se, run_id)
+def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
     schemefolder = root['Circular Weighings'][se]
     weighdata = schemefolder['measurement_' + run_id]
 
     flag = weighdata.metadata.get('Ambient OK?')
     if not flag:
         log.warning('Change in ambient conditions during weighing exceeded quality criteria')
-        return
+        return None
 
     weighing = CircWeigh(se)
     if timed:
-        times=np.reshape(weighdata[:, :, 0], weighing.num_readings)
+        times = np.reshape(weighdata[:, :, 0], weighing.num_readings)
         weighing.generate_design_matrices(times)
     else:
         weighing.generate_design_matrices(times=[])
@@ -166,7 +162,7 @@ def analyse_weighing(folder, filename, se, run_id, timed=True, drift=None):
 
     # save analysis to json file
     # TODO: probably want to overwrite? or save with new identifier if different?
-    weighanalysis = schemefolder.require_dataset(schemefolder.name+'/analysis_'+run_id,
+    weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
 
     max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh (ug)')
