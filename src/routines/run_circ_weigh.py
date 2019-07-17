@@ -30,7 +30,20 @@ def check_for_existing_weighdata(folder, url, se):
         circularweighings = root.require_group('Circular Weighings')
         circularweighings.require_group(se)
 
-    return root  # add here also the max run number
+    return root
+
+
+def get_next_run_id(root, scheme_entry):
+    i = 1
+    while True:
+        run_id = 'run_' + str(i)
+        try:
+            existing_weighing = root['Circular Weighings'][scheme_entry]['measurement_' + run_id]
+            i += 1
+        except KeyError:
+            break
+
+    return run_id
 
 
 def do_circ_weighing(bal, se, root, url, run_id, **metadata):
@@ -165,6 +178,7 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
     weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
 
+    suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
     max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh (ug)')
     analysis_meta = {
         'Analysis Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'),
@@ -172,7 +186,7 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
         'Selected drift': drift,
         'Mass unit': massunit,
         'Drift unit': massunit + ' per ' + weighing.trend,
-        'Acceptance met?': weighing.stdev[drift] < max_stdev_circweigh,  # TODO - or 1.4 times this?
+        'Acceptance met?': weighing.stdev[drift]*suffix[massunit] < 1.4*max_stdev_circweigh*suffix['ug'],
     }
 
     for key, value in weighing.driftcoeffs.items():
@@ -186,3 +200,25 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
     print('Circular weighing complete')
 
     return weighanalysis
+
+
+def analyse_old_weighing(folder, filename, se, run_id, timed, drift):
+
+    url = folder+"\\"+filename+'.json'
+    root = check_for_existing_weighdata(folder, url, se)
+    analyse_weighing(root, url, se, run_id, timed, drift)
+
+
+def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
+
+    url = folder + "\\" + filename + '.json'
+    root = check_for_existing_weighdata(folder, url, se)
+    i = 1
+    while True:
+        try:
+            run_id = 'run_' + str(i)
+            analyse_weighing(root, url, se, run_id, timed, drift)
+            i += 1
+        except KeyError:
+            print('No more runs to analyse')
+            break
