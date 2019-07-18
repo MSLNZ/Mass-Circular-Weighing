@@ -164,7 +164,7 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
 
     print()
     massunit = weighdata.metadata.get('Unit')
-    print('Selected drift correction is', drift, '(in', massunit, 'per reading):')
+    print('Selected', drift, 'correction (in', massunit, 'per reading):')
     print(weighing.drift_coeffs(drift))
 
     analysis = weighing.item_diff(drift)
@@ -174,7 +174,7 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
     print(weighing.grpdiffs)
 
     # save analysis to json file
-    # TODO: probably want to overwrite? or save with new identifier if different?
+    # (note that any previous analysis for the same run is not saved in the new json file)
     weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
 
@@ -191,6 +191,10 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
 
     for key, value in weighing.driftcoeffs.items():
         analysis_meta[key] = value
+
+    if not sum(analysis['mass difference']) == 0:
+        log.warning('Sum of mass differences is not zero. Analysis not accepted')
+        analysis_meta['Acceptance met?'] = False
 
     weighanalysis.add_metadata(**analysis_meta)
 
