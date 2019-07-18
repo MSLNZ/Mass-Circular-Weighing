@@ -6,6 +6,7 @@ from datetime import datetime
 import numpy as np
 from ..log import log
 
+MU_STRING = 'µ'
 
 def check_for_existing_weighdata(folder, url, se):
 
@@ -158,20 +159,17 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
     if not drift:
         drift = d
 
-    print()
-    print('Residual std dev. for each drift order:')
-    print(weighing.stdev)
+    log.info('Residual std dev. for each drift order:\n'
+             + str(weighing.stdev))
 
-    print()
     massunit = weighdata.metadata.get('Unit')
-    print('Selected', drift, 'correction (in', massunit, 'per reading):')
-    print(weighing.drift_coeffs(drift))
+    log.info('Selected ' + drift + ' correction (in ' + massunit + ' per reading):\n'
+             + str(weighing.drift_coeffs(drift)))
 
     analysis = weighing.item_diff(drift)
 
-    print()
-    print('Differences (in', massunit + '):')
-    print(weighing.grpdiffs)
+    log.info('Differences (in ' + massunit + '):\n'
+             + str(weighing.grpdiffs))
 
     # save analysis to json file
     # (note that any previous analysis for the same run is not saved in the new json file)
@@ -182,12 +180,13 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
     max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh (ug)')
     analysis_meta = {
         'Analysis Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'),
-        'Residual std devs': str(weighing.stdev),  # \u03C3 for sigma sign
+        'Residual std devs, \u03C3': str(weighing.stdev),  # \u03C3 for sigma sign
         'Selected drift': drift,
-        'Mass unit': massunit,
+        'Mass unit, µ': massunit,
         'Drift unit': massunit + ' per ' + weighing.trend,
         'Acceptance met?': weighing.stdev[drift]*suffix[massunit] < 1.4*max_stdev_circweigh*suffix['ug'],
     }
+
 
     for key, value in weighing.driftcoeffs.items():
         analysis_meta[key] = value
@@ -198,10 +197,9 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
 
     weighanalysis.add_metadata(**analysis_meta)
 
-    root.save(url=url, mode='w')
+    root.save(url=url, mode='w', encoding='utf-8')
 
-    print()
-    print('Circular weighing complete')
+    log.info('Circular weighing complete')
 
     return weighanalysis
 
@@ -210,7 +208,9 @@ def analyse_old_weighing(folder, filename, se, run_id, timed, drift):
 
     url = folder+"\\"+filename+'.json'
     root = check_for_existing_weighdata(folder, url, se)
-    analyse_weighing(root, url, se, run_id, timed, drift)
+    weighanalysis = analyse_weighing(root, url, se, run_id, timed, drift)
+
+    return weighanalysis
 
 
 def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
