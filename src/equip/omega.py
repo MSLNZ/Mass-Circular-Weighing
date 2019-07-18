@@ -15,21 +15,25 @@ class Omega(object):
         self.record = record
         self.connection = self.record.connect()
 
-    def get_ambient(self):
-        size = 6
+    def get_t_rh(self):
+        t1, rh1 = self.connection.temperature_humidity(probe=1, nbytes=12)
+        t2, rh2 = self.connection.temperature_humidity(probe=2, nbytes=12)
 
-        rh1 = np.float(self.connection.query('*SRH', size=size))
-        rh2 = np.float(self.connection.query('*SRH2', size=size))
-        t1 = np.float(self.connection.query('*SRTC', size=size))
-        t2 = np.float(self.connection.query('*SRTC2', size=size))
-        dp1 = np.float(self.connection.query('*SRDC', size=size))
-        dp2 = np.float(self.connection.query('*SRDC2', size=size))
+        ambient = {
+            'RH (%)': np.round((rh1 + rh2)/2, 3),
+            'T (°C)': np.round((t1 + t2)/2, 3),
+        }
+
+        return ambient
+
+    def get_t_rh_dp(self):
+        t1, rh1, dp1 = self.connection.temperature_humidity_dewpoint(probe=1, nbytes=18)
+        t2, rh2, dp2 = self.connection.temperature_humidity_dewpoint(probe=2, nbytes=18)
 
         ambient = {
             'RH (%)': np.round((rh1 + rh2)/2, 3),
             'T (°C)': np.round((t1 + t2)/2, 3),
             'DP (°C)': np.round((dp1 + dp2)/2, 3),
         }
-        print(ambient)
 
         return ambient
