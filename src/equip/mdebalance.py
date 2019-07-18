@@ -9,10 +9,9 @@ class Balance(object):
 
         Parameters
         ----------
-        cfg : msl.equipment.config.Config
+        record : equipment record object
+            get via Application(config).equipment[alias]
             Requires an MSL.equipment config.xml file
-        alias : str
-            Key of balance in config file
         """
         self.record = record
         self._suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}

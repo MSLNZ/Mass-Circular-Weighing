@@ -11,10 +11,9 @@ class MettlerToledo(Balance):
 
         Parameters
         ----------
-        cfg : msl.equipment.config.Config
+        record : equipment record object
+            get via Application(config).equipment[alias]
             Requires an MSL.equipment config.xml file
-        alias : str
-            Key of balance in config file
         reset : bool
             True if reset balance desired
         """
