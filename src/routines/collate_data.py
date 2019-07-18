@@ -22,7 +22,7 @@ def collate_data_from_json(folder, filename, scheme_entry):
 
     Returns
     -------
-    structured array of all weighing data for acceptable/included weighings only
+    structured array of all weighing data in grams for acceptable/included weighings only
 
     """
     inputdata = np.empty(0,
@@ -50,11 +50,11 @@ def collate_data_from_json(folder, filename, scheme_entry):
 
             i_len = inputdata.shape[0]
             d_len = dataset.shape[0]
-            inputdata.resize(i_len + d_len)
-            inputdata[i_len:]['+ weight group'] = dataset['+ weight group']
-            inputdata[i_len:]['- weight group'] = dataset['- weight group']
-            inputdata[i_len:]['mass difference (g)'] = dataset['mass difference']*suffix[bal_unit]
-            for row in range(d_len):
+            inputdata.resize(i_len + d_len - 1)
+            inputdata[i_len:]['+ weight group'] = dataset['+ weight group'][:-1]
+            inputdata[i_len:]['- weight group'] = dataset['- weight group'][:-1]
+            inputdata[i_len:]['mass difference (g)'] = dataset['mass difference'][:-1]*suffix[bal_unit]
+            for row in range(d_len - 1):
                 inputdata[i_len+row:]['balance uncertainty (ug)'] = stdev
 
     return inputdata
