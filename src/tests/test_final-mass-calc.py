@@ -1,4 +1,5 @@
 from src.routines.final_mass_calc import final_mass_calc
+from src.routines.collate_data import collate_data_from_list
 import numpy as np
 
 filesavepath = 'savefilehere.json'
@@ -31,22 +32,20 @@ std_masses['std uncertainties (ug)'] = [
     0.752,
 ]
 
-num_obs = 25 # get this from the circular weighing scheme - here 18 circ weighing entries and 7 standards
-
 # test data
 weighing1 = np.asarray(
     [
         ('100', '100s', 0.000640283, 8.0),
         ('100s', '50+50s', -0.000192765, 8.0)
     ],
-    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('bal uncert', 'float64')]
+    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('balance uncertainty (ug)', 'float64')]
 )
 weighing2 = np.asarray(
     [
         ('50', '50s', 0.00017231, 6.0),
         ('50s', '20+20d+10', -0.000061662, 6.0)
     ],
-    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('bal uncert', 'float64')]
+    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('balance uncertainty (ug)', 'float64')]
 )
 weighing3 = np.asarray(
     [
@@ -54,21 +53,21 @@ weighing3 = np.asarray(
         ('20s', '20d', -0.000037743, 5.0),
         ('20d', '10+10s', -0.000101083, 5.0)
     ],
-    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('bal uncert', 'float64')]
+    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('balance uncertainty (ug)', 'float64')]
 )
 weighing4 = np.asarray(
     [
         ('10', '10s', 0.000121268, 5.0),
         ('10s', '5+5w', 0.000081936, 5.0)
     ],
-    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('bal uncert', 'float64')]
+    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('balance uncertainty (ug)', 'float64')]
 )
 weighing5 = np.asarray(
     [
         ('5', '5s', -0.000069925, 5.0),
         ('5s', '5w', -0.000000631, 5.0)
     ],
-    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('bal uncert', 'float64')]
+    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('balance uncertainty (ug)', 'float64')]
 )
 weighing6 = np.asarray(
     [
@@ -76,7 +75,7 @@ weighing6 = np.asarray(
         ('2s', '2d', -0.000041124, 0.5),
         ('2d', '1+1s', 0.000049755, 0.5)
     ],
-    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('bal uncert', 'float64')]
+    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('balance uncertainty (ug)', 'float64')]
 )
 weighing7 = np.asarray(
     [
@@ -85,20 +84,13 @@ weighing7 = np.asarray(
         ('1', '1s', 0.000076501, 0.5),
         ('1s', '1w', -0.000058598, 0.5)
     ],
-    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('bal uncert', 'float64')]
+    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference', 'float64'), ('balance uncertainty (ug)', 'float64')]
 )
 weighings = [weighing1, weighing2, weighing3, weighing4, weighing5, weighing6, weighing7]
 
-inputdata = np.empty(num_obs-num_stds,
-    dtype =[('+ weight group', object), ('- weight group', object), ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
-i = 0
-for weighing in weighings:
-    for entry in weighing:
-        inputdata[i] = entry
-        i+=1
+collated = collate_data_from_list(weighings)
 
-
-final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata)
+final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, collated)
 
 
 #     std_masses['std residuals'] = [
