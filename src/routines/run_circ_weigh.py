@@ -2,7 +2,7 @@ import os
 from msl.io import JSONWriter, read
 from src.routines.circ_weigh_class import CircWeigh
 from src.constants import IN_DEGREES_C, MIN_T, MAX_T, MIN_RH, MAX_RH, MAX_T_CHANGE, MAX_RH_CHANGE, \
-    SUFFIX, SQRT_F, MU_STR
+    SUFFIX, SQRT_F, EXCL, MU_STR
 from time import perf_counter
 from datetime import datetime
 import numpy as np
@@ -227,6 +227,7 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
         'Mass unit': massunit,
         'Drift unit': massunit + ' per ' + weighing.trend,
         'Acceptance met?': weighing.stdev[drift]*SUFFIX[massunit] < SQRT_F*max_stdev_circweigh*SUFFIX['ug'],
+        'Exclude?': weighing.stdev[drift]*SUFFIX[massunit] > EXCL*max_stdev_circweigh*SUFFIX['ug']
     }
 
     for key, value in weighing.driftcoeffs.items():
