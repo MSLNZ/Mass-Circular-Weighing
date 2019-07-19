@@ -2,6 +2,7 @@
 
 import os
 from msl.io import read
+from ..constants import MU_STR, SUFFIX
 import numpy as np
 
 
@@ -27,7 +28,7 @@ def collate_data_from_json(folder, filename, scheme_entry):
     """
     inputdata = np.empty(0,
                          dtype=[('+ weight group', object), ('- weight group', object),
-                               ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
+                               ('mass difference (g)', 'float64'), ('balance uncertainty ('+MU_STR+'g)', 'float64')])
 
     url = folder + "\\" + filename + '.json'
     if os.path.isfile(url):
@@ -36,15 +37,14 @@ def collate_data_from_json(folder, filename, scheme_entry):
         print('No such file exists')  # TODO: could upgrade this to raise error if needed
         return None
 
-    suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
     for dataset in root.datasets():
         dname = dataset.name.split('_')  # split('/')[-1].
         ok = dataset.metadata.get('Acceptance met?')
-        if dname[0][-8:] == 'analysis' and ok:
+        if dname[0][-8:] == 'analysis': # and ok: TODO: add back in when sorted
             run_id = 'run_' + dname[2]
 
             meta = root.require_dataset(root['Circular Weighings'][scheme_entry].name + '/measurement_' + run_id)
-            stdev = meta.metadata.get('Stdev for balance (ug)')
+            stdev = meta.metadata.get('Stdev for balance ('+MU_STR+'g)')
 
             bal_unit = dataset.metadata.get('Mass unit')
 
@@ -53,9 +53,9 @@ def collate_data_from_json(folder, filename, scheme_entry):
             inputdata.resize(i_len + d_len - 1)
             inputdata[i_len:]['+ weight group'] = dataset['+ weight group'][:-1]
             inputdata[i_len:]['- weight group'] = dataset['- weight group'][:-1]
-            inputdata[i_len:]['mass difference (g)'] = dataset['mass difference'][:-1]*suffix[bal_unit]
+            inputdata[i_len:]['mass difference (g)'] = dataset['mass difference'][:-1]*SUFFIX[bal_unit]
             for row in range(d_len - 1):
-                inputdata[i_len+row:]['balance uncertainty (ug)'] = stdev
+                inputdata[i_len+row:]['balance uncertainty ('+MU_STR+'g)'] = stdev
 
     return inputdata
 
@@ -76,7 +76,8 @@ def collate_data_from_list(weighings):
 
     """
     collated = np.empty(0,
-        dtype =[('+ weight group', object), ('- weight group', object), ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
+        dtype =[('+ weight group', object), ('- weight group', object),
+                ('mass difference (g)', 'float64'), ('balance uncertainty ('+MU_STR+'g)', 'float64')])
 
     for weighing in weighings:
         c_len = collated.shape[0]
