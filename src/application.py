@@ -1,6 +1,7 @@
 from msl.equipment import Config
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
+from src.equip.omega import Omega
 from .log import log
 import numpy as np
 
@@ -19,13 +20,40 @@ class Application(object):
         self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/path').text, 'std')
         self.all_checks = load_stds_from_set_file(self.cfg.root.find('checks/path').text, 'check')
 
-    def connect_bal(self, alias, strict=True):
-        # selects balance class and returns balance instance
+    def get_bal_instance(self, alias, strict=True):
+        """Selects balance class and returns balance instance
+
+        Parameters
+        ----------
+        alias : str
+            alias for balance in config file
+        strict : bool
+            not currently used
+
+        Returns
+        -------
+        Balance instance
+        """
 
         mode = self.equipment[alias].user_defined['weighing_mode']
         bal = self.bal_class[mode](self.equipment[alias])
 
         return bal
+
+    def get_omega_instance(self, alias):
+        """Gets instance of OMEGA logger for ambient measurements
+
+        Parameters
+        ----------
+        alias : str
+            alias for OMEGA logger in config file
+
+        Returns
+        -------
+        OMEGA instance
+        """
+
+        return Omega(self.equipment[alias])
 
     def acceptance_criteria(self, alias, nominal_mass):
         """Calculates acceptance criteria for a circular weighing
