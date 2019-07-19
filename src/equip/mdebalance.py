@@ -1,6 +1,6 @@
 # Generic class for a balance without a computer interface
 
-from ..constants import MU_STR
+from ..constants import SUFFIX
 from ..log import log
 from time import sleep
 
@@ -16,7 +16,7 @@ class Balance(object):
             Requires an MSL.equipment config.xml file
         """
         self.record = record
-        self._suffix = {MU_STR+'g': 1e-6, 'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
+        self._suffix = SUFFIX
 
         try:
             self._unit = record.user_defined['unit']
@@ -35,7 +35,7 @@ class Balance(object):
         """Prompts user to select the unit of mass from {mg, g, kg}"""
         while True:
             try:
-                self._unit = input('Please enter unit (µg or ug, mg, g, kg):')
+                self._unit = input('Please enter unit (µg or ug, mg, g, or kg):')
                 suffix = self._suffix[self._unit]
             except:
                 print("Invalid entry")
