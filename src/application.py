@@ -2,6 +2,7 @@ from msl.equipment import Config
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
 from src.equip.omega import Omega
+from .constants import MU_STR
 from .log import log
 import numpy as np
 
@@ -102,8 +103,8 @@ class Application(object):
 
         for row in store:
             if float(row[index_map['load min']]) <= nominal_mass <= float(row[index_map['load max']]):
-                return {'Max stdev from CircWeigh (ug)': float(row[index_map['acceptable']]),
-                        'Stdev for balance (ug)': float(row[index_map['residuals']])/2}
+                return {'Max stdev from CircWeigh ('+MU_STR+'g)': float(row[index_map['acceptable']]),
+                        'Stdev for balance ('+MU_STR+'g)': float(row[index_map['residuals']])/2}
 
         raise ValueError('Nominal mass out of range of balance')
 
@@ -125,7 +126,7 @@ def load_stds_from_set_file(path, wtset):
     """
 
     stds = {}
-    for key in {'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (ug)'}:
+    for key in {'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties ('+MU_STR+'g)'}:
         stds[key] = []
 
     with open(path, 'r') as fp:
@@ -141,14 +142,15 @@ def load_stds_from_set_file(path, wtset):
             fp.readline()
 
             headerline = fp.readline().strip('\n')
-            if not headerline == '" nominal (g) "," weight identifier "," value(g) "," uncert (g) ","cov factor","density","dens uncert"':
+            if not headerline == '" nominal (g) "," weight identifier "," value(g) "," uncert (g) ",' \
+                                 '"cov factor","density","dens uncert"':
                 print('File format has changed; data sorting may be incorrect')
                 print(headerline)
 
             line = fp.readline()
             while line:
                 line = line.strip('\n').split(', ')
-                for i, key in enumerate(['nominal (g)', 'mass values (g)', 'uncertainties (ug)']):
+                for i, key in enumerate(['nominal (g)', 'mass values (g)', 'uncertainties ('+MU_STR+'g)']):
                     value = line[i].strip(' ').strip('\"\",')
                     if i == 0:
                         stds['weight ID'].append(value + stds['Set Identifier'])  #
