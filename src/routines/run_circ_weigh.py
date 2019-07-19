@@ -1,17 +1,18 @@
 import os
 from msl.io import JSONWriter, read
 from src.routines.circ_weigh_class import CircWeigh
+from src.constants import IN_DEGREES_C, MIN_T, MAX_T, MIN_RH, MAX_RH, MAX_T_CHANGE, MAX_RH_CHANGE, \
+    SUFFIX, SQRT_F, MU_STR
 from time import perf_counter
 from datetime import datetime
 import numpy as np
 from ..log import log
 
-MU_STRING = 'µ'
 
 def check_for_existing_weighdata(folder, url, se):
 
     if os.path.isfile(url):
-        existing_root = read(url)
+        existing_root = read(url, encoding='utf-8')
         if not os.path.exists(folder+"\\backups\\"):
             os.makedirs(folder+"\\backups\\")
         new_index = len(os.listdir(folder + "\\backups\\"))
@@ -21,7 +22,7 @@ def check_for_existing_weighdata(folder, url, se):
         root = JSONWriter()
         root.set_root(existing_root)
         log.debug('Working root is '+repr(root))
-        root.save(root=existing_root, url=new_file, mode='w')
+        root.save(root=existing_root, url=new_file, mode='w', encoding='utf-8', ensure_ascii=False)
 
     else:
         if not os.path.exists(folder):
@@ -47,9 +48,12 @@ def get_next_run_id(root, scheme_entry):
     return run_id
 
 
-def do_circ_weighing(bal, se, root, url, run_id, **metadata):
+def do_circ_weighing(bal, se, root, url, run_id, omega=None, **metadata):
 
-    ambient_pre = check_ambient_pre()
+    metadata['Mmt Timestamp'] = datetime.now().isoformat(sep=' ', timespec='minutes')
+    metadata['Time unit'] = 'min'
+
+    ambient_pre = check_ambient_pre(omega)
     for key, value in ambient_pre.items():
         metadata[key] = value
 
@@ -66,53 +70,73 @@ def do_circ_weighing(bal, se, root, url, run_id, **metadata):
     weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)
     weighdata.add_metadata(**metadata)
 
-    # do circular weighing:
-    times = []
-    t0 = 0
-    for cycle in range(weighing.num_cycles):
-        for pos in range(weighing.num_wtgrps):
-            mass = weighing.wtgrps[pos]
-            bal.load_bal(mass)
-            reading = bal.get_mass_stable()
-            if not times:
-                time = 0
-                t0 = perf_counter()
-            else:
-                time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
-            times.append(time)
-            weighdata[cycle, pos, :] = [time, reading]
-            root.save(url=url, mode='w')
-            bal.unload_bal(mass)
+    # do circular weighing, allowing for keyboard interrupt:
+    try:
+        times = []
+        t0 = 0
+        for cycle in range(weighing.num_cycles):
+            for pos in range(weighing.num_wtgrps):
+                mass = weighing.wtgrps[pos]
+                bal.load_bal(mass)
+                reading = bal.get_mass_stable()
+                if not times:
+                    time = 0
+                    t0 = perf_counter()
+                else:
+                    time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
+                times.append(time)
+                weighdata[cycle, pos, :] = [time, reading]
+                root.save(url=url, mode='w', ensure_ascii=False)
+                bal.unload_bal(mass)
 
-    #metadata['Timestamps'] = np.round(times, 3)
-    metadata['Time unit'] = 'min'
+    except (KeyboardInterrupt, SystemExit):
+        log.info('Circular weighing sequence aborted')
+        metadata['Weighing complete'] = False
+        weighdata.add_metadata(**metadata)
+        root.save(url=url, mode='w', ensure_ascii=False)
 
-    metadata['Mmt Timestamp'] = datetime.now().isoformat(sep=' ', timespec='minutes')
+        return root
 
-    ambient_post = check_ambient_post(ambient_pre)
+    ambient_post = check_ambient_post(omega, ambient_pre)
     for key, value in ambient_post.items():
         metadata[key] = value
 
-    print(metadata)
+    metadata['Weighing complete'] = True
     weighdata.add_metadata(**metadata)
-    root.save(url=url, mode='w')
+    root.save(url=url, mode='w', ensure_ascii=False)
 
     print(weighdata[:, :, :])
 
     return root
 
 
-def check_ambient_pre():
-    # check ambient conditions meet quality criteria for commencing weighing
-    ambient_pre = {'T_pre (deg C)': 20.0, 'RH_pre (%)': 50.0}  # \xb0 is degree in unicode
-    # TODO: link this to Omega logger
+def check_ambient_pre(omega):
+    """Check ambient conditions meet quality criteria for commencing weighing
 
-    if 18.1 < ambient_pre['T_pre (deg C)'] < 21.9:
+    Parameters
+    ----------
+    omega : OMEGA instance
+
+    Returns
+    -------
+    ambient_pre : dict
+        dict of ambient conditions at start of weighing: {'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
+        If OMEGA instance unavailable, returns 20+IN_DEGREES_C and 50%.
+    """
+
+    try:
+        ambient = omega.get_t_rh()
+        ambient_pre = {'T_pre'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_pre (%)': ambient['RH (%)']}
+    except:
+        log.error('Omega logger is not present or could not be read')
+        ambient_pre = {'T_pre'+IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
+
+    if MIN_T < ambient_pre['T_pre'+IN_DEGREES_C] < MAX_T:
         log.info('Ambient temperature OK for weighing')
     else:
         raise ValueError('Ambient temperature does not meet limits')
 
-    if 33 < ambient_pre['RH_pre (%)'] < 67:
+    if MIN_RH < ambient_pre['RH_pre (%)'] < MAX_RH:
         log.info('Ambient humidity OK for weighing')
     else:
         raise ValueError('Ambient humidity does not meet limits')
@@ -120,15 +144,33 @@ def check_ambient_pre():
     return ambient_pre
 
 
-def check_ambient_post(ambient_pre):
-    # check ambient conditions meet quality criteria during weighing
-    ambient_post = {'T_post (deg C)': 20.3, 'RH_post (%)': 44.9}
-    # TODO: get from Omega logger
+def check_ambient_post(omega, ambient_pre):
+    """Check ambient conditions met quality criteria during weighing
 
-    if (ambient_pre['T_pre (deg C)'] - ambient_post['T_post (deg C)']) ** 2 > 0.25:
+    Parameters
+    ----------
+    omega : OMEGA instance
+    ambient_pre : dict
+        dict of ambient conditions at start of weighing: {'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
+
+    Returns
+    -------
+    ambient_post : dict
+        dict of ambient conditions at end of weighing, and evaluation of overall conditions during measurement.
+        dict has key-value pairs {'T_post'+IN_DEGREES_C: float, 'RH_post (%)': float, 'Ambient OK?': bool}
+    """
+
+    try:
+        ambient = omega.get_t_rh()
+        ambient_post = {'T_post'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_post (%)': ambient['RH (%)']}
+    except:
+        log.error('Omega logger is not present or could not be read')
+        ambient_post = {'T_post'+IN_DEGREES_C: 20.0, 'RH_post (%)': 50.0}
+
+    if (ambient_pre['T_pre'+IN_DEGREES_C] - ambient_post['T_post'+IN_DEGREES_C]) ** 2 > MAX_T_CHANGE**2:
         ambient_post['Ambient OK?'] = False
         log.warning('Ambient temperature change during weighing exceeds quality criteria')
-    elif (ambient_pre['RH_pre (%)'] - ambient_post['RH_post (%)']) ** 2 > 225:
+    elif (ambient_pre['RH_pre (%)'] - ambient_post['RH_post (%)']) ** 2 > MAX_RH_CHANGE**2:
         ambient_post['Ambient OK?'] = False
         log.warning('Ambient humidity change during weighing exceeds quality criteria')
     else:
@@ -176,17 +218,16 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
     weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
 
-    suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
-    max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh (ug)')
+    max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)')
+
     analysis_meta = {
         'Analysis Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'),
-        'Residual std devs, \u03C3': str(weighing.stdev),  # \u03C3 for sigma sign
+        'Residual std devs': str(weighing.stdev),
         'Selected drift': drift,
-        'Mass unit, µ': massunit,
+        'Mass unit': massunit,
         'Drift unit': massunit + ' per ' + weighing.trend,
-        'Acceptance met?': weighing.stdev[drift]*suffix[massunit] < 1.4*max_stdev_circweigh*suffix['ug'],
+        'Acceptance met?': weighing.stdev[drift]*SUFFIX[massunit] < SQRT_F*max_stdev_circweigh*SUFFIX['ug'],
     }
-
 
     for key, value in weighing.driftcoeffs.items():
         analysis_meta[key] = value
@@ -197,7 +238,7 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
 
     weighanalysis.add_metadata(**analysis_meta)
 
-    root.save(url=url, mode='w', encoding='utf-8')
+    root.save(url=url, mode='w', encoding='utf-8', ensure_ascii=False)
 
     log.info('Circular weighing complete')
 
