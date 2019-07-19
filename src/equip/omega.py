@@ -1,4 +1,5 @@
 import numpy as np
+from src.constants import IN_DEGREES_C
 
 
 class Omega(object):
@@ -21,7 +22,7 @@ class Omega(object):
 
         ambient = {
             'RH (%)': np.round((rh1 + rh2)/2, 3),
-            'T (°C)': np.round((t1 + t2)/2, 3),
+            'T'+IN_DEGREES_C: np.round((t1 + t2)/2, 3),
         }
 
         return ambient
@@ -32,8 +33,8 @@ class Omega(object):
 
         ambient = {
             'RH (%)': np.round((rh1 + rh2)/2, 3),
-            'T (°C)': np.round((t1 + t2)/2, 3),
-            'DP (°C)': np.round((dp1 + dp2)/2, 3),
+            'T'+IN_DEGREES_C: np.round((t1 + t2)/2, 3),
+            'DP'+IN_DEGREES_C: np.round((dp1 + dp2)/2, 3),
         }
 
         return ambient
