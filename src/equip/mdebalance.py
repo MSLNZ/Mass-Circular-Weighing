@@ -1,7 +1,9 @@
-'''Generic class for a balance without a computer interface'''
+# Generic class for a balance without a computer interface
 
+from ..constants import MU_STR
 from ..log import log
 from time import sleep
+
 
 class Balance(object):
     def __init__(self, record):
@@ -14,10 +16,16 @@ class Balance(object):
             Requires an MSL.equipment config.xml file
         """
         self.record = record
-        self._suffix = {'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
-        self.set_unit()
+        self._suffix = {MU_STR+'g': 1e-6, 'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
+
+        try:
+            self._unit = record.user_defined['unit']
+        except:
+            self.set_unit()
+
         self.stable_wait = record.user_defined['stable_wait']
         # wait time in seconds for balance reading to stabilise
+
 
     @property
     def unit(self):
@@ -27,7 +35,7 @@ class Balance(object):
         """Prompts user to select the unit of mass from {mg, g, kg}"""
         while True:
             try:
-                self._unit = input('Please enter unit (ug, mg, g, kg):')
+                self._unit = input('Please enter unit (µg or ug, mg, g, kg):')
                 suffix = self._suffix[self._unit]
             except:
                 print("Invalid entry")
@@ -75,8 +83,11 @@ class Balance(object):
                         break
                     reading = float(check)
             except ValueError:
-                print("Invalid entry")  # TODO: add here options to pause or abort weighing?
-                continue
+                if reading == 'abort' or reading == 'cancel':
+                    raise KeyboardInterrupt
+                else:
+                    print("Invalid entry")
+                    continue
             else:
                 break
         log.info('Mass reading: '+str(reading)+' '+str(self._unit))
@@ -84,6 +95,9 @@ class Balance(object):
 
     def get_mass_stable(self):
         print('Waiting for stable reading')
-        sleep(self.stable_wait)
-        reading = self.get_mass_instant()
-        return reading
+        try:
+            sleep(self.stable_wait)
+            reading = self.get_mass_instant()
+            return reading
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
