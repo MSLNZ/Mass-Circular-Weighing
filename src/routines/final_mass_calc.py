@@ -4,7 +4,7 @@ from msl.io import JSONWriter
 from src.log import log
 
 
-def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata):
+def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None):
     """Calculates mass values using matrix least squares methods
 
     Parameters
@@ -60,10 +60,10 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     scheme_std.create_dataset('std mass values', data=std_masses)
     log.info('Standards:\nstd weight ID, std mass values (g), std uncertainties (ug)\n'+str(std_masses))
 
-    num_unknowns = num_client_masses + num_stds + num_check_masses
+    num_unknowns = num_client_masses + num_check_masses + num_stds
     log.info('Number of unknowns = '+str(num_unknowns))
-    allmassIDs = np.append(np.append(client_wt_IDs, check_wt_IDs), std_masses['std weight ID'])  # note that stds are grouped last
-
+    allmassIDs = np.append(np.append(client_wt_IDs, check_wt_IDs), std_masses['std weight ID'])
+    # note that stds are grouped last
 
     # Create design matrix and collect relevant data
     num_obs = len(inputdata)+num_stds
@@ -100,12 +100,21 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
 
     # Hadamard product: element-wise multiplication
     uumeas = np.vstack(uncerts) * np.hstack(uncerts)    # becomes square matrix dim num_obs
-    rmeas = np.identity(num_obs)                        # Add off-diagonal terms for correlations
+
+    rmeas = np.identity(num_obs)
+    if type(corr) == np.ndarray:                        # Add off-diagonal terms for correlations
+        for mass1 in std_masses['std weight ID']:
+            i = np.where(std_masses['std weight ID'] == mass1)
+            for mass2 in std_masses['std weight ID']:
+                j = np.where(std_masses['std weight ID'] == mass2)
+                rmeas[len(inputdata)+i[0], len(inputdata)+j[0]] = corr[i, j]
+        log.debug('rmeas matrix includes correlations for stds:\n'+str(rmeas[:, -num_stds:]))
 
     psi_y_hadamard = np.zeros((num_obs, num_obs))       # Hadamard product is element-wise multiplication
     for i in range(num_obs):
         for j in range(num_obs):
-            psi_y_hadamard[i, j] = uumeas[i, j] * rmeas[i, j]
+            if not rmeas[i, j] == 0:
+                psi_y_hadamard[i, j] = uumeas[i, j] * rmeas[i, j]
 
     psi_y_inv = np.linalg.inv(psi_y_hadamard)
 
@@ -113,18 +122,18 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     psi_bmeas = np.linalg.inv(psi_bmeas_inv)
 
     b = np.linalg.multi_dot([psi_bmeas, xT, psi_y_inv, differences])
-    log.info('Mass values are: '+str(b))
+    log.info('Mass values before corrections are: '+str(b))
 
     r0 = (differences - np.dot(x, b))*1e6               # residuals, converted from g to ug
     sum_residues_squared = np.dot(r0, r0)
-    log.info('Residuals:\n'+str(np.round(r0, 3)))       # also save as column with input data for checking
+    log.info('Residuals:\n'+str(np.round(r0, 4)))       # also save as column with input data for checking
 
     inputdatares = np.empty(
         num_obs,
         dtype =[('+ weight group', object), ('- weight group', object), ('mass difference (g)', 'float64'),
                 ('balance uncertainty (ug)', 'float64'), ('residual (ug)', 'float64')])
     inputdatares['+ weight group'][0:len(inputdata)] = inputdata['+ weight group']
-    inputdatares['+ weight group'][len(inputdata):] = std_masses["std weight ID"]
+    inputdatares['+ weight group'][len(inputdata):] = std_masses['std weight ID']
     inputdatares['- weight group'][0:len(inputdata)] = inputdata['- weight group']
     inputdatares['mass difference (g)'] = differences
     inputdatares['balance uncertainty (ug)'] = uncerts
@@ -136,27 +145,33 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
             flag.append(entry[0] + ' - ' + entry[1])
 
     # uncertainty due to no buoyancy correction
-    cmx1 = np.ones(num_client_masses+num_check_masses)  # from above, stds are added last
-    cmx1 = np.append(cmx1, np.zeros(num_stds))          # 1's for unknowns, 0's for reference stds
+    if nbc:
+        cmx1 = np.ones(num_client_masses+num_check_masses)  # from above, stds are added last
+        cmx1 = np.append(cmx1, np.zeros(num_stds))          # 1's for unknowns, 0's for reference stds
 
-    reluncert = 0.10                                    # relative uncertainty in ppm for no buoyancy correction
-    rnbc = np.identity(num_unknowns)                    # Add off-diagonal terms for correlations
-    unbc = reluncert * b * cmx1                         # vector of length num_unknowns. TP wrongly has * 1e-6
+        reluncert = 0.10                                    # relative uncertainty in ppm for no buoyancy correction
+        unbc = reluncert * b * cmx1                         # vector of length num_unknowns. TP wrongly has * 1e-6
+        uunbc = np.vstack(unbc) * np.hstack(unbc)           # square matrix of dim num_obs
+        rnbc = np.identity(num_unknowns)                    # add off-diagonals for any correlations
 
-    uunbc = np.vstack(unbc) * np.hstack(unbc)           # square matrix of dim num_obs
+        psi_nbc_hadamard = np.zeros((num_unknowns, num_unknowns))
+        for i in range(num_unknowns):                       # Here the Hadamard product is taking the diagonal of the matrix
+            for j in range(num_unknowns):
+                if not rnbc[i, j] == 0:
+                    psi_nbc_hadamard[i, j] = uunbc[i, j] * rnbc[i, j]
 
-    psi_nbc_hadamard = np.zeros((num_unknowns, num_unknowns))
-    for i in range(num_unknowns):                       # Here the Hadamard product is taking the diagonal of the matrix
-        for j in range(num_unknowns):
-            psi_nbc_hadamard[i, j] = uunbc[i, j] * rnbc[i, j]
+        psi_b = psi_bmeas + psi_nbc_hadamard
 
-    psi_b = psi_bmeas + psi_nbc_hadamard
+    else:
+        psi_b = psi_bmeas
+        reluncert = 0
+
     std_uncert_b = np.sqrt(np.diag(psi_b))
     #det_varcovar_bmeas = np.linalg.det(psi_bmeas)
     #det_varcovar_nbc = np.linalg.det(psi_nbc_hadamard)
     #det_varcovar_b = np.linalg.det(psi_b)
 
-    summarytable = np.empty((num_unknowns, 5), object)  # add headers!
+    summarytable = np.empty((num_unknowns, 5), object)
     for i in range(num_unknowns):
         summarytable[i, 0] = allmassIDs[i]
         if i < num_client_masses:
