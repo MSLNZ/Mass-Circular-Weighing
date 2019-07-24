@@ -127,6 +127,7 @@ def check_ambient_pre(omega):
     try:
         ambient = omega.get_t_rh()
         ambient_pre = {'T_pre'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_pre (%)': ambient['RH (%)']}
+        log.info('Ambient conditions:\n'+str(ambient_pre))
     except:
         log.error('Omega logger is not present or could not be read')
         ambient_pre = {'T_pre'+IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
@@ -163,6 +164,7 @@ def check_ambient_post(omega, ambient_pre):
     try:
         ambient = omega.get_t_rh()
         ambient_post = {'T_post'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_post (%)': ambient['RH (%)']}
+        log.info('Ambient conditions:\n'+str(ambient_post))
     except:
         log.error('Omega logger is not present or could not be read')
         ambient_post = {'T_post'+IN_DEGREES_C: 20.0, 'RH_post (%)': 50.0}
