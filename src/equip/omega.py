@@ -14,11 +14,11 @@ class Omega(object):
             Requires an MSL.equipment config.xml file
         """
         self.record = record
-        self.connection = self.record.connect()
 
     def get_t_rh(self):
-        t1, rh1 = self.connection.temperature_humidity(probe=1, nbytes=12)
-        t2, rh2 = self.connection.temperature_humidity(probe=2, nbytes=12)
+        connection = self.record.connect()
+        t1, rh1 = connection.temperature_humidity(probe=1, nbytes=12)
+        t2, rh2 = connection.temperature_humidity(probe=2, nbytes=12)
 
         ambient = {
             'RH (%)': np.round((rh1 + rh2)/2, 3),
@@ -28,8 +28,9 @@ class Omega(object):
         return ambient
 
     def get_t_rh_dp(self):
-        t1, rh1, dp1 = self.connection.temperature_humidity_dewpoint(probe=1, nbytes=18)
-        t2, rh2, dp2 = self.connection.temperature_humidity_dewpoint(probe=2, nbytes=18)
+        connection = self.record.connect()
+        t1, rh1, dp1 = connection.temperature_humidity_dewpoint(probe=1, nbytes=18)
+        t2, rh2, dp2 = connection.temperature_humidity_dewpoint(probe=2, nbytes=18)
 
         ambient = {
             'RH (%)': np.round((rh1 + rh2)/2, 3),
