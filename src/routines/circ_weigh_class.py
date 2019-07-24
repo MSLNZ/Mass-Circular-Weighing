@@ -1,5 +1,5 @@
 import numpy as np
-from ..log import log
+from src.log import log
 
 """ This class uses matrix least squares analysis for circular weighing measurement sequences
 For more information, see 'A General Approach to Comparisons in the Presence of Drift'
@@ -9,6 +9,7 @@ For more information, see 'A General Approach to Comparisons in the Presence of 
    - Estimates of item differences and their standard deviations
    - Drift parameters and their standard deviations
 """
+
 
 class CircWeigh(object):
     _sequences = {2: 5, 3: 4, 4: 3, 5: 3}  # key: number of weight groups in weighing, value: number of cycles
@@ -182,6 +183,7 @@ class CircWeigh(object):
 
         w = w_T.T
         diffab = np.dot(w_T, self.b[drift])
+        log.debug('Raw differences are\n'+str(diffab))
         vardiffab = np.linalg.multi_dot([w_T, self.varcovar[drift], w])
         stdev_diffab = np.sqrt(np.diag(vardiffab))
 

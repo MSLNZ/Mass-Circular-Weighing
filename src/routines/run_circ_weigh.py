@@ -6,7 +6,7 @@ from src.constants import IN_DEGREES_C, MIN_T, MAX_T, MIN_RH, MAX_RH, MAX_T_CHAN
 from time import perf_counter
 from datetime import datetime
 import numpy as np
-from ..log import log
+from src.log import log
 
 
 def check_for_existing_weighdata(folder, url, se):
@@ -95,7 +95,7 @@ def do_circ_weighing(bal, se, root, url, run_id, omega=None, **metadata):
         weighdata.add_metadata(**metadata)
         root.save(url=url, mode='w', ensure_ascii=False)
 
-        return root
+        return None
 
     ambient_post = check_ambient_post(omega, ambient_pre)
     for key, value in ambient_post.items():
@@ -105,7 +105,7 @@ def do_circ_weighing(bal, se, root, url, run_id, omega=None, **metadata):
     weighdata.add_metadata(**metadata)
     root.save(url=url, mode='w', ensure_ascii=False)
 
-    print(weighdata[:, :, :])
+    log.debug('weighdata:\n'+str(weighdata[:, :, :]))
 
     return root
 
@@ -184,11 +184,6 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
     schemefolder = root['Circular Weighings'][se]
     weighdata = schemefolder['measurement_' + run_id]
 
-    flag = weighdata.metadata.get('Ambient OK?')
-    if not flag:
-        log.warning('Change in ambient conditions during weighing exceeded quality criteria')
-        return None
-
     weighing = CircWeigh(se)
     if timed:
         times = np.reshape(weighdata[:, :, 0], weighing.num_readings)
@@ -235,6 +230,11 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
 
     if not sum(analysis['mass difference']) == 0:
         log.warning('Sum of mass differences is not zero. Analysis not accepted')
+        analysis_meta['Acceptance met?'] = False
+
+    flag = weighdata.metadata.get('Ambient OK?')
+    if not flag:
+        log.warning('Change in ambient conditions during weighing exceeded quality criteria')
         analysis_meta['Acceptance met?'] = False
 
     weighanalysis.add_metadata(**analysis_meta)
