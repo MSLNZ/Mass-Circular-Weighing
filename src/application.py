@@ -17,7 +17,7 @@ class Application(object):
         self.db = self.cfg.database()           # loads database
         self.equipment = self.db.equipment      # loads subset of database with equipment being used
 
-        self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': MettlerToledo}
+        self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': Balance}
         # TODO: add aw class for automatic loading balance
 
         self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/path').text, 'std')

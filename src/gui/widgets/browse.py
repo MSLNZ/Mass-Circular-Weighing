@@ -1,10 +1,9 @@
-
 from msl.qt import QtWidgets, Button, prompt
-from src.log import log
 
 
-def label(label):
-    return QtWidgets.QLabel(label)
+def label(name):
+    return QtWidgets.QLabel(name)
+
 
 class Browse(QtWidgets.QWidget):
 
@@ -28,13 +27,10 @@ class Browse(QtWidgets.QWidget):
         self.textbox.setText(folder_text)
 
     def mass_drive_selected(self):
-        #log.debug('Mass drive selected')
         self.textbox.setText(r'I:\MSL\Private\Mass')
 
     def hdrive_selected(self):
-        #log.debug('H: drive selected')
         self.textbox.setText(r'H:')
 
     def sampledata_selected(self):
-        #log.debug('sample data selected')
         self.textbox.setText(r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data')

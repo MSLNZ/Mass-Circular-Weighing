@@ -1,70 +1,86 @@
 import sys
-from msl.qt import application, QtWidgets, Button, excepthook, prompt, Logger
+from msl.qt import application, QtWidgets, Button, excepthook, Logger
 from src.log import log
-
-from src.gui.widgets.browse import Browse, label
-from src.gui.housekeeping import Housekeeping
-
-
-
-def enter_scheme_details():
-    scheme_table = QtWidgets.QTableWidget()
-    scheme_table.setColumnCount(5)
-    scheme_table.setRowCount(2)
-    scheme_table.setHorizontalHeaderLabels(['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# runs', 'Status'])
-    return scheme_table
+from src.routines.do_new_weighing import do_new_weighing
+from src.application import Application
+from src.gui.widgets.housekeeping import Housekeeping
+from src.gui.widgets.scheme_table import SchemeTable
+from src.constants import MAX_BAD_RUNS
 
 
-def add_row(scheme):
-    scheme.insertRow(1)
+def make_table_panel():
+    get_row = Button(text='Do weighing(s) for selected scheme entry', left_click=collect_n_good_runs, )
+
+    central_panel_group = QtWidgets.QGroupBox('Weighing Scheme Details')
+    central_panel_layout = QtWidgets.QVBoxLayout()
+    central_panel_layout.addWidget(schemetable)
+    central_panel_layout.addWidget(get_row)
+    central_panel_group.setLayout(central_panel_layout)
+
+    return central_panel_group
+
+
+def do_single_weighing(app, bal_alias, scheme_entry, nom_mass_str, ):
+
+    client = housekeeping.client
+    folder = housekeeping.folder
+    filename = housekeeping.client + '_' + nom_mass_str
+    nominal_mass = float(nom_mass_str)
+    omega_alias = housekeeping.omega
+    timed = housekeeping.timed
+    drift = housekeeping.drift
+
+    ok = do_new_weighing(app, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
+                    omega_alias, timed, drift)
+
+    return ok
+
+
+def collect_n_good_runs():
+    app = Application(housekeeping.config)
+    row = schemetable.currentRow()
+    log.info('Row ' + str(row + 1) + ' selected for weighing')
+
+    se_row_data = schemetable.get_row_info(row)
+    scheme_entry = se_row_data[0]
+    nom_mass_str = se_row_data[1]
+    bal_alias = se_row_data[2]
+    num_runs = se_row_data[3]
+
+    mode = app.equipment[bal_alias].user_defined['weighing_mode']
+
+    i = 0
+    bad = 0
+    while i < float(num_runs) and bad < MAX_BAD_RUNS:
+        print('Collected '+ str(i) + ' acceptable weighing(s) of ' + num_runs)
+        ok = do_single_weighing(app, bal_alias, scheme_entry, nom_mass_str,)
+        if ok:
+            i += 1
+        elif mode == 'aw':
+            i += 1
+        else:
+            bad += 1
+
+    print('Finished weighing ' + scheme_entry)
+
 
 
 sys.excepthook = excepthook
 
-app = application()
+gui = application()
+
 
 w = QtWidgets.QWidget()
 w.setWindowTitle('Mass Calibration: Main Window')
 
-# config = QtWidgets.QLineEdit(r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\config.xml')
-# client_io = QtWidgets.QLineEdit('AsureQ')
-# folder_io = QtWidgets.QLineEdit()
-# get_folder = Button(text='Select folder', left_click=display_folder, icon='shell32|4')
-
-
-te = QtWidgets.QTextEdit()
-
-sb = QtWidgets.QSpinBox()
-# sb.valueChanged.connect(spinbox_changed)
-
-# cb_stds = QtWidgets.QComboBox()
-# cb_stds.addItems(['MET16A', 'MET16B', 'WV'])  # options for standards and check masses
-# # cb_stds.currentTextChanged.connect(combo_changed)
-# cb_checks = QtWidgets.QComboBox()
-# cb_checks.addItems(['MET16A', 'MET16B', 'WV'])  # options for standards and check masses
-# # cb_checks.currentTextChanged.connect(combo_changed)
-
-#go = Button(text='Confirm set up', left_click=collate_housekeeping)
-
-#folder_box = folder_box()
-schemetable = enter_scheme_details()
-
-new_row = Button(text='Add row', left_click=add_row(schemetable), )
-
-# lhs_panel_group = QtWidgets.QGroupBox('Housekeeping')
-# lhs_panel_layout = QtWidgets.QVBoxLayout()
-# lhs_panel_layout.addWidget(housekeeping())
-# lhs_panel_layout.addWidget(go)
-# lhs_panel_group.setLayout(lhs_panel_layout)
-
-central_panel_group = QtWidgets.QGroupBox('Weighing Scheme Details')
-central_panel_layout = QtWidgets.QVBoxLayout()
-central_panel_layout.addWidget(schemetable)
-central_panel_layout.addWidget(new_row)
-central_panel_group.setLayout(central_panel_layout)
 
 housekeeping = Housekeeping()
 lhs_panel_group = housekeeping.lhs_panel_group()
+
+
+
+schemetable = SchemeTable()
+central_panel_group = make_table_panel()
 
 layout = QtWidgets.QHBoxLayout()
 layout.addWidget(lhs_panel_group)
@@ -74,29 +90,4 @@ layout.addWidget(Logger(log))
 w.setLayout(layout)
 
 w.show()
-app.exec()
-
-'''layout = QtWidgets.QGridLayout()
-layout.addWidget(cb_checks, 0, 0)
-layout.addWidget(client_io, 0, 1)
-layout.addWidget(te, 1, 0, 1, 2)
-layout.addWidget(cb_stds, 2, 0)
-layout.addWidget(sb, 2, 1)
-layout.addWidget(go, 3, 3)
-
-
-
-
-
-
-def button_clicked():
-    print('Button clicked', sb.value(), cb_stds.currentText())
-
-
-def combo_changed(value):
-    print(value)
-
-def spinbox_changed(value):
-    print(value)
-
-    '''
+gui.exec()

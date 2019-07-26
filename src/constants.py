@@ -24,5 +24,20 @@ EXCL = 3                    # criterion for excluding a single weighing within a
                             # Currently set to a rather arbitrary value without any experimental basis...
 
 
-config_default = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\config.xml'
-stds = ['MET16A', 'MET16B', 'WV']  # options for standards and check masses
+config_default = r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing\config.xml'
+stds = [                    # options for standards and check masses
+    'MET16A',
+    'MET16B',
+    'WV',
+]
+balances = [                # available balances
+    "MDE-demo",
+    "AX10005",
+    "CCE605",
+    "AB204-S",
+    "AT106",
+]
+omega_loggers = [           # available Omega Loggers
+    "Omega",
+]
+MAX_BAD_RUNS = 3

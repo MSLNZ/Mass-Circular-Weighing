@@ -1,6 +1,6 @@
 from msl.qt import QtWidgets, Button
 from src.log import log
-from src.constants import config_default, stds
+from src.constants import config_default, stds, omega_loggers
 
 from src.gui.widgets.browse import Browse, label
 
@@ -19,8 +19,11 @@ class Housekeeping(QtWidgets.QWidget):
         self.cb_checks_io = QtWidgets.QComboBox()
         self.cb_checks_io.addItems(stds)
 
+        self.omega_io = QtWidgets.QComboBox()
+        self.omega_io.addItems(omega_loggers)
+
         self.drift_io = QtWidgets.QComboBox()
-        self.drift_io.addItems(['<auto>', 'no drift', 'linear drift', 'quadratic drift', 'cubic drift'])
+        self.drift_io.addItems(['<auto select>', 'no drift', 'linear drift', 'quadratic drift', 'cubic drift'])
 
         self.timed_io = QtWidgets.QComboBox()
         self.timed_io.addItems(['NO', 'YES'])
@@ -39,6 +42,7 @@ class Housekeeping(QtWidgets.QWidget):
         formlayout.addRow(label('List of client masses'), self.client_masses_io)
         formlayout.addRow(label('Standard mass set'), self.cb_stds_io)
         formlayout.addRow(label('Check mass set'), self.cb_checks_io)
+        formlayout.addRow(label('Omega logger'), self.omega_io)
         self.formGroup.setLayout(formlayout)
 
         return self.formGroup
@@ -91,12 +95,20 @@ class Housekeeping(QtWidgets.QWidget):
         return self.cb_checks_io.currentText()
 
     @property
+    def omega(self):
+        return self.omega_io.currentText()
+
+    @property
     def drift(self):
+        if self.drift_io.currentText() == '<auto select>':
+            return None
         return self.drift_io.currentText()
 
     @property
     def timed(self):
-        return self.timed_io.currentText()
+        if self.timed_io.currentText() == 'NO':
+            return False
+        return True
 
     @property
     def correlations(self):
@@ -109,8 +121,9 @@ class Housekeeping(QtWidgets.QWidget):
         log.info('Client masses: ' + self.client_masses)
         log.info('Standard mass set: ' + self.std_set)
         log.info('Check mass set: ' + self.check_set)
-        log.info('Drift correction: ' + self.drift)
-        log.info('Use measurement times? ' + self.timed)
+        log.info('Omega logger: ' + self.omega)
+        log.info('Drift correction: ' + self.drift_io.currentText())
+        log.info('Use measurement times? ' + str(self.timed))
         log.info('Correlations between standards? ' + self.correlations)
 
         return True
