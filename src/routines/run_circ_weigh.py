@@ -127,7 +127,9 @@ def check_ambient_pre(omega):
     try:
         ambient = omega.get_t_rh()
         ambient_pre = {'T_pre'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_pre (%)': ambient['RH (%)']}
-        log.info('Ambient conditions:\n'+str(ambient_pre))
+        log.info('Ambient conditions:\n'+
+                 'Temperature'+IN_DEGREES_C+': '+str(ambient['T'+IN_DEGREES_C])+
+                 'Humidity (%): '+str(ambient['RH (%)']))
     except:
         log.error('Omega logger is not present or could not be read')
         ambient_pre = {'T_pre'+IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
@@ -268,5 +270,5 @@ def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
             analyse_weighing(root, url, se, run_id, timed, drift)
             i += 1
         except KeyError:
-            print('No more runs to analyse')
+            log.info('No more runs to analyse')
             break

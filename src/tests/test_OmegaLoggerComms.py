@@ -8,7 +8,7 @@ app = Application(config)
 
 
 omega = app.get_omega_instance('Omega')
-ambient = omega.get_t_rh_dp()
+ambient = omega.get_t_rh()
 
 print(ambient)
 
