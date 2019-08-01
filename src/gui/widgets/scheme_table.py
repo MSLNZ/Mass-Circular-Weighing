@@ -56,8 +56,6 @@ class SchemeTable(QtWidgets.QTableWidget):
     def delete_row(self, row):
         self.removeRow(row)
 
-    #TODO: allow copy paste
-
     def get_row_info(self, row):
         try:
             scheme_entry = self.item(row, 0).text()

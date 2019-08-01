@@ -5,6 +5,7 @@ from msl.qt import application, QtWidgets, Button, excepthook, Logger
 from msl.qt.threading import Thread, Worker
 
 from src.constants import MAX_BAD_RUNS
+from src.log import log
 from src.routines.run_circ_weigh import *
 
 
@@ -130,7 +131,7 @@ class WeighingWorker(Worker):
 
         bad = 0
         run_no = float(run_id.strip('run_'))
-        while run_no < float(num_runs) and bad < MAX_BAD_RUNS:
+        while run_no < float(num_runs)+1 and bad < MAX_BAD_RUNS:
             print('got to beginning weighing')
             weighing_root = do_weighing(bal, se, root, url, run_id,
                                         callback1=self.callback, callback2=self.callback2, omega=omega_instance,
@@ -175,6 +176,8 @@ class WeighingThread(Thread):
         layout.addRow(label('Position'), self.position)
 
         layout.addRow(label('Reading'), self.reading)
+
+        layout.addWidget(Logger(log))
 
         self.window.setLayout(layout)
         self.window.resize(400,400)

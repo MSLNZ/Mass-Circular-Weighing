@@ -3,6 +3,7 @@
 from ..constants import SUFFIX
 from ..log import log
 from time import sleep
+from msl.qt import prompt
 
 
 class Balance(object):
@@ -26,10 +27,16 @@ class Balance(object):
         self.stable_wait = record.user_defined['stable_wait']
         # wait time in seconds for balance reading to stabilise
 
+        self._want_abort = False
+
 
     @property
     def unit(self):
         return str(self._unit)
+
+    @property
+    def want_abort(self):
+        return self._want_abort
 
     def set_unit(self):
         """Prompts user to select the unit of mass from {mg, g, kg}"""
@@ -46,24 +53,38 @@ class Balance(object):
 
     def zero_bal(self):
         """Prompts user to zero balance with no mass on balance"""
-        input("Zero balance with no load, then press enter to continue.")
+        if not self.want_abort:
+            zeroed = prompt.question("Zero balance with no load.")
+            if not zeroed:
+                self._want_abort = True
 
     def scale_adjust(self):
         """Prompts user to adjust scale using internal weights"""
-        input("Perform internal balance calibration, then press enter to continue.")
+        if not self.want_abort:
+            adjusted = prompt.question("Perform internal balance calibration.")
+            if not adjusted:
+                self._want_abort = True
 
     def tare_bal(self):
         """Prompts user to tare balance with correct tare load"""
-        input('Check that the balance has correct tare load, then press enter to continue.')
-        input("Tare balance, then press enter to continue.")
+        if not self.want_abort:
+            tared = prompt.question('Check that the balance has correct tare load, then tare balance.')
+            if not tared:
+                self._want_abort = True
 
     def load_bal(self, mass):
         """Prompts user to load balance with specified mass"""
-        input('Load balance with mass '+mass+', then press enter to continue.')
+        if not self.want_abort:
+            loaded = prompt.question('Load balance with mass '+mass+'.')
+            if not loaded:
+                self._want_abort = True
 
     def unload_bal(self, mass):
         """Prompts user to remove specified mass from balance"""
-        input('Unload mass '+mass+' from balance, then press enter to continue.')
+        if not self.want_abort:
+            unloaded = prompt.question('Unload mass '+mass+' from balance.')
+            if not unloaded:
+                self._want_abort = True
 
     def get_mass_instant(self):
         """Asks user to enter mass from balance
@@ -73,31 +94,34 @@ class Balance(object):
             mass (in unit set for balance when initialised)
         """
         reading = 0
-        while True:
+        while not self.want_abort:
             try:
-                reading = float(input("Enter balance reading: "))
-                while True:
-                    print("Mass reading:", reading, self._unit)
-                    check = input('If correct, press any key. If not correct, re-enter balance reading')
-                    if len(check) < 2:
+                reading = prompt.double("Enter balance reading: ", precision=1, title='Reading')
+                if not reading:
+                    self._want_abort = True
+                print('abort flag in reading', self.want_abort)
+                while not self.want_abort:
+                    #print("Mass reading:", reading, self._unit)
+                    item = prompt.item("Mass reading: "+str(reading)+' '+self._unit+
+                                     '\n \nIs this reading correct?', ['Yes', 'No', 'Abort weighing'])
+                    if item == 'Yes':
                         break
-                    reading = float(check)
+                    elif item =='Abort weighing':
+                        print('abort flagged in reading', self.want_abort)
+                        self._want_abort = True
+                        break
+                    reading = prompt.double("Enter balance reading: ", precision=1, title='Reading')
             except ValueError:
-                if reading == 'abort' or reading == 'cancel':
-                    raise KeyboardInterrupt
-                else:
-                    print("Invalid entry")
-                    continue
+                log.error("Invalid entry")
+                continue
             else:
                 break
         log.info('Mass reading: '+str(reading)+' '+str(self._unit))
         return reading
 
     def get_mass_stable(self):
-        print('Waiting for stable reading')
-        try:
+        while not self.want_abort:
+            log.info('Waiting for stable reading')
             sleep(self.stable_wait)
             reading = self.get_mass_instant()
             return reading
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt

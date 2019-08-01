@@ -1,7 +1,7 @@
 import sys
 
 from msl.qt import application, QtWidgets, Button, excepthook, Logger
-from msl.qt.sleep import Sleep
+
 from src.log import log
 from src.gui.widgets.housekeeping import Housekeeping
 from src.gui.widgets.scheme_table import SchemeTable

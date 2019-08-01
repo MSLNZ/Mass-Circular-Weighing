@@ -31,12 +31,12 @@ def do_new_weighing(app, client, bal_alias, folder, filename, scheme_entry, nomi
     run_id = get_next_run_id(root, scheme_entry)
 
     weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, omega=omega_instance, **metadata)
-    if not weighing_root:
-        return False
+    #if not weighing_root:
+        #return False
 
-    weigh_analysis = analyse_weighing(weighing_root, url, scheme_entry, run_id, timed, drift)
+    #weigh_analysis = analyse_weighing(weighing_root, url, scheme_entry, run_id, timed, drift)
 
-    return weigh_analysis.metadata.get('Acceptance met?')
+    #return weigh_analysis.metadata.get('Acceptance met?')
 
 
 if __name__ == "__main__":
@@ -45,12 +45,12 @@ if __name__ == "__main__":
     ### initialise application
     app = Application(config)
 
-    client = 'AsureQ_Mar'
-    folder = r'C:\Users\r.hawke.IRL\PycharmProjects\test_json_files\AsureQ_Mar'  # use full path
+    client = 'Demo1'
+    folder = r'C:\Users\r.hawke.IRL\PycharmProjects\test_json_files\Demo1'  # use full path
 
     ### specify balance to use for weighing, and weights in comparison
-    scheme_entry = "5000 5000MA 5000MB"
-    # "1a 1b 1c 1d"
+    scheme_entry = "1a 1b 1c 1d" # "5000 5000MA 5000MB"
+
     #"2000 2000MA 2000MB"  "1000 1000MA 1000MB"
     # "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example
     # "1 1s 0.5+0.5s" #

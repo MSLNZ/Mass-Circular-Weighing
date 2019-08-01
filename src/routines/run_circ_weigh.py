@@ -54,6 +54,9 @@ def do_circ_weighing(bal, se, root, url, run_id, omega=None, **metadata):
     metadata['Time unit'] = 'min'
 
     ambient_pre = check_ambient_pre(omega)
+    if not ambient_pre:
+        log.error('Ambient conditions not suitable for weighing')
+        return None
     for key, value in ambient_pre.items():
         metadata[key] = value
 
@@ -71,43 +74,46 @@ def do_circ_weighing(bal, se, root, url, run_id, omega=None, **metadata):
     weighdata.add_metadata(**metadata)
 
     # do circular weighing, allowing for keyboard interrupt:
-    try:
+    print('first abort flag', bal.want_abort)
+    while not bal.want_abort:
         times = []
         t0 = 0
         for cycle in range(weighing.num_cycles):
             for pos in range(weighing.num_wtgrps):
-                mass = weighing.wtgrps[pos]
-                bal.load_bal(mass)
-                reading = bal.get_mass_stable()
-                if not times:
-                    time = 0
-                    t0 = perf_counter()
-                else:
-                    time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
-                times.append(time)
-                weighdata[cycle, pos, :] = [time, reading]
-                root.save(url=url, mode='w', ensure_ascii=False)
-                bal.unload_bal(mass)
+                while not bal.want_abort:
+                    print('abort flag in run circ weigh program', bal.want_abort)
+                    mass = weighing.wtgrps[pos]
+                    bal.load_bal(mass)
+                    reading = bal.get_mass_stable()
+                    if not times:
+                        time = 0
+                        t0 = perf_counter()
+                    else:
+                        time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
+                    times.append(time)
+                    weighdata[cycle, pos, :] = [time, reading]
+                    root.save(url=url, mode='w', ensure_ascii=False)
+                    bal.unload_bal(mass)
 
-    except (KeyboardInterrupt, SystemExit):
-        log.info('Circular weighing sequence aborted')
-        metadata['Weighing complete'] = False
+    while not bal.want_abort:
+        ambient_post = check_ambient_post(omega, ambient_pre)
+        for key, value in ambient_post.items():
+            metadata[key] = value
+
+        metadata['Weighing complete'] = True
         weighdata.add_metadata(**metadata)
         root.save(url=url, mode='w', ensure_ascii=False)
 
-        return None
+        log.debug('weighdata:\n'+str(weighdata[:, :, :]))
 
-    ambient_post = check_ambient_post(omega, ambient_pre)
-    for key, value in ambient_post.items():
-        metadata[key] = value
+        return root
 
-    metadata['Weighing complete'] = True
+    log.info('Circular weighing sequence aborted')
+    metadata['Weighing complete'] = False
     weighdata.add_metadata(**metadata)
     root.save(url=url, mode='w', ensure_ascii=False)
 
-    log.debug('weighdata:\n'+str(weighdata[:, :, :]))
-
-    return root
+    return None
 
 
 def check_ambient_pre(omega):
@@ -177,6 +183,8 @@ def check_ambient_post(omega, ambient_pre):
     except:
         log.error('Omega logger is not present or could not be read')
         ambient_post = {'T_post'+IN_DEGREES_C: 20.0, 'RH_post (%)': 50.0}
+
+
 
     if (ambient_pre['T_pre'+IN_DEGREES_C] - ambient_post['T_post'+IN_DEGREES_C]) ** 2 > MAX_T_CHANGE**2:
         ambient_post['Ambient OK?'] = False
