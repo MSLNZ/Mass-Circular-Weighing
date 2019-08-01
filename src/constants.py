@@ -12,7 +12,7 @@ IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 MIN_T = 18.1                # temperature limits at beginning of weighing
 MAX_T = 21.9
 
-MIN_RH = 32                 # humidity limits at beginning of weighing
+MIN_RH = 33                 # humidity limits at beginning of weighing
 MAX_RH = 67
 
 MAX_T_CHANGE = 0.5          # max allowed change in T IN_DEGREES_C over course of weighing
