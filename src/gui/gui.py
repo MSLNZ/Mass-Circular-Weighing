@@ -1,11 +1,11 @@
 import sys
+
 from msl.qt import application, QtWidgets, Button, excepthook, Logger
 from src.log import log
-from src.routines.do_new_weighing import do_new_weighing
-from src.application import Application
 from src.gui.widgets.housekeeping import Housekeeping
 from src.gui.widgets.scheme_table import SchemeTable
-from src.constants import MAX_BAD_RUNS
+from src.gui.widgets.mde_popup import WeighingThread
+
 
 
 def make_table_panel():
@@ -20,55 +20,32 @@ def make_table_panel():
     return central_panel_group
 
 
-def do_single_weighing(app, bal_alias, scheme_entry, nom_mass_str, ):
-
-    client = housekeeping.client
-    folder = housekeeping.folder
-    filename = housekeeping.client + '_' + nom_mass_str
-    nominal_mass = float(nom_mass_str)
-    omega_alias = housekeeping.omega
-    timed = housekeeping.timed
-    drift = housekeeping.drift
-
-    ok = do_new_weighing(app, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
-                    omega_alias, timed, drift)
-
-    return ok
-
-
 def collect_n_good_runs():
-    app = Application(housekeeping.config)
+    info = housekeeping.info
     row = schemetable.currentRow()
     log.info('Row ' + str(row + 1) + ' selected for weighing')
 
+    schemetable.update_se_status(row, 'Running')
+    print('running')
+
     se_row_data = schemetable.get_row_info(row)
-    scheme_entry = se_row_data[0]
-    nom_mass_str = se_row_data[1]
-    bal_alias = se_row_data[2]
-    num_runs = se_row_data[3]
+    thread.transfer_info(se_row_data)
 
-    mode = app.equipment[bal_alias].user_defined['weighing_mode']
+    thread.show()
 
-    i = 0
-    bad = 0
-    while i < float(num_runs) and bad < MAX_BAD_RUNS:
-        print('Collected '+ str(i) + ' acceptable weighing(s) of ' + num_runs)
-        ok = do_single_weighing(app, bal_alias, scheme_entry, nom_mass_str,)
-        if ok:
-            i += 1
-        elif mode == 'aw':
-            i += 1
-        else:
-            bad += 1
+    thread.start(thread.update_cyc_pos, thread.update_reading, se_row_data, info)
 
-    print('Finished weighing ' + scheme_entry)
+    #while not thread.good_runs:
+    #    sleep(15)
 
+    #schemetable.update_se_status(row, 'Finished')
 
 
 sys.excepthook = excepthook
 
 gui = application()
 
+thread = WeighingThread()
 
 w = QtWidgets.QWidget()
 w.setWindowTitle('Mass Calibration: Main Window')
@@ -77,17 +54,17 @@ w.setWindowTitle('Mass Calibration: Main Window')
 housekeeping = Housekeeping()
 lhs_panel_group = housekeeping.lhs_panel_group()
 
-
-
 schemetable = SchemeTable()
 central_panel_group = make_table_panel()
 
 layout = QtWidgets.QHBoxLayout()
 layout.addWidget(lhs_panel_group)
 layout.addWidget(central_panel_group)
+
 layout.addWidget(Logger(log))
 
 w.setLayout(layout)
+w.resize(1300, 400)
 
 w.show()
 gui.exec()

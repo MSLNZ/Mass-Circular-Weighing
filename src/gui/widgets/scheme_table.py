@@ -26,6 +26,7 @@ class SchemeTable(QtWidgets.QTableWidget):
         balance_io.addItems(balances)
         self.setCellWidget(row_no, 2, balance_io)
         self.setCellWidget(row_no, 3, QtWidgets.QSpinBox())
+        self.setCellWidget(row_no, 4, QtWidgets.QLabel())
 
     def vert_header_menu(self, pos):
         row = self.currentRow()
@@ -69,6 +70,9 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         except AttributeError:
             log.error('Incomplete data in selected row')
+
+    def update_se_status(self, row, status):
+        self.cellWidget(row, 4).setText(status)
 
     #TODO: enable drag and drop using self.dropEvent
 

@@ -1,6 +1,7 @@
 from msl.qt import QtWidgets, Button
 from src.log import log
 from src.constants import config_default, stds, omega_loggers
+from src.application import Application
 
 from src.gui.widgets.browse import Browse, label
 
@@ -30,7 +31,8 @@ class Housekeeping(QtWidgets.QWidget):
 
         self.corr_io = QtWidgets.QLineEdit('None')
 
-        self.go = Button(text='Confirm set up', left_click=self.collate_housekeeping)
+        self.app = None
+        self.go = Button(text='Confirm set up', left_click=self.initialise_app)
 
     def arrange_housekeeping_box(self):
         self.formGroup = QtWidgets.QGroupBox()
@@ -114,7 +116,7 @@ class Housekeeping(QtWidgets.QWidget):
     def correlations(self):
         return self.corr_io.text()
 
-    def collate_housekeeping(self):
+    def initialise_app(self):
         log.info('Config file: '+ self.config)
         log.info('Save folder: ' + self.folder)
         log.info('Client: ' + self.client)
@@ -126,4 +128,22 @@ class Housekeeping(QtWidgets.QWidget):
         log.info('Use measurement times? ' + str(self.timed))
         log.info('Correlations between standards? ' + self.correlations)
 
+        self.app = Application(self.config)
+
         return True
+
+    @property
+    def info(self):
+        info = {
+            'App': self.app,
+            'Config file': self.config,
+            'Folder': self.folder,
+            'Client': self.client,
+            'Client masses': self.client_masses,
+            'Standard mass set': self.std_set,
+            'Check mass set':self.check_set,
+            'Omega logger': self.omega,
+            'Drift correction': self.drift_io.currentText(),
+            'Use measurement times?':  str(self.timed),
+            'Correlations between standards?': self.correlations,}
+        return info
