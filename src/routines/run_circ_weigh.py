@@ -126,23 +126,30 @@ def check_ambient_pre(omega):
 
     try:
         ambient = omega.get_t_rh()
-        ambient_pre = {'T_pre'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_pre (%)': ambient['RH (%)']}
-        log.info('Ambient conditions:\n'+
-                 'Temperature'+IN_DEGREES_C+': '+str(ambient['T'+IN_DEGREES_C])+
-                 'Humidity (%): '+str(ambient['RH (%)']))
-    except:
-        log.error('Omega logger is not present or could not be read')
-        ambient_pre = {'T_pre'+IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
+    except ConnectionAbortedError:
+        try:
+            ambient = omega.get_t_rh()
+        except ConnectionAbortedError:
+            log.error('Omega logger is not present or could not be read')
+            ambient_pre = {'T_pre' + IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
+            return ambient_pre
+
+    ambient_pre = {'T_pre'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_pre (%)': ambient['RH (%)']}
+    log.info('Ambient conditions:\n'+
+             'Temperature'+IN_DEGREES_C+': '+str(ambient['T'+IN_DEGREES_C])+
+             '; Humidity (%): '+str(ambient['RH (%)']))
 
     if MIN_T < ambient_pre['T_pre'+IN_DEGREES_C] < MAX_T:
         log.info('Ambient temperature OK for weighing')
     else:
-        raise ValueError('Ambient temperature does not meet limits')
+        log.warning('Ambient temperature does not meet limits')
+        return False
 
     if MIN_RH < ambient_pre['RH_pre (%)'] < MAX_RH:
         log.info('Ambient humidity OK for weighing')
     else:
-        raise ValueError('Ambient humidity does not meet limits')
+        log.warning('Ambient humidity does not meet limits')
+        return False
 
     return ambient_pre
 
