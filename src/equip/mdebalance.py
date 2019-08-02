@@ -57,49 +57,48 @@ class Balance(object):
 
     def set_unit(self):
         """Prompts user to select the unit of mass from {mg, g, kg}"""
-        while True:
-            try:
-                self._unit = input('Please enter unit (µg or ug, mg, g, or kg):')
-                suffix = self._suffix[self._unit]
-            except:
-                print("Invalid entry")
-                continue
-            else:
-                break
+        if not self.want_abort:
+            self._unit = prompt.item('Please select unit', ['µg', 'mg', 'g', 'kg'],
+                                     title='Balance Preparation')
         return self._unit
 
     def zero_bal(self):
         """Prompts user to zero balance with no mass on balance"""
         if not self.want_abort:
-            zeroed = prompt.instruction("Zero balance with no load.")
+            zeroed = prompt.instruction("Zero balance with no load.",
+                                        title='Balance Preparation')
             if not zeroed:
                 self._want_abort = True
 
     def scale_adjust(self):
         """Prompts user to adjust scale using internal weights"""
         if not self.want_abort:
-            adjusted = prompt.instruction("Perform internal balance calibration.")
+            adjusted = prompt.instruction("Perform internal balance calibration.",
+                                          title='Balance Preparation')
             if not adjusted:
                 self._want_abort = True
 
     def tare_bal(self):
         """Prompts user to tare balance with correct tare load"""
         if not self.want_abort:
-            tared = prompt.instruction('Check that the balance has correct tare load, then tare balance.')
+            tared = prompt.instruction('Check that the balance has correct tare load, then tare balance.',
+                                       title='Balance Preparation')
             if not tared:
                 self._want_abort = True
 
     def load_bal(self, mass):
         """Prompts user to load balance with specified mass"""
         if not self.want_abort:
-            loaded = prompt.instruction('Load balance with mass '+mass+'.')
+            loaded = prompt.instruction('Load balance with mass '+mass+'.',
+                                        title='Circular Weighing')
             if not loaded:
                 self._want_abort = True
 
     def unload_bal(self, mass):
         """Prompts user to remove specified mass from balance"""
         if not self.want_abort:
-            unloaded = prompt.instruction('Unload mass '+mass+' from balance.')
+            unloaded = prompt.instruction('Unload mass '+mass+' from balance.',
+                                          title='Circular Weighing')
             if not unloaded:
                 self._want_abort = True
 
@@ -113,7 +112,8 @@ class Balance(object):
         reading = 0
         while not self.want_abort:
             try:
-                reading = prompt.double("Enter balance reading: ", precision=self.dp, title='Reading')
+                reading = prompt.double("Enter balance reading: ", precision=self.dp,
+                                        title='Circular Weighing')
                 if not reading and not reading == 0:
                     self._want_abort = True
                 while not self.want_abort:
@@ -124,7 +124,8 @@ class Balance(object):
                     elif result == 'Cancel':
                         self._want_abort = True
                         break
-                    reading = prompt.double("Enter balance reading: ", precision=self.dp, title='Reading')
+                    reading = prompt.double("Enter balance reading: ", precision=self.dp,
+                                            title='Circular Weighing')
             except ValueError:
                 log.error("Invalid entry")
                 continue
