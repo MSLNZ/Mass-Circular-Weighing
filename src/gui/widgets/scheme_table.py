@@ -13,6 +13,8 @@ class SchemeTable(QtWidgets.QTableWidget):
         self.setRowCount(10)
         self.setHorizontalHeaderLabels(['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# runs', 'Status'])
         self.resizeColumnsToContents()
+        header = self.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
 
         for i in range(self.rowCount()):
             self.set_cell_types(i)
