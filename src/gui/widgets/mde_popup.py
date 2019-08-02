@@ -21,19 +21,21 @@ def do_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, omeg
 
     ambient_pre = check_ambient_pre(omega)
     if not ambient_pre:
-        log.info('Measurement not started due to ambient conditions')
+        log.info('Measurement not started due to unsuitable ambient conditions')
         return False
     for key, value in ambient_pre.items():
         metadata[key] = value
 
-    log.info("Beginning circular weighing for scheme entry " + se + ' ' + run_id)
-    log.info('Number of weight groups in weighing = ' + str(weighing.num_wtgrps))
-    log.info('Number of cycles = ' + str(weighing.num_cycles))
-    log.info('Weight groups are positioned as follows:')
-
+    positionstr = ''
     for i in range(weighing.num_wtgrps):
-        log.info('Position ' + str(i + 1) + ': ' + weighing.wtgrps[i])
+        positionstr = positionstr + 'Position '+ str(i + 1) + ': ' + weighing.wtgrps[i] + '\n'
         metadata['grp' + str(i + 1)] = weighing.wtgrps[i]
+
+    log.info("\nBeginning circular weighing for scheme entry "+ se +' '+ run_id +
+             '\nNumber of weight groups in weighing = '+ str(weighing.num_wtgrps) +
+             '\nNumber of cycles = '+ str(weighing.num_cycles) +
+             '\nWeight groups are positioned as follows:' +
+             '\n' + positionstr.strip('\n'))
 
     data = np.empty(shape=(weighing.num_cycles, weighing.num_wtgrps, 2))
     weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)
@@ -47,8 +49,8 @@ def do_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, omeg
                 if callback1 is not None:
                     callback1(run_id, cycle+1, pos+1, weighing.num_cycles, weighing.num_wtgrps)
                 mass = weighing.wtgrps[pos]
-                bal.load_bal(mass)                  # add callbacks here?
-                reading = bal.get_mass_stable()     # add callbacks here?
+                bal.load_bal(mass)
+                reading = bal.get_mass_stable()
                 if callback2 is not None:
                     callback2(reading, str(metadata['Unit']))
                 if not times:
@@ -133,10 +135,11 @@ class WeighingWorker(Worker):
         run_no = float(run_id.strip('run_'))
         while run_no < float(num_runs)+1 and bad < MAX_BAD_RUNS:
             print('got to beginning weighing')
-            weighing_root = do_weighing(bal, se, root, url, run_id,
-                                        callback1=self.callback, callback2=self.callback2, omega=omega_instance,
-                                        **metadata,)
-            ok = weighing_root #analyse weighing using timed and drift
+            #weighing_root = do_weighing(bal, se, root, url, run_id,
+            #                            callback1=self.callback, callback2=self.callback2, omega=omega_instance,
+            #                            **metadata,)
+            # should be able to call function directly from run_circ_weigh
+            ok = True# weighing_root #analyse weighing using timed and drift
             if ok:
                 print('ok =', ok)
                 run_no += 1
@@ -147,10 +150,15 @@ class WeighingWorker(Worker):
                 print('bad weighing')
                 bad += 1
 
+        if bad == MAX_BAD_RUNS:
+            log.error('Completed ' + str(run_no) + ' acceptable weighings of ' + num_runs)
+            return 'Failed'
+
         print('done all weighings for ' + se)
 
         self.good_runs = run_no
 
+        return 'Finished'
 
 
 

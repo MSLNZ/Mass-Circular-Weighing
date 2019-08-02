@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     config = r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing\config.xml'
     ### initialise application
-    app = Application(config)
+    app = Application(config, 'MET16A', 'MET16B')
 
     client = 'Demo1'
     folder = r'C:\Users\r.hawke.IRL\PycharmProjects\test_json_files\Demo1'  # use full path
