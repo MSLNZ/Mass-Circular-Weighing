@@ -41,7 +41,7 @@ def do_new_weighing(app, client, bal_alias, folder, filename, scheme_entry, nomi
 
 if __name__ == "__main__":
 
-    config = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\config.xml'
+    config = r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing\config.xml'
     ### initialise application
     app = Application(config)
 
@@ -54,13 +54,13 @@ if __name__ == "__main__":
     #"2000 2000MA 2000MB"  "1000 1000MA 1000MB"
     # "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example
     # "1 1s 0.5+0.5s" #
-    nominal_mass = 5000  # nominal mass in g
+    nominal_mass = 1000  # nominal mass in g
     bal_alias = 'AX10005' # codename for balance
     omega_alias = 'Omega'
 
     filename = client + '_' + str(nominal_mass) # + '_' + run_id
 
-    for i in range(2):
+    for i in range(1):
         do_new_weighing(app, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
                    omega_alias=omega_alias, timed=False, drift='linear drift')
 

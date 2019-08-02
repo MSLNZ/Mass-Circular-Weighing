@@ -48,52 +48,57 @@ def get_next_run_id(root, scheme_entry):
     return run_id
 
 
-def do_circ_weighing(bal, se, root, url, run_id, omega=None, **metadata):
+def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, omega=None, **metadata):
 
     metadata['Mmt Timestamp'] = datetime.now().isoformat(sep=' ', timespec='minutes')
     metadata['Time unit'] = 'min'
 
     ambient_pre = check_ambient_pre(omega)
     if not ambient_pre:
-        log.error('Ambient conditions not suitable for weighing')
-        return None
+        log.info('Measurement not started due to unsuitable ambient conditions')
+        return False
     for key, value in ambient_pre.items():
         metadata[key] = value
 
-    print("Beginning circular weighing for scheme entry", se, run_id)
     weighing = CircWeigh(se)
-    print('Number of weight groups in weighing =', weighing.num_wtgrps)
-    print('Number of cycles =', weighing.num_cycles)
-    print('Weight groups are positioned as follows:')
+    positionstr = ''
     for i in range(weighing.num_wtgrps):
-        print('Position', str(i + 1) + ':', weighing.wtgrps[i])
+        positionstr = positionstr + 'Position '+ str(i + 1) + ': ' + weighing.wtgrps[i] + '\n'
         metadata['grp' + str(i + 1)] = weighing.wtgrps[i]
+
+    log.info("\nBeginning circular weighing for scheme entry "+ se +' '+ run_id +
+             '\nNumber of weight groups in weighing = '+ str(weighing.num_wtgrps) +
+             '\nNumber of cycles = '+ str(weighing.num_cycles) +
+             '\nWeight groups are positioned as follows:' +
+             '\n' + positionstr.strip('\n'))
 
     data = np.empty(shape=(weighing.num_cycles, weighing.num_wtgrps, 2))
     weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)
     weighdata.add_metadata(**metadata)
 
     # do circular weighing, allowing for keyboard interrupt:
-    print('first abort flag', bal.want_abort)
     while not bal.want_abort:
         times = []
         t0 = 0
         for cycle in range(weighing.num_cycles):
             for pos in range(weighing.num_wtgrps):
-                while not bal.want_abort:
-                    print('abort flag in run circ weigh program', bal.want_abort)
-                    mass = weighing.wtgrps[pos]
-                    bal.load_bal(mass)
-                    reading = bal.get_mass_stable()
-                    if not times:
-                        time = 0
-                        t0 = perf_counter()
-                    else:
-                        time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
-                    times.append(time)
-                    weighdata[cycle, pos, :] = [time, reading]
-                    root.save(url=url, mode='w', ensure_ascii=False)
-                    bal.unload_bal(mass)
+                if callback1 is not None:
+                    callback1(run_id, cycle+1, pos+1, weighing.num_cycles, weighing.num_wtgrps)
+                mass = weighing.wtgrps[pos]
+                bal.load_bal(mass)
+                reading = bal.get_mass_stable()
+                if callback2 is not None:
+                    callback2(reading, str(metadata['Unit']))
+                if not times:
+                    time = 0
+                    t0 = perf_counter()
+                else:
+                    time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
+                times.append(time)
+                weighdata[cycle, pos, :] = [time, reading]
+                root.save(url=url, mode='w', ensure_ascii=False)
+                bal.unload_bal(mass)
+        break
 
     while not bal.want_abort:
         ambient_post = check_ambient_post(omega, ambient_pre)
