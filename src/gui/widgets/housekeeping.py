@@ -1,6 +1,6 @@
 from msl.qt import QtWidgets, Button
 from src.log import log
-from src.constants import config_default, stds, omega_loggers
+from src.constants import config_default, save_folder_default, stds, omega_loggers
 from src.application import Application
 
 from src.gui.widgets.browse import Browse, label
@@ -11,9 +11,9 @@ class Housekeeping(QtWidgets.QWidget):
         super(Housekeeping, self).__init__()
 
         self.config_io = Browse(config_default, 'shell32|4')
-        self.folder_io = Browse('', 'shell32|4')
+        self.folder_io = Browse(save_folder_default, 'shell32|4')
         self.client_io = QtWidgets.QLineEdit('Client')
-        self.client_masses_io = QtWidgets.QLineEdit()
+        self.client_masses_io = QtWidgets.QLineEdit('1 2 5 10 20 50')
 
         self.cb_stds_io = QtWidgets.QComboBox()
         self.cb_stds_io.addItems(stds)
@@ -128,7 +128,7 @@ class Housekeeping(QtWidgets.QWidget):
         log.info('Use measurement times? ' + str(self.timed))
         log.info('Correlations between standards? ' + self.correlations)
 
-        self.app = Application(self.config)
+        self.app = Application(self.config, self.std_set, self.check_set)
 
         return True
 

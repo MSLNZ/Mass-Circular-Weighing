@@ -25,6 +25,7 @@ EXCL = 3                    # criterion for excluding a single weighing within a
 
 
 config_default = r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing\config.xml'
+save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
 stds = [                    # options for standards and check masses
     'MET16A',
     'MET16B',
