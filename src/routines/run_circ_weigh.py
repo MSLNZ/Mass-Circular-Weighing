@@ -48,37 +48,47 @@ def get_next_run_id(root, scheme_entry):
     return run_id
 
 
-def do_circ_weighing(bal, se, root, url, run_id, omega=None, **metadata):
+def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, omega=None, **metadata):
 
     metadata['Mmt Timestamp'] = datetime.now().isoformat(sep=' ', timespec='minutes')
     metadata['Time unit'] = 'min'
 
     ambient_pre = check_ambient_pre(omega)
+    if not ambient_pre:
+        log.info('Measurement not started due to unsuitable ambient conditions')
+        return False
     for key, value in ambient_pre.items():
         metadata[key] = value
 
-    print("Beginning circular weighing for scheme entry", se, run_id)
     weighing = CircWeigh(se)
-    print('Number of weight groups in weighing =', weighing.num_wtgrps)
-    print('Number of cycles =', weighing.num_cycles)
-    print('Weight groups are positioned as follows:')
+    positionstr = ''
     for i in range(weighing.num_wtgrps):
-        print('Position', str(i + 1) + ':', weighing.wtgrps[i])
+        positionstr = positionstr + 'Position '+ str(i + 1) + ': ' + weighing.wtgrps[i] + '\n'
         metadata['grp' + str(i + 1)] = weighing.wtgrps[i]
+
+    log.info("\nBeginning circular weighing for scheme entry "+ se +' '+ run_id +
+             '\nNumber of weight groups in weighing = '+ str(weighing.num_wtgrps) +
+             '\nNumber of cycles = '+ str(weighing.num_cycles) +
+             '\nWeight groups are positioned as follows:' +
+             '\n' + positionstr.strip('\n'))
 
     data = np.empty(shape=(weighing.num_cycles, weighing.num_wtgrps, 2))
     weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)
     weighdata.add_metadata(**metadata)
 
     # do circular weighing, allowing for keyboard interrupt:
-    try:
+    while not bal.want_abort:
         times = []
         t0 = 0
         for cycle in range(weighing.num_cycles):
             for pos in range(weighing.num_wtgrps):
+                if callback1 is not None:
+                    callback1(run_id, cycle+1, pos+1, weighing.num_cycles, weighing.num_wtgrps)
                 mass = weighing.wtgrps[pos]
                 bal.load_bal(mass)
                 reading = bal.get_mass_stable()
+                if callback2 is not None:
+                    callback2(reading, str(metadata['Unit']))
                 if not times:
                     time = 0
                     t0 = perf_counter()
@@ -88,26 +98,27 @@ def do_circ_weighing(bal, se, root, url, run_id, omega=None, **metadata):
                 weighdata[cycle, pos, :] = [time, reading]
                 root.save(url=url, mode='w', ensure_ascii=False)
                 bal.unload_bal(mass)
+        break
 
-    except (KeyboardInterrupt, SystemExit):
-        log.info('Circular weighing sequence aborted')
-        metadata['Weighing complete'] = False
+    while not bal.want_abort:
+        ambient_post = check_ambient_post(omega, ambient_pre)
+        for key, value in ambient_post.items():
+            metadata[key] = value
+
+        metadata['Weighing complete'] = True
         weighdata.add_metadata(**metadata)
         root.save(url=url, mode='w', ensure_ascii=False)
 
-        return None
+        log.debug('weighdata:\n'+str(weighdata[:, :, :]))
 
-    ambient_post = check_ambient_post(omega, ambient_pre)
-    for key, value in ambient_post.items():
-        metadata[key] = value
+        return root
 
-    metadata['Weighing complete'] = True
+    log.info('Circular weighing sequence aborted')
+    metadata['Weighing complete'] = False
     weighdata.add_metadata(**metadata)
     root.save(url=url, mode='w', ensure_ascii=False)
 
-    log.debug('weighdata:\n'+str(weighdata[:, :, :]))
-
-    return root
+    return None
 
 
 def check_ambient_pre(omega):
@@ -126,21 +137,30 @@ def check_ambient_pre(omega):
 
     try:
         ambient = omega.get_t_rh()
-        ambient_pre = {'T_pre'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_pre (%)': ambient['RH (%)']}
-        log.info('Ambient conditions:\n'+str(ambient_pre))
-    except:
-        log.error('Omega logger is not present or could not be read')
-        ambient_pre = {'T_pre'+IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
+    except ConnectionAbortedError:
+        try:
+            ambient = omega.get_t_rh()
+        except ConnectionAbortedError:
+            log.error('Omega logger is not present or could not be read')
+            ambient_pre = {'T_pre' + IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
+            return ambient_pre
+
+    ambient_pre = {'T_pre'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_pre (%)': ambient['RH (%)']}
+    log.info('Ambient conditions:\n'+
+             'Temperature'+IN_DEGREES_C+': '+str(ambient['T'+IN_DEGREES_C])+
+             '; Humidity (%): '+str(ambient['RH (%)']))
 
     if MIN_T < ambient_pre['T_pre'+IN_DEGREES_C] < MAX_T:
         log.info('Ambient temperature OK for weighing')
     else:
-        raise ValueError('Ambient temperature does not meet limits')
+        log.warning('Ambient temperature does not meet limits')
+        return False
 
     if MIN_RH < ambient_pre['RH_pre (%)'] < MAX_RH:
         log.info('Ambient humidity OK for weighing')
     else:
-        raise ValueError('Ambient humidity does not meet limits')
+        log.warning('Ambient humidity does not meet limits')
+        return False
 
     return ambient_pre
 
@@ -168,6 +188,8 @@ def check_ambient_post(omega, ambient_pre):
     except:
         log.error('Omega logger is not present or could not be read')
         ambient_post = {'T_post'+IN_DEGREES_C: 20.0, 'RH_post (%)': 50.0}
+
+
 
     if (ambient_pre['T_pre'+IN_DEGREES_C] - ambient_post['T_post'+IN_DEGREES_C]) ** 2 > MAX_T_CHANGE**2:
         ambient_post['Ambient OK?'] = False
@@ -268,5 +290,5 @@ def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
             analyse_weighing(root, url, se, run_id, timed, drift)
             i += 1
         except KeyError:
-            print('No more runs to analyse')
+            log.info('No more runs to analyse')
             break

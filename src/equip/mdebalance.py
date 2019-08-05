@@ -3,6 +3,7 @@
 from ..constants import SUFFIX
 from ..log import log
 from time import sleep
+from msl.qt import prompt
 
 
 class Balance(object):
@@ -23,47 +24,83 @@ class Balance(object):
         except:
             self.set_unit()
 
+        try:
+            resolution = record.user_defined['resolution'].split()
+            self._resolution = float(resolution[0])*SUFFIX[resolution[1]]/SUFFIX[self.unit]
+        except:
+             self._resolution = 0.000001
+        self.dp = self.calc_dp()
+
         self.stable_wait = record.user_defined['stable_wait']
         # wait time in seconds for balance reading to stabilise
 
+        self._want_abort = False
 
     @property
     def unit(self):
         return str(self._unit)
 
+    @property
+    def resolution(self):
+        return self._resolution
+
+    @property
+    def want_abort(self):
+        return self._want_abort
+
+    def calc_dp(self):
+        str = "{:.0e}".format(self.resolution)
+        e = float(str.split('e')[1])
+        if e < 0:
+            return -e
+        return 0
+
     def set_unit(self):
         """Prompts user to select the unit of mass from {mg, g, kg}"""
-        while True:
-            try:
-                self._unit = input('Please enter unit (µg or ug, mg, g, or kg):')
-                suffix = self._suffix[self._unit]
-            except:
-                print("Invalid entry")
-                continue
-            else:
-                break
+        if not self.want_abort:
+            self._unit = prompt.item('Please select unit', ['µg', 'mg', 'g', 'kg'],
+                                     title='Balance Preparation')
         return self._unit
 
     def zero_bal(self):
         """Prompts user to zero balance with no mass on balance"""
-        input("Zero balance with no load, then press enter to continue.")
+        if not self.want_abort:
+            zeroed = prompt.instruction("Zero balance with no load.",
+                                        title='Balance Preparation')
+            if not zeroed:
+                self._want_abort = True
 
     def scale_adjust(self):
         """Prompts user to adjust scale using internal weights"""
-        input("Perform internal balance calibration, then press enter to continue.")
+        if not self.want_abort:
+            adjusted = prompt.instruction("Perform internal balance calibration.",
+                                          title='Balance Preparation')
+            if not adjusted:
+                self._want_abort = True
 
     def tare_bal(self):
         """Prompts user to tare balance with correct tare load"""
-        input('Check that the balance has correct tare load, then press enter to continue.')
-        input("Tare balance, then press enter to continue.")
+        if not self.want_abort:
+            tared = prompt.instruction('Check that the balance has correct tare load, then tare balance.',
+                                       title='Balance Preparation')
+            if not tared:
+                self._want_abort = True
 
     def load_bal(self, mass):
         """Prompts user to load balance with specified mass"""
-        input('Load balance with mass '+mass+', then press enter to continue.')
+        if not self.want_abort:
+            loaded = prompt.instruction('Load balance with mass '+mass+'.',
+                                        title='Circular Weighing')
+            if not loaded:
+                self._want_abort = True
 
     def unload_bal(self, mass):
         """Prompts user to remove specified mass from balance"""
-        input('Unload mass '+mass+' from balance, then press enter to continue.')
+        if not self.want_abort:
+            unloaded = prompt.instruction('Unload mass '+mass+' from balance.',
+                                          title='Circular Weighing')
+            if not unloaded:
+                self._want_abort = True
 
     def get_mass_instant(self):
         """Asks user to enter mass from balance
@@ -73,31 +110,33 @@ class Balance(object):
             mass (in unit set for balance when initialised)
         """
         reading = 0
-        while True:
+        while not self.want_abort:
             try:
-                reading = float(input("Enter balance reading: "))
-                while True:
-                    print("Mass reading:", reading, self._unit)
-                    check = input('If correct, press any key. If not correct, re-enter balance reading')
-                    if len(check) < 2:
+                reading = prompt.double("Enter balance reading: ", precision=self.dp,
+                                        title='Circular Weighing')
+                if not reading and not reading == 0:
+                    self._want_abort = True
+                while not self.want_abort:
+                    result = prompt.y_n_cancel("Mass reading: "+str(reading)+' '+self._unit+
+                                     '\n \nIs this reading correct?')
+                    if result == 'Yes':
                         break
-                    reading = float(check)
+                    elif result == 'Cancel':
+                        self._want_abort = True
+                        break
+                    reading = prompt.double("Enter balance reading: ", precision=self.dp,
+                                            title='Circular Weighing')
             except ValueError:
-                if reading == 'abort' or reading == 'cancel':
-                    raise KeyboardInterrupt
-                else:
-                    print("Invalid entry")
-                    continue
+                log.error("Invalid entry")
+                continue
             else:
                 break
         log.info('Mass reading: '+str(reading)+' '+str(self._unit))
         return reading
 
     def get_mass_stable(self):
-        print('Waiting for stable reading')
-        try:
+        while not self.want_abort:
+            log.info('Waiting for stable reading')
             sleep(self.stable_wait)
             reading = self.get_mass_instant()
             return reading
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt

@@ -11,17 +11,17 @@ import numpy as np
 
 class Application(object):
 
-    def __init__(self, config):
+    def __init__(self, config, stdset, checkset):
 
         self.cfg = Config(config)               # loads cfg file
         self.db = self.cfg.database()           # loads database
         self.equipment = self.db.equipment      # loads subset of database with equipment being used
 
-        self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': MettlerToledo}
+        self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': Balance}
         # TODO: add aw class for automatic loading balance
 
-        self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/path').text, 'std')
-        self.all_checks = load_stds_from_set_file(self.cfg.root.find('checks/path').text, 'check')
+        self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/'+stdset).text, 'std')
+        self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+checkset).text, 'check')
 
     def get_bal_instance(self, alias, strict=True):
         """Selects balance class and returns balance instance
