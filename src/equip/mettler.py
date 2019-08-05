@@ -1,12 +1,13 @@
 '''Class for Mettler Toledo Balance with computer interface'''
 
 from ..log import log
+from src.constants import SUFFIX
 from time import perf_counter
 from .mdebalance import Balance
 from msl.equipment import MSLTimeoutError
 
 class MettlerToledo(Balance):
-    def __init__(self, record, reset=True):
+    def __init__(self, record, reset=False):
         """Initialise Mettler Toledo Balance via computer interface
 
         Parameters
@@ -68,7 +69,7 @@ class MettlerToledo(Balance):
                     if perf_counter()-t0 > self.intcaltimeout:
                         raise TimeoutError("Calibration took longer than expected")
                     else:
-                        log.debug('Waiting for internal calibration to complete')
+                        log.info('Waiting for internal calibration to complete')
 
         self._raise_error(m[0]+' '+m[1])
 
@@ -82,45 +83,87 @@ class MettlerToledo(Balance):
         self._raise_error(m[0]+' '+m[1])
 
     def get_mass_instant(self):
-        """Reads instantaneous mass from balance
+        """Reads instantaneous mass from balance. Includes a check that the balance has been read correctly.
 
         Returns
         -------
         float
-            mass in grams
+            mass in unit of balance
+        None
+            if serial read error
+        error code
+            if balance read correctly but error raised
         """
         m = self._query("SI").split()
-        if m[1] == 'S':
-            return float(m[2])*self._suffix[m[3]]
-        elif m[1] == 'D':
-            log.info('Reading is nonstable (dynamic) weight value')
-            return float(m[2])*self._suffix[m[3]]
-        self._raise_error(m[0]+' '+m[1])
+        if self.check_reading(m):
+            if m[1] == 'S':
+                return float(m[2])
+            elif m[1] == 'D':
+                log.info('Reading is nonstable (dynamic) weight value')
+                return float(m[2])
+            else:
+                return self._raise_error(m[0]+' '+m[1])
+        return None
 
     def get_mass_stable(self):
-        """Reads mass from balance when reading is stable
+        """Reads mass from balance when reading is stable.  Returns the average of three readings,
+        ensuring a maximum deviation between readings of twice the balance resolution.
 
         Returns
         -------
         float
-            mass in grams
+            mass in unit set for balance
         """
+        readings = []
+
         m = self._query("S").split()
-        if m[1] == 'S':
-            return float(m[2])*self._suffix[m[3]]
-        self._raise_error(m[0]+' '+m[1])
+        if self.check_reading(m):
+            if m[1] == 'S':
+                a = float(m[2])
+                readings.append(a)
+            else:
+                return self._raise_error(m[0] + ' ' + m[1])
+
+        t0 = perf_counter()
+        while perf_counter() - t0 < 30:
+            while len(readings) < 3:
+                b = self.get_mass_instant()
+                if type(b) == float:
+                    readings.append(b)
+                elif not b:
+                    continue
+                else:
+                    return b
+
+            if max(readings) - min(readings) < 2*self.resolution:
+                return sum(readings)/3
+
+        self._raise_error('U')
+
+    def check_reading(self, m):
+        if not m[3] == self.unit:
+            if self._suffix[m[3]]:
+                log.warning('Balance unit set to ' + self.unit + ' but received ' + m[3] +
+                            '. Unit and resolution are now in ' + m[3]+'.')
+                self._resolution = SUFFIX[self.unit]/SUFFIX[m[3]]*self.resolution
+                self._unit = m[3]
+                return True
+            else:
+                log.warning('Serial error when reading balance OR incorrect unit set')
+                return False
+        return True
 
     def _raise_error(self, errorkey):
-        raise ValueError(ERRORCODES.get(errorkey,'Unknown serial comms error'))
+        raise ValueError(ERRORCODES.get(errorkey,'Unknown serial communication error'))
 
 
 
 
 ERRORCODES = {
-    'Z I': 'Zero setting not performed (balance is currently executing another command, '
-           'e.g. taring, or timeout as stability was not reached).',
-    'Z +': 'Upper limit of zero setting range exceeded.',
-    'Z -': 'Lower limit of zero setting range exceeded',
+    'Z I':  'Zero setting not performed (balance is currently executing another command, '
+            'e.g. taring, or timeout as stability was not reached).',
+    'Z +':  'Upper limit of zero setting range exceeded.',
+    'Z -':  'Lower limit of zero setting range exceeded',
     'ZI I': 'Zero setting not performed (balance is currently executing another command, '
             'e.g. taring, or timeout as stability was not reached).',
     'ZI +': 'Upper limit of zero setting range exceeded.',
@@ -128,12 +171,13 @@ ERRORCODES = {
     'C3 I': 'A calibration can not be performed at present as another operation is taking place.',
     'C3 L': 'Calibration operation not possible, e.g. as internal weight missing.',
     'C3 C': 'The calibration was aborted as, e.g. stability not attained or the procedure was aborted with the C key.',
-    'T I': 'Taring not performed (balance is currently executing another command, '
-           'e.g. zero setting, or timeout as stability was not reached).',
-    'T +': 'Upper limit of taring range exceeded.',
-    'T -': 'Lower limit of taring range exceeded.',
-    'S I': 'Command not executable (balance is currently executing another command, '
-           'e.g. taring, or timeout as stability was not reached).',
-    'S +': 'Balance in overload range.',
-    'S -': 'Balance in underload range.'
+    'T I':  'Taring not performed (balance is currently executing another command, '
+            'e.g. zero setting, or timeout as stability was not reached).',
+    'T +':  'Upper limit of taring range exceeded.',
+    'T -':  'Lower limit of taring range exceeded.',
+    'S I':  'Command not executable (balance is currently executing another command, '
+            'e.g. taring, or timeout as stability was not reached).',
+    'S +':  'Balance in overload range.',
+    'S -':  'Balance in underload range.',
+    'U':    'Timed out while trying to obtain three close readings from get_mass_stable ',
 }
