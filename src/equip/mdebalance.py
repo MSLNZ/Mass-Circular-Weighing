@@ -49,6 +49,13 @@ class Balance(object):
         return self._want_abort
 
     def calc_dp(self):
+        """Calculates the number of decimal places displayed on the balance for convenient data entry
+
+        Returns
+        -------
+        :class:`float`
+            The number of decimal places displayed on the balance
+        """
         str = "{:.0e}".format(self.resolution)
         e = float(str.split('e')[1])
         if e < 0:
@@ -56,7 +63,13 @@ class Balance(object):
         return 0
 
     def set_unit(self):
-        """Prompts user to select the unit of mass from {mg, g, kg}"""
+        """Prompts user to select the unit of mass from µg, mg, g, and kg
+
+        Returns
+        -------
+        :class:`str`
+            'µg', 'mg', 'g', or 'kg'
+        """
         if not self.want_abort:
             self._unit = prompt.item('Please select unit', ['µg', 'mg', 'g', 'kg'],
                                      title='Balance Preparation')
@@ -65,7 +78,7 @@ class Balance(object):
     def zero_bal(self):
         """Prompts user to zero balance with no mass on balance"""
         if not self.want_abort:
-            zeroed = prompt.instruction("Zero balance with no load.",
+            zeroed = prompt.ok_cancel("Zero balance with no load.",
                                         title='Balance Preparation')
             if not zeroed:
                 self._want_abort = True
@@ -73,7 +86,7 @@ class Balance(object):
     def scale_adjust(self):
         """Prompts user to adjust scale using internal weights"""
         if not self.want_abort:
-            adjusted = prompt.instruction("Perform internal balance calibration.",
+            adjusted = prompt.ok_cancel("Perform internal balance calibration.",
                                           title='Balance Preparation')
             if not adjusted:
                 self._want_abort = True
@@ -81,7 +94,7 @@ class Balance(object):
     def tare_bal(self):
         """Prompts user to tare balance with correct tare load"""
         if not self.want_abort:
-            tared = prompt.instruction('Check that the balance has correct tare load, then tare balance.',
+            tared = prompt.ok_cancel('Check that the balance has correct tare load, then tare balance.',
                                        title='Balance Preparation')
             if not tared:
                 self._want_abort = True
@@ -89,7 +102,7 @@ class Balance(object):
     def load_bal(self, mass):
         """Prompts user to load balance with specified mass"""
         if not self.want_abort:
-            loaded = prompt.instruction('Load balance with mass '+mass+'.',
+            loaded = prompt.ok_cancel('Load balance with mass '+mass+'.',
                                         title='Circular Weighing')
             if not loaded:
                 self._want_abort = True
@@ -97,7 +110,7 @@ class Balance(object):
     def unload_bal(self, mass):
         """Prompts user to remove specified mass from balance"""
         if not self.want_abort:
-            unloaded = prompt.instruction('Unload mass '+mass+' from balance.',
+            unloaded = prompt.ok_cancel('Unload mass '+mass+' from balance.',
                                           title='Circular Weighing')
             if not unloaded:
                 self._want_abort = True
@@ -117,11 +130,11 @@ class Balance(object):
                 if not reading and not reading == 0:
                     self._want_abort = True
                 while not self.want_abort:
-                    result = prompt.y_n_cancel("Mass reading: "+str(reading)+' '+self._unit+
-                                     '\n \nIs this reading correct?')
-                    if result == 'Yes':
+                    result = prompt.yes_no_cancel("Mass reading: "+str(reading)+' '+self._unit+
+                                                  '\n \nIs this reading correct?')
+                    if result:
                         break
-                    elif result == 'Cancel':
+                    elif result is None:
                         self._want_abort = True
                         break
                     reading = prompt.double("Enter balance reading: ", precision=self.dp,

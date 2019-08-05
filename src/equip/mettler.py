@@ -5,6 +5,7 @@ from src.constants import SUFFIX
 from time import perf_counter
 from .mdebalance import Balance
 from msl.equipment import MSLTimeoutError
+from msl.qt import prompt
 
 class MettlerToledo(Balance):
     def __init__(self, record, reset=False):
@@ -75,7 +76,7 @@ class MettlerToledo(Balance):
 
     def tare_bal(self):
         """Tares balance after checking with user that tare load is correct"""
-        input('Check that the balance has correct tare load, then press enter to continue.')
+        prompt.ok_cancel('Check that the balance has correct tare load, then press enter to continue.')
         m = self._query("T").split()
         if m[1] == 'S':
             log.info('Balance tared with value '+m[2]+' '+m[3])
