@@ -5,7 +5,7 @@ from msl.qt import application, QtWidgets, Button, excepthook, Logger
 from src.log import log
 from src.gui.widgets.housekeeping import Housekeeping
 from src.gui.widgets.scheme_table import SchemeTable
-from src.gui.widgets.mde_popup import WeighingThread
+from src.gui.widgets.circweigh_popup import WeighingThread
 
 
 
@@ -26,7 +26,7 @@ def make_table_panel():
 def check_scheme_entries():
     for i in range(schemetable.rowCount()):
         try:
-            scheme_entry = schemetable.item(i, 0).text()
+            scheme_entry = schemetable.cellWidget(i, 0).text()
             for wtgrp in scheme_entry.split():
                 for mass in wtgrp.split('+'):
                     if mass not in housekeeping.client_masses \
@@ -37,6 +37,8 @@ def check_scheme_entries():
         except AttributeError:
             pass
 
+    log.info('Checked all scheme entries')
+
 
 def collect_n_good_runs():
     info = housekeeping.info
@@ -44,7 +46,6 @@ def collect_n_good_runs():
     log.info('Row ' + str(row + 1) + ' selected for weighing')
 
     schemetable.update_se_status(row, 'Running')
-    print('running')
 
     se_row_data = schemetable.get_row_info(row)
     thread.transfer_info(se_row_data)

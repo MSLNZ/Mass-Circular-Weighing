@@ -3,7 +3,9 @@
 from ..constants import SUFFIX
 from ..log import log
 from time import sleep
-from msl.qt import prompt
+
+from ..gui.prompt_thread import PromptThread
+prompt_thread = PromptThread()
 
 
 class Balance(object):
@@ -71,47 +73,53 @@ class Balance(object):
             'µg', 'mg', 'g', or 'kg'
         """
         if not self.want_abort:
-            self._unit = prompt.item('Please select unit', ['µg', 'mg', 'g', 'kg'],
-                                     title='Balance Preparation')
+            prompt_thread.show('item', 'Please select unit', ['µg', 'mg', 'g', 'kg'],
+                               title='Balance Preparation')
+            self._unit = prompt_thread.wait_for_prompt_reply()
         return self._unit
 
     def zero_bal(self):
         """Prompts user to zero balance with no mass on balance"""
         if not self.want_abort:
-            zeroed = prompt.ok_cancel("Zero balance with no load.",
-                                        title='Balance Preparation')
+            prompt_thread.show('ok_cancel', "Zero balance with no load.",
+                               title='Balance Preparation')
+            zeroed = prompt_thread.wait_for_prompt_reply()
             if not zeroed:
                 self._want_abort = True
 
     def scale_adjust(self):
         """Prompts user to adjust scale using internal weights"""
         if not self.want_abort:
-            adjusted = prompt.ok_cancel("Perform internal balance calibration.",
-                                          title='Balance Preparation')
+            prompt_thread.show('ok_cancel', "Perform internal balance calibration.",
+                               title='Balance Preparation')
+            adjusted = prompt_thread.wait_for_prompt_reply()
             if not adjusted:
                 self._want_abort = True
 
     def tare_bal(self):
         """Prompts user to tare balance with correct tare load"""
         if not self.want_abort:
-            tared = prompt.ok_cancel('Check that the balance has correct tare load, then tare balance.',
-                                       title='Balance Preparation')
+            prompt_thread.show('ok_cancel', 'Check that the balance has correct tare load, then tare balance.',
+                               title='Balance Preparation')
+            tared = prompt_thread.wait_for_prompt_reply()
             if not tared:
                 self._want_abort = True
 
     def load_bal(self, mass):
         """Prompts user to load balance with specified mass"""
         if not self.want_abort:
-            loaded = prompt.ok_cancel('Load balance with mass '+mass+'.',
-                                        title='Circular Weighing')
+            prompt_thread.show('ok_cancel', 'Load balance with mass '+mass+'.',
+                               title='Circular Weighing')
+            loaded = prompt_thread.wait_for_prompt_reply()
             if not loaded:
                 self._want_abort = True
 
     def unload_bal(self, mass):
         """Prompts user to remove specified mass from balance"""
         if not self.want_abort:
-            unloaded = prompt.ok_cancel('Unload mass '+mass+' from balance.',
-                                          title='Circular Weighing')
+            prompt_thread.show('ok_cancel', 'Unload mass '+mass+' from balance.',
+                               title='Circular Weighing')
+            unloaded = prompt_thread.wait_for_prompt_reply()
             if not unloaded:
                 self._want_abort = True
 
@@ -125,20 +133,23 @@ class Balance(object):
         reading = 0
         while not self.want_abort:
             try:
-                reading = prompt.double("Enter balance reading: ", precision=self.dp,
-                                        title='Circular Weighing')
+                prompt_thread.show('double', "Enter balance reading: ", precision=self.dp,
+                                   title='Circular Weighing')
+                reading = prompt_thread.wait_for_prompt_reply()
                 if not reading and not reading == 0:
                     self._want_abort = True
                 while not self.want_abort:
-                    result = prompt.yes_no_cancel("Mass reading: "+str(reading)+' '+self._unit+
-                                                  '\n \nIs this reading correct?')
+                    prompt_thread.show('yes_no_cancel', "Mass reading: "+str(reading)+' '+self._unit+
+                                       '\n \nIs this reading correct?')
+                    result = prompt_thread.wait_for_prompt_reply()
                     if result:
                         break
                     elif result is None:
                         self._want_abort = True
                         break
-                    reading = prompt.double("Enter balance reading: ", precision=self.dp,
-                                            title='Circular Weighing')
+                    prompt_thread.show('double', "Enter balance reading: ", precision=self.dp,
+                                       title='Circular Weighing')
+                    reading = prompt_thread.wait_for_prompt_reply()
             except ValueError:
                 log.error("Invalid entry")
                 continue

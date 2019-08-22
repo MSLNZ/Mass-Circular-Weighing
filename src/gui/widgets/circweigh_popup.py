@@ -1,7 +1,5 @@
-import time
 
-import sys
-from msl.qt import application, QtWidgets, Button, excepthook, Logger
+from msl.qt import QtWidgets, Button, excepthook, Logger
 from msl.qt.threading import Thread, Worker
 
 from src.constants import MAX_BAD_RUNS
@@ -21,9 +19,10 @@ class WeighingWorker(Worker):
         self.callback2 = callback2
         self.se_row_data = se_row_data
         self.info = info
-        self.good_runs = None
+        self.good_runs = 0
 
     def process(self):
+        # collating and sorting metadata
         se = self.se_row_data[0]
         nom_mass_str = self.se_row_data[1]
         bal_alias = self.se_row_data[2]
@@ -55,38 +54,43 @@ class WeighingWorker(Worker):
         filename = client + '_' + nom_mass_str  # + '_' + run_id
         url = folder + "\\" + filename + '.json'
         root = check_for_existing_weighdata(folder, url, se)
-        run_id = get_next_run_id(root, se)
+        run_id_1 = get_next_run_id(root, se)
 
         log.debug(str(self.info))
 
+        run = 0
         bad = 0
-        run_no = float(run_id.strip('run_'))
-        while run_no < float(num_runs)+1 and bad < MAX_BAD_RUNS:
-            print('got to beginning weighing')
+        run_no_1 = int(run_id_1.strip('run_'))
+        while run < float(num_runs)+MAX_BAD_RUNS+1 and bad < MAX_BAD_RUNS:
+            run_id = 'run_' + str(round(run_no_1+run, 0))
             weighing_root = do_circ_weighing(bal, se, root, url, run_id,
                                         callback1=self.callback, callback2=self.callback2, omega=omega_instance,
                                         **metadata,)
-            # should be able to call function directly from run_circ_weigh
-            ok = weighing_root #analyse weighing using timed and drift
+            ok = weighing_root # here want to analyse weighing using timed and drift
             if ok:
                 print('ok =', ok)
-                run_no += 1
+                self.good_runs += 1
             elif mode == 'aw':
                 print('allowed')
-                run_no += 1
+                self.good_runs += 1
             else:
                 print('bad weighing')
                 bad += 1
 
+            if self.good_runs == float(num_runs):
+                break
+
+            run += 1
+            bal._want_abort = False
+
+
         if bad == MAX_BAD_RUNS:
-            log.error('Completed ' + str(run_no) + ' acceptable weighings of ' + num_runs)
-            return 'Failed'
+            log.error('Completed ' + str(self.good_runs) + ' acceptable weighings of ' + num_runs)
+            return 'Failed' # check this...
 
-        print('done all weighings for ' + se)
+        print('Finished weighings for ' + se)
 
-        self.good_runs = run_no
-
-        return 'Finished'
+        return self.good_runs
 
 
 class WeighingThread(Thread):

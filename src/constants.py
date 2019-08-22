@@ -1,5 +1,7 @@
 # A repository for constants and symbols used in the mass weighing program
 
+import os
+
 MU_STR = 'µ'                # ALT+0181 or 'µ'
 SIGMA_STR = 'σ'             # \u03C3 for sigma sign
 SQUARED_STR = '²'
@@ -12,7 +14,7 @@ IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 MIN_T = 18.1                # temperature limits at beginning of weighing
 MAX_T = 21.9
 
-MIN_RH = 33                 # humidity limits at beginning of weighing
+MIN_RH = 20                 # humidity limits at beginning of weighing
 MAX_RH = 67
 
 MAX_T_CHANGE = 0.5          # max allowed change in T IN_DEGREES_C over course of weighing
@@ -24,7 +26,7 @@ EXCL = 3                    # criterion for excluding a single weighing within a
                             # Currently set to a rather arbitrary value without any experimental basis...
 
 
-config_default = r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing\config.xml'
+config_default = os.path.abspath(os.path.join('..', 'config.xml'))
 save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
 stds = [                    # options for standards and check masses
     'MET16A',

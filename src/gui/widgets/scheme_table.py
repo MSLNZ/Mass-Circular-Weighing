@@ -1,6 +1,6 @@
+import xlrd
 
-from msl.qt import QtWidgets
-from PyQt5 import QtCore
+from msl.qt import QtWidgets, QtCore, io, prompt
 from src.log import log
 from src.constants import balances
 
@@ -9,23 +9,28 @@ class SchemeTable(QtWidgets.QTableWidget):
 
     def __init__(self):
         super(SchemeTable, self).__init__()
+        self.setAcceptDrops(True)
         self.setColumnCount(5)
-        self.setRowCount(10)
-        self.setHorizontalHeaderLabels(['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# runs', 'Status'])
+        self.make_rows(10)
+        self.setHorizontalHeaderLabels(['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# Runs', 'Status'])
         self.resizeColumnsToContents()
         header = self.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-
-        for i in range(self.rowCount()):
-            self.set_cell_types(i)
 
         verthead = self.verticalHeader()
         verthead.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         verthead.customContextMenuRequested.connect(self.vert_header_menu)
 
+    def make_rows(self, numrows):
+        self.setRowCount(numrows)
+        for i in range(self.rowCount()):
+            self.set_cell_types(i)
+
     def set_cell_types(self, row_no):
         balance_io = QtWidgets.QComboBox()
         balance_io.addItems(balances)
+        self.setCellWidget(row_no, 0, QtWidgets.QLineEdit())
+        self.setCellWidget(row_no, 1, QtWidgets.QLineEdit())
         self.setCellWidget(row_no, 2, balance_io)
         self.setCellWidget(row_no, 3, QtWidgets.QSpinBox())
         self.setCellWidget(row_no, 4, QtWidgets.QLabel())
@@ -60,8 +65,8 @@ class SchemeTable(QtWidgets.QTableWidget):
 
     def get_row_info(self, row):
         try:
-            scheme_entry = self.item(row, 0).text()
-            nominal = self.item(row, 1).text()
+            scheme_entry = self.cellWidget(row, 0).text()
+            nominal = self.cellWidget(row, 1).text()
             bal_alias = self.cellWidget(row, 2).currentText()
             num_runs = self.cellWidget(row, 3).text()
             scheme_entry_row = [scheme_entry, nominal, bal_alias, num_runs]
@@ -74,6 +79,73 @@ class SchemeTable(QtWidgets.QTableWidget):
     def update_se_status(self, row, status):
         self.cellWidget(row, 4).setText(status)
 
-    #TODO: enable drag and drop using self.dropEvent
+    def dragEnterEvent(self, event):
+        paths = io.get_drag_enter_paths(event, pattern='*.xls*')
+        if paths:
+            self.scheme_path = paths[0]
+            if len(paths) > 1:
+                self.scheme_path = prompt.item('Please select one file containing the weighing scheme', items=paths)
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        event.accept()
+
+    def dropEvent(self, event):
+        header, rows = read_excel_scheme(self.scheme_path)
+        self.make_rows(len(rows))
+
+        index_map = {}
+        for col_name in {'weight', 'nominal', 'balance', 'runs',}:
+            for i, name in enumerate(header):
+                if col_name in name.lower():
+                    index_map[col_name] = i
+
+        for i, row in enumerate(rows):
+            self.cellWidget(i, 0).setText(row[index_map['weight']])
+            self.cellWidget(i, 1).setText(row[index_map['nominal']])
+            self.cellWidget(i, 2).setCurrentIndex(self.cellWidget(i, 2).findText(row[index_map['balance']]))
+            self.cellWidget(i, 3).setValue(float(row[index_map['runs']]))
+
+        log.info('Scheme loaded from ' + str(self.scheme_path))
+
+def read_excel_scheme(path):
+    """Read an Excel file containing a weighing scheme"""
+    _book = xlrd.open_workbook(path, on_demand=True)
+
+    names = _book.sheet_names()
+    if len(names) > 1:
+        sheet_name = prompt.item('Please select which Sheet you wish to use:', names)
+    else:
+        sheet_name = names[0]
+
+    try:
+        sheet = _book.sheet_by_name(sheet_name)
+    except xlrd.XLRDError:
+        sheet = None
+
+    if sheet is None:
+        raise IOError('There is no Sheet named {!r} in {}'.format(sheet_name, path))
+
+    header = [val for val in sheet.row_values(0)]
+    rows = [[_cell_convert(sheet.cell(r, c)) for c in range(sheet.ncols)] for r in range(1, sheet.nrows)]
+    log.debug('Loading Sheet <{}> in {!r}'.format(sheet_name, path))
+    return header, rows
+
+
+def _cell_convert(cell):
+    """Convert an Excel cell to the appropriate value and data type"""
+    t = cell.ctype
+    if t == xlrd.XL_CELL_NUMBER or t == xlrd.XL_CELL_BOOLEAN:
+        if int(cell.value) == cell.value:
+            return '{}'.format(int(cell.value))
+        else:
+            return '{}'.format(cell.value)
+    elif t == xlrd.XL_CELL_ERROR:
+        return xlrd.error_text_from_code[cell.value]
+    else:
+        return cell.value.strip()
+
 
 

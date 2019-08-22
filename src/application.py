@@ -154,9 +154,10 @@ def load_stds_from_set_file(path, wtset):
                 line = line.strip('\n').split(', ')
                 for i, key in enumerate(['nominal (g)', 'mass values (g)', 'uncertainties ('+MU_STR+'g)']):
                     value = line[i].strip(' ').strip('\"\",')
+                    trunc_val = ('{:g}'.format((float(value))))
                     if i == 0:
-                        stds['weight ID'].append(value + stds['Set Identifier'])  #
-                    stds[key].append(np.float(value))
+                        stds['weight ID'].append(trunc_val + stds['Set Identifier'])  #
+                    stds[key].append(np.float(trunc_val))
 
                 line = fp.readline()
         else:
