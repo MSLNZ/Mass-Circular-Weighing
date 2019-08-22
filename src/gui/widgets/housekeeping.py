@@ -19,6 +19,7 @@ class Housekeeping(QtWidgets.QWidget):
         self.cb_stds_io.addItems(stds)
         self.cb_checks_io = QtWidgets.QComboBox()
         self.cb_checks_io.addItems(stds)
+        self.cb_checks_io.setCurrentText('MET16B')
 
         self.omega_io = QtWidgets.QComboBox()
         self.omega_io.addItems(omega_loggers)
