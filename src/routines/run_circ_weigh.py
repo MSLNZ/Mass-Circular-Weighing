@@ -83,7 +83,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         for cycle in range(weighing.num_cycles):
             for pos in range(weighing.num_wtgrps):
                 if callback1 is not None:
-                    callback1(run_id, cycle+1, pos+1, weighing.num_cycles, weighing.num_wtgrps)
+                    callback1(cycle+1, pos+1, weighing.num_cycles, weighing.num_wtgrps)
                 mass = weighing.wtgrps[pos]
                 bal.load_bal(mass)
                 reading = bal.get_mass_stable()

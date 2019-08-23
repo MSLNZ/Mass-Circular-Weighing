@@ -13,13 +13,13 @@ def label(name):
 
 class WeighingWorker(Worker):
 
-    def __init__(self, callback, callback2, se_row_data, info):
+    def __init__(self, call_run, call_cp, call_read, se_row_data, info):
         super(WeighingWorker, self).__init__()
-        self.callback = callback
-        self.callback2 = callback2
+        self.callback_run = call_run
+        self.callback_cp = call_cp
+        self.callback_read = call_read
         self.se_row_data = se_row_data
         self.info = info
-        self.good_runs = 0
 
     def process(self):
         # collating and sorting metadata
@@ -59,33 +59,35 @@ class WeighingWorker(Worker):
         log.debug(str(self.info))
 
         run = 0
-        bad = 0
+        good_runs = 0
+        bad_runs = 0
         run_no_1 = int(run_id_1.strip('run_'))
-        while run < float(num_runs)+MAX_BAD_RUNS+1 and bad < MAX_BAD_RUNS:
+        while run < float(num_runs)+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS:
+            self.callback_run(good_runs, bad_runs, num_runs)
             run_id = 'run_' + str(round(run_no_1+run, 0))
             weighing_root = do_circ_weighing(bal, se, root, url, run_id,
-                                        callback1=self.callback, callback2=self.callback2, omega=omega_instance,
+                                        callback1=self.callback_cp, callback2=self.callback_read, omega=omega_instance,
                                         **metadata,)
             ok = weighing_root # here want to analyse weighing using timed and drift
             if ok:
                 print('ok =', ok)
-                self.good_runs += 1
+                good_runs += 1
             elif mode == 'aw':
                 print('allowed')
-                self.good_runs += 1
+                good_runs += 1
             else:
                 print('bad weighing')
-                bad += 1
+                bad_runs += 1
 
-            if self.good_runs == float(num_runs):
+            if good_runs == float(num_runs):
                 break
 
             run += 1
             bal._want_abort = False
 
 
-        if bad == MAX_BAD_RUNS:
-            log.error('Completed ' + str(self.good_runs) + ' acceptable weighings of ' + num_runs)
+        if bad_runs == MAX_BAD_RUNS:
+            log.error('Completed ' + str(good_runs) + ' acceptable weighings of ' + num_runs)
             return 'Failed' # check this...
 
         print('Finished weighings for ' + se)
@@ -107,19 +109,20 @@ class WeighingThread(Thread):
         self.position = label('0')
         self.reading = label('0')
 
-        layout = QtWidgets.QFormLayout()
-        layout.addRow(label('Scheme Entry'), self.scheme_entry)
-        layout.addRow(label('Nominal mass (g)'), self.nominal_mass)
-        layout.addRow(label('Run'), self.run_id)
-        layout.addRow(label('Cycle'), self.cycle)
-        layout.addRow(label('Position'), self.position)
+        status = QtWidgets.QFormLayout()
+        status.addRow(label('Scheme Entry'), self.scheme_entry)
+        status.addRow(label('Nominal mass (g)'), self.nominal_mass)
+        status.addRow(label('Run'), self.run_id)
+        status.addRow(label('Cycle'), self.cycle)
+        status.addRow(label('Position'), self.position)
 
-        layout.addRow(label('Reading'), self.reading)
+        status.addRow(label('Reading'), self.reading)
 
-        layout.addWidget(Logger(log))
+        data = QtWidgets.QTableWidget()
 
-        self.window.setLayout(layout)
-        self.window.resize(400,400)
+        self.window.setLayout(status)
+        self.window.resize(500, 300)
+        self.window.move(500, 600)
 
     def transfer_info(self, se_row_data):
         scheme_entry = se_row_data[0]
@@ -130,14 +133,22 @@ class WeighingThread(Thread):
         self.nominal_mass.setText(nom_mass_str)
         self.num_runs = num_runs
 
-    def show(self):
+    def show(self, se_row_data, info):
+        self.transfer_info(se_row_data)
         self.window.show()
+        self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, se_row_data, info)
 
-    def update_cyc_pos(self, run_id, c, p, num_cyc, num_pos):
-        self.run_id.setText('{} of {}'.format(run_id.strip('run_'), self.num_runs))
+    def update_run_no(self, good, bad, tot):
+        self.run_id.setText('{} of {} ({} bad)'.format(good+1, tot, bad))
+
+    def update_cyc_pos(self, c, p, num_cyc, num_pos):
         self.cycle.setText('{} of {}'.format(c, num_cyc))
         self.position.setText('{} of {}'.format(p, num_pos))
 
     def update_reading(self, reading, unit):
         self.reading.setText('{} {}'.format(reading, unit))
+        
+    def update_weigh_matrix(self, c, p, num_cyc, num_pos, reading, ):
+        # make array
+        pass
 

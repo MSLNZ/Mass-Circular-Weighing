@@ -48,11 +48,8 @@ def collect_n_good_runs():
     schemetable.update_se_status(row, 'Running')
 
     se_row_data = schemetable.get_row_info(row)
-    thread.transfer_info(se_row_data)
 
-    thread.show()
-
-    thread.start(thread.update_cyc_pos, thread.update_reading, se_row_data, info)
+    thread.show(se_row_data, info)
 
     #while not thread.good_runs:
     #    sleep(15)
@@ -74,7 +71,7 @@ gui = application()
 thread = WeighingThread()
 
 w = QtWidgets.QWidget()
-w.setFixedSize(1400, 450)
+w.setFixedSize(1900, 500)
 w.setWindowTitle('Mass Calibration: Main Window')
 
 housekeeping = Housekeeping()
@@ -88,10 +85,10 @@ layout = QtWidgets.QHBoxLayout()
 layout.addWidget(lhs_panel_group, 3)
 layout.addWidget(central_panel_group, 4)
 
-layout.addWidget(Logger(log), 3)
+layout.addWidget(Logger(log), 4)
 
 w.setLayout(layout)
-
+w.move(10, 10)
 
 w.show()
 gui.exec()

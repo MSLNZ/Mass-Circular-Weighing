@@ -43,4 +43,4 @@ balances = [                # available balances
 omega_loggers = [           # available Omega Loggers
     "Omega",
 ]
-MAX_BAD_RUNS = 3
+MAX_BAD_RUNS = 1
