@@ -12,7 +12,7 @@ DEGREE_SIGN = '°'           # \xb0
 IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 
 MIN_T = 18.1                # temperature limits at beginning of weighing
-MAX_T = 21.9
+MAX_T = 30 #21.9
 
 MIN_RH = 20                 # humidity limits at beginning of weighing
 MAX_RH = 67

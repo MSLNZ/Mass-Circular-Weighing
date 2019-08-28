@@ -1,4 +1,5 @@
 import xlrd, xlwt
+import os
 
 from msl.qt import QtWidgets, QtCore, io, prompt
 from src.log import log
@@ -128,7 +129,12 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         log.info('Checked all scheme entries')
 
-    def save_scheme(self, path):
+    def save_scheme(self, folder, filename):
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
+        path = folder + "\\" + filename
+
         workbook = xlwt.Workbook()
         sheet = workbook.add_sheet('Scheme')
         header = ['Weight groups', 'Nominal mass (g)', 'Balance alias', '# runs']

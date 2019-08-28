@@ -36,8 +36,9 @@ def check_scheme():
     schemetable.check_scheme_entries(housekeeping)
 
 def save_scheme():
-    path = housekeeping.folder+'\Scheme.xls'
-    schemetable.save_scheme(path)
+    folder = housekeeping.folder
+    filename = housekeeping.client + '_Scheme.xls'
+    schemetable.save_scheme(folder, filename)
 
 def collect_n_good_runs():
     info = housekeeping.info
@@ -47,7 +48,7 @@ def collect_n_good_runs():
         return
     log.info('Row ' + str(row + 1) + ' selected for weighing')
 
-    schemetable.update_se_status(row, 'Running')
+    #schemetable.update_se_status(row, 'Started')
 
     se_row_data = schemetable.get_row_info(row)
 

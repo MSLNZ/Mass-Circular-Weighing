@@ -20,6 +20,7 @@ class WeighingWorker(Worker):
         self.callback_read = call_read
         self.se_row_data = se_row_data
         self.info = info
+        self.good_runs = 0
 
     def process(self):
         # collating and sorting metadata
@@ -59,27 +60,32 @@ class WeighingWorker(Worker):
         log.debug(str(self.info))
 
         run = 0
-        good_runs = 0
         bad_runs = 0
+        #aborted = False
         run_no_1 = int(run_id_1.strip('run_'))
-        while run < float(num_runs)+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS:
-            self.callback_run(good_runs, bad_runs, num_runs)
+        while run < float(num_runs)+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS: # and not aborted:
+            self.callback_run(self.good_runs, bad_runs, num_runs)
             run_id = 'run_' + str(round(run_no_1+run, 0))
             weighing_root = do_circ_weighing(bal, se, root, url, run_id,
                                         callback1=self.callback_cp, callback2=self.callback_read, omega=omega_instance,
                                         **metadata,)
-            ok = weighing_root # here want to analyse weighing using timed and drift
-            if ok:
-                print('ok =', ok)
-                good_runs += 1
-            elif mode == 'aw':
-                print('allowed')
-                good_runs += 1
+            if weighing_root:
+                ok = True  # here analyse weighing using timed and drift:
+                # analyse_weighing(root, url, se, run_id, timed=True, drift=None) currently returns weighanalysis (entire root)
+                if ok:
+                    print('ok =', ok)
+                    self.good_runs += 1
+                elif mode == 'aw':
+                    print('outside acceptance but allowed')
+                    self.good_runs += 1
+                else:
+                    bad_runs += 1
             else:
-                print('bad weighing')
-                bad_runs += 1
+                print('Weighing aborted')
+                #aborted = True
+                return
 
-            if good_runs == float(num_runs):
+            if self.good_runs == float(num_runs):
                 break
 
             run += 1
@@ -87,7 +93,7 @@ class WeighingWorker(Worker):
 
 
         if bad_runs == MAX_BAD_RUNS:
-            log.error('Completed ' + str(good_runs) + ' acceptable weighings of ' + num_runs)
+            log.error('Completed ' + str(self.good_runs) + ' acceptable weighings of ' + num_runs)
             return 'Failed' # check this...
 
         print('Finished weighings for ' + se)
@@ -100,6 +106,9 @@ class WeighingThread(Thread):
     def __init__(self):
         super(WeighingThread, self).__init__(WeighingWorker)
 
+        self.se_row_data = None
+        self.info = None
+
         self.window = QtWidgets.QWidget()
         self.window.setWindowTitle('Circular Weighing')
         self.scheme_entry = label('scheme_entry')
@@ -109,34 +118,38 @@ class WeighingThread(Thread):
         self.position = label('0')
         self.reading = label('0')
 
-        status = QtWidgets.QFormLayout()
-        status.addRow(label('Scheme Entry'), self.scheme_entry)
-        status.addRow(label('Nominal mass (g)'), self.nominal_mass)
-        status.addRow(label('Run'), self.run_id)
-        status.addRow(label('Cycle'), self.cycle)
-        status.addRow(label('Position'), self.position)
+        status = QtWidgets.QWidget()
+        status_layout = QtWidgets.QFormLayout()
+        status_layout.addRow(label('Scheme Entry'), self.scheme_entry)
+        status_layout.addRow(label('Nominal mass (g)'), self.nominal_mass)
+        status_layout.addRow(label('Run'), self.run_id)
+        status_layout.addRow(label('Cycle'), self.cycle)
+        status_layout.addRow(label('Position'), self.position)
+        status_layout.addRow(label('Reading'), self.reading)
+        status.setLayout(status_layout)
 
-        status.addRow(label('Reading'), self.reading)
+        start_weighing = Button(text='Start weighing(s)', left_click=self.start_weighing, )
 
-        data = QtWidgets.QTableWidget()
+        panel = QtWidgets.QGridLayout()
+        panel.addWidget(status, 0, 0)
+        panel.addWidget(start_weighing, 1, 1)
 
-        self.window.setLayout(status)
+        self.window.setLayout(panel)
         self.window.resize(500, 300)
         self.window.move(500, 600)
 
-    def transfer_info(self, se_row_data):
-        scheme_entry = se_row_data[0]
-        # should check that all masses are correctly entered
-        nom_mass_str = se_row_data[1]
-        num_runs = se_row_data[3]
-        self.scheme_entry.setText(scheme_entry)
-        self.nominal_mass.setText(nom_mass_str)
-        self.num_runs = num_runs
-
     def show(self, se_row_data, info):
-        self.transfer_info(se_row_data)
+        self.se_row_data = se_row_data
+        self.info = info
+
+        self.scheme_entry.setText(se_row_data[0])
+        self.nominal_mass.setText(se_row_data[1])
+        self.num_runs = se_row_data[3]
+
         self.window.show()
-        self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, se_row_data, info)
+
+    def start_weighing(self, ):
+        self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.info)
 
     def update_run_no(self, good, bad, tot):
         self.run_id.setText('{} of {} ({} bad)'.format(good+1, tot, bad))
@@ -147,8 +160,11 @@ class WeighingThread(Thread):
 
     def update_reading(self, reading, unit):
         self.reading.setText('{} {}'.format(reading, unit))
-        
+
     def update_weigh_matrix(self, c, p, num_cyc, num_pos, reading, ):
         # make array
+        print('here but not really!?!')
         pass
+
+
 
