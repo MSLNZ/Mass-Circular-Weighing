@@ -1,4 +1,4 @@
-import xlrd
+import xlrd, xlwt
 
 from msl.qt import QtWidgets, QtCore, io, prompt
 from src.log import log
@@ -20,6 +20,8 @@ class SchemeTable(QtWidgets.QTableWidget):
         verthead = self.verticalHeader()
         verthead.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         verthead.customContextMenuRequested.connect(self.vert_header_menu)
+
+        self.scheme_path = None
 
     def make_rows(self, numrows):
         self.setRowCount(numrows)
@@ -109,6 +111,44 @@ class SchemeTable(QtWidgets.QTableWidget):
             self.cellWidget(i, 3).setValue(float(row[index_map['runs']]))
 
         log.info('Scheme loaded from ' + str(self.scheme_path))
+
+    def check_scheme_entries(self, housekeeping):
+        for i in range(self.rowCount()):
+            try:
+                scheme_entry = self.cellWidget(i, 0).text()
+                for wtgrp in scheme_entry.split():
+                    for mass in wtgrp.split('+'):
+                        if mass not in housekeeping.client_masses \
+                                and mass not in housekeeping.app.all_checks['weight ID'] \
+                                and mass not in housekeeping.app.all_stds['weight ID']:
+                            log.error(mass + ' is not in any of the specified mass sets.')
+
+            except AttributeError:
+                pass
+
+        log.info('Checked all scheme entries')
+
+    def save_scheme(self, path):
+        workbook = xlwt.Workbook()
+        sheet = workbook.add_sheet('Scheme')
+        header = ['Weight groups', 'Nominal mass (g)', 'Balance alias', '# runs']
+        for j, text in enumerate(header):
+            sheet.write(0, j, text)
+
+        for row in range(self.rowCount()):
+            # scheme_entry_row = [scheme_entry, nominal, bal_alias, num_runs]
+            try:
+                sheet.write(row+1, 0, self.cellWidget(row, 0).text())
+                sheet.write(row+1, 1, self.cellWidget(row, 1).text())
+                sheet.write(row+1, 2, self.cellWidget(row, 2).currentText())
+                sheet.write(row+1, 3, self.cellWidget(row, 3).text())
+
+            except AttributeError:
+                pass  #  log.error('Incomplete data in selected row')
+
+        workbook.save(path)
+        log.info('Scheme saved to ' + str(path))
+
 
 def read_excel_scheme(path):
     """Read an Excel file containing a weighing scheme"""

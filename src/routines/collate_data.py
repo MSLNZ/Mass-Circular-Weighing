@@ -7,6 +7,12 @@ from ..log import log
 import numpy as np
 
 
+def collate_all_weighings(schemetable, folder, client):
+    for row in range(schemetable.rowCount()):
+        filename = client + '_' + schemetable.cellWidget(row, 1).text()
+        print(schemetable.cellWidget(row, 0).text(), folder, filename)
+
+
 def collate_a_data_from_json(folder, filename, scheme_entry):
     """Use this function for an automatic weighing where individual weighings are not likely to meet SQRT_F criterion,
     but the ensemble average is.

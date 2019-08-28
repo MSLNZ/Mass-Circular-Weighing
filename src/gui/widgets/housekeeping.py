@@ -13,7 +13,7 @@ class Housekeeping(QtWidgets.QWidget):
         self.config_io = Browse(config_default, 'shell32|4')
         self.folder_io = Browse(save_folder_default, 'shell32|4')
         self.client_io = QtWidgets.QLineEdit('Client')
-        self.client_masses_io = QtWidgets.QLineEdit('1 2 5 10 20 50')
+        self.client_masses_io = QtWidgets.QTextEdit('1 2 5 10 20 50')
 
         self.cb_stds_io = QtWidgets.QComboBox()
         self.cb_stds_io.addItems(stds)
@@ -87,7 +87,7 @@ class Housekeeping(QtWidgets.QWidget):
 
     @property
     def client_masses(self):
-        return self.client_masses_io.text()
+        return self.client_masses_io.toPlainText()
 
     @property
     def std_set(self):
