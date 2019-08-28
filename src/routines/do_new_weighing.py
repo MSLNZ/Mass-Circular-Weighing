@@ -45,11 +45,11 @@ if __name__ == "__main__":
     ### initialise application
     app = Application(config, 'MET16A', 'MET16B')
 
-    client = 'Demo1'
+    client = 'Demo_prompt'
     folder = r'C:\Users\r.hawke.IRL\PycharmProjects\test_json_files\Demo1'  # use full path
 
     ### specify balance to use for weighing, and weights in comparison
-    scheme_entry = "1a 1b 1c 1d" # "5000 5000MA 5000MB"
+    scheme_entry = "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" #"1a 1b 1c 1d" # "5000 5000MA 5000MB"
 
     #"2000 2000MA 2000MB"  "1000 1000MA 1000MB"
     # "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example

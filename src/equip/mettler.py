@@ -106,7 +106,7 @@ class MettlerToledo(Balance):
                 return self._raise_error(m[0]+' '+m[1])
         return None
 
-    def get_mass_stable(self):
+    def get_mass_stable(self, mass):
         """Reads mass from balance when reading is stable.  Returns the average of three readings,
         ensuring a maximum deviation between readings of twice the balance resolution.
 
@@ -115,31 +115,33 @@ class MettlerToledo(Balance):
         float
             mass in unit set for balance
         """
-        readings = []
+        while not self.want_abort:
+            log.info('Waiting for stable reading for '+mass)
+            readings = []
 
-        m = self._query("S").split()
-        if self.check_reading(m):
-            if m[1] == 'S':
-                a = float(m[2])
-                readings.append(a)
-            else:
-                return self._raise_error(m[0] + ' ' + m[1])
-
-        t0 = perf_counter()
-        while perf_counter() - t0 < 30:
-            while len(readings) < 3:
-                b = self.get_mass_instant()
-                if type(b) == float:
-                    readings.append(b)
-                elif not b:
-                    continue
+            m = self._query("S").split()
+            if self.check_reading(m):
+                if m[1] == 'S':
+                    a = float(m[2])
+                    readings.append(a)
                 else:
-                    return b
+                    return self._raise_error(m[0] + ' ' + m[1])
 
-            if max(readings) - min(readings) < 2*self.resolution:
-                return sum(readings)/3
+            t0 = perf_counter()
+            while perf_counter() - t0 < 30:
+                while len(readings) < 3:
+                    b = self.get_mass_instant()
+                    if type(b) == float:
+                        readings.append(b)
+                    elif not b:
+                        continue
+                    else:
+                        return b
 
-        self._raise_error('U')
+                if max(readings) - min(readings) < 2*self.resolution:
+                    return sum(readings)/3
+
+            self._raise_error('U')
 
     def check_reading(self, m):
         if not m[3] == self.unit:

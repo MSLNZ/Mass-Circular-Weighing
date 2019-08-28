@@ -25,7 +25,7 @@ class PromptThread(Thread):
 
     def prompt(self, args, kwargs):
         """Popup a prompt"""
-        self.reply = getattr(prompt, args[0])(*args[1:], **kwargs)
+        self.reply = getattr(prompt, args[0])(args[1], *args[2:], **kwargs)
         self.signal_prompt_done.emit()
 
     def wait_for_prompt_reply(self):

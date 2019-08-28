@@ -85,8 +85,8 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                 if callback1 is not None:
                     callback1(cycle+1, pos+1, weighing.num_cycles, weighing.num_wtgrps)
                 mass = weighing.wtgrps[pos]
-                bal.load_bal(mass)
-                reading = bal.get_mass_stable()
+                bal.load_bal(mass, pos)
+                reading = bal.get_mass_stable(mass)
                 if callback2 is not None:
                     callback2(reading, str(metadata['Unit']))
                 if not times:
@@ -97,7 +97,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                 times.append(time)
                 weighdata[cycle, pos, :] = [time, reading]
                 root.save(url=url, mode='w', ensure_ascii=False)
-                bal.unload_bal(mass)
+                bal.unload_bal(mass, pos)
         break
 
     while not bal.want_abort:

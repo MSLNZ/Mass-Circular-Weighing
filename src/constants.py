@@ -44,3 +44,5 @@ omega_loggers = [           # available Omega Loggers
     "Omega",
 ]
 MAX_BAD_RUNS = 1
+
+FONTSIZE = 50               # sets size of large pop-ups during circular weighing
