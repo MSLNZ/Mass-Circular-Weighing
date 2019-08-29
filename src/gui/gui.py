@@ -5,8 +5,9 @@ from msl.qt import application, QtWidgets, Button, excepthook, Logger
 from src.log import log
 from src.gui.widgets.housekeeping import Housekeeping
 from src.gui.widgets.scheme_table import SchemeTable
-from src.gui.widgets.circweigh_popup import WeighingThread
+from src.gui.circweigh_popup import WeighingThread
 from src.routines.collate_data import collate_all_weighings
+from src.gui.masscalc_popup import MassCalcThread
 
 
 def make_table_panel():
@@ -41,6 +42,11 @@ def save_scheme():
     schemetable.save_scheme(folder, filename)
 
 def collect_n_good_runs():
+    try:
+        housekeeping.cfg.bal_class
+    except:
+        housekeeping.initialise_cfg()
+
     info = housekeeping.info
     row = schemetable.currentRow()
     if row == -1:
@@ -60,14 +66,15 @@ def collect_n_good_runs():
     #schemetable.update_se_status(row, 'Finished')
 
 def display_results():
-    collate_all_weighings(schemetable, housekeeping.folder, housekeeping.client)
+    data = collate_all_weighings(schemetable, housekeeping)
+    mass_thread.show(data)
 
 def final_mass_calc():
     filesavepath = ''
     client = housekeeping.info.client
     client_wt_IDs = housekeeping.client_masses
-    check_wt_IDs = housekeeping.app.all_checks['weight ID']
-    std_masses = housekeeping.app.self.all_stds
+    check_wt_IDs = housekeeping.cfg.all_checks['weight ID']
+    std_masses = housekeeping.cfg.self.all_stds
 
 
 sys.excepthook = excepthook
@@ -75,27 +82,23 @@ sys.excepthook = excepthook
 gui = application()
 
 weigh_thread = WeighingThread()
-fmcalc_thread = ""
+mass_thread = MassCalcThread()
 
 w = QtWidgets.QWidget()
-w.setFixedSize(1900, 500)
+rect = QtWidgets.QDesktopWidget()
+w.setFixedSize(rect.width()*0.9, rect.height()*0.45)
 w.setWindowTitle('Mass Calibration: Main Window')
 
 housekeeping = Housekeeping()
 lhs_panel_group = housekeeping.lhs_panel_group()
-
 schemetable = SchemeTable()
 central_panel_group = make_table_panel()
-#central_panel_group.resize(700,600)
 
 layout = QtWidgets.QHBoxLayout()
 layout.addWidget(lhs_panel_group, 3)
 layout.addWidget(central_panel_group, 4)
-
-layout.addWidget(Logger(log), 4)
-
+layout.addWidget(Logger(fmt='%(message)s'), 4)
 w.setLayout(layout)
-w.move(10, 10)
 
 w.show()
 gui.exec()

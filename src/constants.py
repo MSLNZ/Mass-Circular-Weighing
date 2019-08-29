@@ -2,7 +2,7 @@
 
 import os
 
-MU_STR = 'µ'                # ALT+0181 or 'µ'
+MU_STR = 'u' #'µ'                # ALT+0181 or 'µ'
 SIGMA_STR = 'σ'             # \u03C3 for sigma sign
 SQUARED_STR = '²'
 
@@ -27,7 +27,7 @@ EXCL = 3                    # criterion for excluding a single weighing within a
 
 
 config_default = os.path.abspath(os.path.join('..', 'config.xml'))
-save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
+save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\AsureQ_Mar'
 stds = [                    # options for standards and check masses
     'MET16A',
     'MET16B',
@@ -45,4 +45,4 @@ omega_loggers = [           # available Omega Loggers
 ]
 MAX_BAD_RUNS = 1
 
-FONTSIZE = 50               # sets size of large pop-ups during circular weighing
+FONTSIZE = 32               # sets size of large pop-ups during circular weighing

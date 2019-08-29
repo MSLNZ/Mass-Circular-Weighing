@@ -1,8 +1,8 @@
 
-from msl.qt import QtWidgets, Button, excepthook, Logger
+from msl.qt import QtGui, QtWidgets, Button, excepthook, Logger
 from msl.qt.threading import Thread, Worker
 
-from src.constants import MAX_BAD_RUNS
+from src.constants import MAX_BAD_RUNS, FONTSIZE
 from src.log import log
 from src.routines.run_circ_weigh import *
 
@@ -33,14 +33,14 @@ class WeighingWorker(Worker):
         omega_alias = self.info['Omega logger']
         timed = self.info['Use measurement times?']
         drift = self.info['Drift correction']
-        app = self.info['App']
-        bal = app.get_bal_instance(bal_alias)
-        mode = app.equipment[bal_alias].user_defined['weighing_mode']
-        ac = app.acceptance_criteria(bal_alias, float(nom_mass_str))
+        cfg = self.info['CFG']
+        bal = cfg.get_bal_instance(bal_alias)
+        mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
+        ac = cfg.acceptance_criteria(bal_alias, float(nom_mass_str))
 
         # get OMEGA instance if available
         if omega_alias:
-            omega_instance = app.get_omega_instance(omega_alias)
+            omega_instance = cfg.get_omega_instance(omega_alias)
         else:
             omega_instance = None
 
@@ -61,29 +61,25 @@ class WeighingWorker(Worker):
 
         run = 0
         bad_runs = 0
-        #aborted = False
         run_no_1 = int(run_id_1.strip('run_'))
-        while run < float(num_runs)+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS: # and not aborted:
+        while run < float(num_runs)+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS:
             self.callback_run(self.good_runs, bad_runs, num_runs)
             run_id = 'run_' + str(round(run_no_1+run, 0))
             weighing_root = do_circ_weighing(bal, se, root, url, run_id,
                                         callback1=self.callback_cp, callback2=self.callback_read, omega=omega_instance,
                                         **metadata,)
             if weighing_root:
-                ok = True  # here analyse weighing using timed and drift:
-                # analyse_weighing(root, url, se, run_id, timed=True, drift=None) currently returns weighanalysis (entire root)
-                if ok:
-                    print('ok =', ok)
+                weighanalysis = analyse_weighing(root, url, se, run_id, timed=timed, drift=drift)
+                if weighanalysis.metadata.get['Acceptance met?']:
+                    print('good weighing')
                     self.good_runs += 1
-                elif mode == 'aw':
+                elif mode == 'aw' and not weighanalysis.metadata.get['Exclude?']:
                     print('outside acceptance but allowed')
                     self.good_runs += 1
                 else:
                     bad_runs += 1
             else:
-                print('Weighing aborted')
-                #aborted = True
-                return
+                return self.good_runs
 
             if self.good_runs == float(num_runs):
                 break
@@ -91,13 +87,11 @@ class WeighingWorker(Worker):
             run += 1
             bal._want_abort = False
 
-
         if bad_runs == MAX_BAD_RUNS:
             log.error('Completed ' + str(self.good_runs) + ' acceptable weighings of ' + num_runs)
-            return 'Failed' # check this...
+            return self.good_runs
 
         print('Finished weighings for ' + se)
-
         return self.good_runs
 
 
@@ -110,6 +104,9 @@ class WeighingThread(Thread):
         self.info = None
 
         self.window = QtWidgets.QWidget()
+        f = QtGui.QFont()
+        f.setPointSize(FONTSIZE)
+        self.window.setFont(f)
         self.window.setWindowTitle('Circular Weighing')
         self.scheme_entry = label('scheme_entry')
         self.nominal_mass = label('nominal')
@@ -135,8 +132,8 @@ class WeighingThread(Thread):
         panel.addWidget(start_weighing, 1, 1)
 
         self.window.setLayout(panel)
-        self.window.resize(500, 300)
-        self.window.move(500, 600)
+        rect = QtWidgets.QDesktopWidget()
+        self.window.move(rect.width() * 0.05, rect.height() * 0.55)
 
     def show(self, se_row_data, info):
         self.se_row_data = se_row_data

@@ -9,7 +9,7 @@ from .log import log
 import numpy as np
 
 
-class Application(object):
+class Configuration(object):
 
     def __init__(self, config, stdset, checkset):
 

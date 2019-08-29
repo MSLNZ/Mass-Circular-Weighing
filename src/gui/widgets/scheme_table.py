@@ -114,14 +114,19 @@ class SchemeTable(QtWidgets.QTableWidget):
         log.info('Scheme loaded from ' + str(self.scheme_path))
 
     def check_scheme_entries(self, housekeeping):
+        try:
+            housekeeping.cfg.all_checks['weight ID']
+        except:
+            housekeeping.initialise_cfg()
+
         for i in range(self.rowCount()):
             try:
                 scheme_entry = self.cellWidget(i, 0).text()
                 for wtgrp in scheme_entry.split():
                     for mass in wtgrp.split('+'):
                         if mass not in housekeeping.client_masses \
-                                and mass not in housekeeping.app.all_checks['weight ID'] \
-                                and mass not in housekeeping.app.all_stds['weight ID']:
+                                and mass not in housekeeping.cfg.all_checks['weight ID'] \
+                                and mass not in housekeeping.cfg.all_stds['weight ID']:
                             log.error(mass + ' is not in any of the specified mass sets.')
 
             except AttributeError:

@@ -1,4 +1,4 @@
-from src.application import Application
+from src.configuration import Configuration
 from src.routines.run_circ_weigh import *
 #from src.routines.collate_data import collate_a_data_from_json
 #from src.routines.final_mass_calc import final_mass_calc
@@ -6,15 +6,15 @@ from src.routines.run_circ_weigh import *
 import numpy as np
 
 
-def do_new_weighing(app, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
+def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
                     omega_alias=None, timed=False, drift='quadratic drift'):
     # get balance instance
-    balance = app.get_bal_instance(bal_alias)
-    ac = app.acceptance_criteria(bal_alias, nominal_mass)
+    balance = cfg.get_bal_instance(bal_alias)
+    ac = cfg.acceptance_criteria(bal_alias, nominal_mass)
 
     # get OMEGA instance if available
     if omega_alias:
-        omega_instance = app.get_omega_instance(omega_alias)
+        omega_instance = cfg.get_omega_instance(omega_alias)
     else:
         omega_instance=None
 
@@ -42,8 +42,8 @@ def do_new_weighing(app, client, bal_alias, folder, filename, scheme_entry, nomi
 if __name__ == "__main__":
 
     config = r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing\config.xml'
-    ### initialise application
-    app = Application(config, 'MET16A', 'MET16B')
+    ### initialise configuration
+    cfg = Configuration(config, 'MET16A', 'MET16B')
 
     client = 'Demo_prompt'
     folder = r'C:\Users\r.hawke.IRL\PycharmProjects\test_json_files\Demo1'  # use full path
@@ -61,8 +61,8 @@ if __name__ == "__main__":
     filename = client + '_' + str(nominal_mass) # + '_' + run_id
 
     for i in range(1):
-        do_new_weighing(app, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
-                   omega_alias=omega_alias, timed=False, drift='linear drift')
+        do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
+                        omega_alias=omega_alias, timed=False, drift='linear drift')
 
     #analyse_all_weighings_in_file(folder, filename, scheme_entry, timed=False, drift='linear drift')#None)
 
@@ -75,9 +75,9 @@ if __name__ == "__main__":
     check_wt_IDs = ['1000MB']
     std_wt_IDs = ['1000MA']
 
-    check_wts = app.all_checks
+    check_wts = cfg.all_checks
 
-    i_s = app.all_stds['weight ID'].index('1000.000MA')
+    i_s = cfg.all_stds['weight ID'].index('1000.000MA')
     i_c = check_wts['weight ID'].index('1000.000MB')
 
     std_masses = np.empty(len(std_wt_IDs), dtype={
@@ -85,8 +85,8 @@ if __name__ == "__main__":
         'formats': (object, np.float, np.float)})
 
     std_masses['std weight ID'] = std_wt_IDs
-    std_masses['std mass values (g)'] = app.all_stds['mass values (g)'][i_s]
-    std_masses['std uncertainties (ug)'] = app.all_stds['uncertainties (ug)'][i_s]
+    std_masses['std mass values (g)'] = cfg.all_stds['mass values (g)'][i_s]
+    std_masses['std uncertainties (ug)'] = cfg.all_stds['uncertainties (ug)'][i_s]
 
     #print(std_masses)
 
