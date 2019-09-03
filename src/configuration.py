@@ -53,10 +53,22 @@ class Configuration(object):
 
         Returns
         -------
-        OMEGA instance
+        dict
+            dict of OMEGA instance and limits on ambient conditions
         """
+        omega = {
+            'Inst': Omega(self.equipment[alias]),
 
-        return Omega(self.equipment[alias])
+            'MIN_T': float(self.cfg.root.find('min_temp').text),
+            'MAX_T': float(self.cfg.root.find('max_temp').text),
+            'MAX_T_CHANGE': float(self.cfg.root.find('max_temp_change').text),
+
+            'MIN_RH': float(self.cfg.root.find('min_rh').text),
+            'MAX_RH': float(self.cfg.root.find('max_rh').text),
+            'MAX_RH_CHANGE': float(self.cfg.root.find('max_rh_change').text),
+        }
+
+        return omega
 
     def acceptance_criteria(self, alias, nominal_mass):
         """Calculates acceptance criteria for a circular weighing

@@ -1,19 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
   <msl>
 
+    <!-- Specify all balances available for weighings. -->
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
     <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
     <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
 
+    <!-- Specify equipment for ambient sensing. -->
     <equipment alias="Omega" manufacturer="OMEGA" model="iTHX-W"/>
 
+    <!-- Specify the limits for ambient conditions to begin weighing. -->
+    <min_temp units="C">18.1</min_temp>
+    <max_temp units="C">30</max_temp>
+    <min_rh units="%">30</min_rh>
+    <max_rh units="%">70</max_rh>
+
+    <!-- Specify the limits for changes in ambient conditions during weighing. -->
+    <max_temp_change units="C">0.5</max_temp_change>
+    <max_rh_change units="%">15</max_rh_change>
+
+    <!-- Specify where to find acceptance limits for circular weighing data. -->
     <acceptance_criteria>
           <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
           <sheet>AcceptanceCriteria</sheet>
     </acceptance_criteria>
 
+    <!-- Specify all standard sets available for weighings. -->
     <standards>
           <MET16A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16A.set</MET16A>
           <MET16B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16B.set</MET16B>
@@ -21,10 +35,6 @@
 
     <!-- Specify the Equipment-Register Databases to load equipment records from. -->
     <registers>
-      <!--
-        The "team" attribute is used to specify which research team the Equipment-Register
-        database belongs to.
-      -->
       <register team="M&amp;P" user_defined="weighing_mode, stable_wait, unit, resolution">
           <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
           <sheet>Balances</sheet>
@@ -32,12 +42,6 @@
 
       <register team="M&amp;P">
           <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
-          <!--
-            If there are multiple Sheets in the Excel database then you must specify the
-            name of the Sheet that contains the equipment records. This Excel database
-            also contains connection records (see the <connections> tag below) and so
-            the <sheet> tag must be specified.
-          -->
           <sheet>Equipment</sheet>
       </register>
     </registers>
@@ -46,11 +50,6 @@
     <connections>
       <connection>
         <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
-        <!--
-          Must also specify which Sheet in this Excel database contains the connection records.
-          This "Equipment Register.xls" root also contains an "Equipment" Sheet, see the
-          <register team="P&amp;R"> element above.
-        -->
         <sheet>LenovoX260</sheet>
       </connection>
     </connections>

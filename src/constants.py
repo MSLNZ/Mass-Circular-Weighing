@@ -33,7 +33,7 @@ stds = [                    # options for standards and check masses
     'MET16B',
     'WV',
 ]
-balances = [                # available balances
+balances = [                # available balances - can we get these from the config file? e.g. get all equipment aliases
     "MDE-demo",
     "AX10005",
     "CCE605",
@@ -43,6 +43,6 @@ balances = [                # available balances
 omega_loggers = [           # available Omega Loggers
     "Omega",
 ]
-MAX_BAD_RUNS = 1
+MAX_BAD_RUNS = 3
 
 FONTSIZE = 32               # sets size of large pop-ups during circular weighing

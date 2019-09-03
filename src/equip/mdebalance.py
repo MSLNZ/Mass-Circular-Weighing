@@ -22,10 +22,10 @@ class Balance(object):
         """
         self.record = record
         self._suffix = SUFFIX
+        self._want_abort = False
 
-        try:
-            self._unit = record.user_defined['unit']
-        except:
+        self._unit = record.user_defined['unit']
+        if self.unit == "":
             self.set_unit()
 
         try:
@@ -37,8 +37,6 @@ class Balance(object):
 
         self.stable_wait = record.user_defined['stable_wait']
         # wait time in seconds for balance reading to stabilise
-
-        self._want_abort = False
 
     @property
     def unit(self):
@@ -74,10 +72,9 @@ class Balance(object):
         :class:`str`
             'µg', 'mg', 'g', or 'kg'
         """
-        if not self.want_abort:
-            prompt_thread.show('item', 'Please select unit', ['µg', 'mg', 'g', 'kg'], font=FONTSIZE,
-                               title='Balance Preparation')
-            self._unit = prompt_thread.wait_for_prompt_reply()
+        prompt_thread.show('item', 'Please select unit', ['µg', 'mg', 'g', 'kg'], font=FONTSIZE,
+                           title='Balance Preparation')
+        self._unit = prompt_thread.wait_for_prompt_reply()
         return self._unit
 
     def zero_bal(self):

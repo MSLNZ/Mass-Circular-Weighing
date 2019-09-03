@@ -1,8 +1,7 @@
 import os
 from msl.io import JSONWriter, read
 from src.routines.circ_weigh_class import CircWeigh
-from src.constants import IN_DEGREES_C, MIN_T, MAX_T, MIN_RH, MAX_RH, MAX_T_CHANGE, MAX_RH_CHANGE, \
-    SUFFIX, SQRT_F, EXCL, MU_STR
+from src.constants import IN_DEGREES_C, SUFFIX, SQRT_F, EXCL, MU_STR
 from time import perf_counter
 from datetime import datetime
 import numpy as np
@@ -126,7 +125,8 @@ def check_ambient_pre(omega):
 
     Parameters
     ----------
-    omega : OMEGA instance
+    omega : dict
+        dict of OMEGA instance and limits on ambient conditions
 
     Returns
     -------
@@ -136,27 +136,27 @@ def check_ambient_pre(omega):
     """
 
     try:
-        ambient = omega.get_t_rh()
+        ambient = omega['Inst'].get_t_rh()
     except ConnectionAbortedError:
         try:
-            ambient = omega.get_t_rh()
+            ambient = omega['Inst'].get_t_rh()
         except ConnectionAbortedError:
             log.error('Omega logger is not present or could not be read')
-            ambient_pre = {'T_pre' + IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
-            return ambient_pre
+            #ambient_pre = {'T_pre' + IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
+            return False
 
     ambient_pre = {'T_pre'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_pre (%)': ambient['RH (%)']}
     log.info('Ambient conditions:\n'+
              'Temperature'+IN_DEGREES_C+': '+str(ambient['T'+IN_DEGREES_C])+
              '; Humidity (%): '+str(ambient['RH (%)']))
 
-    if MIN_T < ambient_pre['T_pre'+IN_DEGREES_C] < MAX_T:
+    if omega['MIN_T'] < ambient_pre['T_pre'+IN_DEGREES_C] < omega['MAX_T']:
         log.info('Ambient temperature OK for weighing')
     else:
         log.warning('Ambient temperature does not meet limits')
         return False
 
-    if MIN_RH < ambient_pre['RH_pre (%)'] < MAX_RH:
+    if omega['MIN_RH'] < ambient_pre['RH_pre (%)'] < omega['MAX_RH']:
         log.info('Ambient humidity OK for weighing')
     else:
         log.warning('Ambient humidity does not meet limits')
@@ -170,7 +170,8 @@ def check_ambient_post(omega, ambient_pre):
 
     Parameters
     ----------
-    omega : OMEGA instance
+    omega : dict
+        dict of OMEGA instance and limits on ambient conditions
     ambient_pre : dict
         dict of ambient conditions at start of weighing: {'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
 
@@ -182,31 +183,32 @@ def check_ambient_post(omega, ambient_pre):
     """
 
     try:
-        ambient = omega.get_t_rh()
+        ambient = omega['Inst'].get_t_rh()
         ambient_post = {'T_post'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_post (%)': ambient['RH (%)']}
         log.info('Ambient conditions:\n'+str(ambient_post))
+
+        if (ambient_pre['T_pre'+IN_DEGREES_C] - ambient_post['T_post'+IN_DEGREES_C]) ** 2 > omega['MAX_T_CHANGE']**2:
+            ambient_post['Ambient OK?'] = False
+            log.warning('Ambient temperature change during weighing exceeds quality criteria')
+        elif (ambient_pre['RH_pre (%)'] - ambient_post['RH_post (%)']) ** 2 > omega['MAX_RH_CHANGE']**2:
+            ambient_post['Ambient OK?'] = False
+            log.warning('Ambient humidity change during weighing exceeds quality criteria')
+        else:
+            log.info('Ambient conditions OK during weighing')
+            ambient_post['Ambient OK?'] = True
     except:
         log.error('Omega logger is not present or could not be read')
-        ambient_post = {'T_post'+IN_DEGREES_C: 20.0, 'RH_post (%)': 50.0}
-
-
-
-    if (ambient_pre['T_pre'+IN_DEGREES_C] - ambient_post['T_post'+IN_DEGREES_C]) ** 2 > MAX_T_CHANGE**2:
-        ambient_post['Ambient OK?'] = False
-        log.warning('Ambient temperature change during weighing exceeds quality criteria')
-    elif (ambient_pre['RH_pre (%)'] - ambient_post['RH_post (%)']) ** 2 > MAX_RH_CHANGE**2:
-        ambient_post['Ambient OK?'] = False
-        log.warning('Ambient humidity change during weighing exceeds quality criteria')
-    else:
-        log.info('Ambient conditions OK during weighing')
-        ambient_post['Ambient OK?'] = True
+        ambient_post = {'T_post'+IN_DEGREES_C: None, 'RH_post (%)': None, 'Ambient OK?': None}
 
     return ambient_post
 
 
-def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
+def analyse_weighing(root, url, se, run_id, timed=False, drift=None):
     schemefolder = root['Circular Weighings'][se]
     weighdata = schemefolder['measurement_' + run_id]
+
+    if not weighdata.metadata.get('Weighing complete'):
+        return None
 
     weighing = CircWeigh(se)
     if timed:
@@ -258,7 +260,7 @@ def analyse_weighing(root, url, se, run_id, timed=True, drift=None):
 
     flag = weighdata.metadata.get('Ambient OK?')
     if not flag:
-        log.warning('Change in ambient conditions during weighing exceeded quality criteria')
+        log.warning('Change in ambient conditions during weighing may have exceeded quality criteria')
         analysis_meta['Acceptance met?'] = False
 
     weighanalysis.add_metadata(**analysis_meta)
@@ -292,3 +294,31 @@ def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
         except KeyError:
             log.info('No more runs to analyse')
             break
+
+
+def check_existing_runs(root, scheme_entry):
+    i = 0
+    good_runs = 0
+    while True:
+        run_id = 'run_' + str(i+1)
+        try:
+            existing_mmt = root['Circular Weighings'][scheme_entry]['measurement_' + run_id]
+            print(run_id, 'complete?', existing_mmt.metadata.get('Weighing complete'))
+            try:
+                existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
+                ok = existing_analysis.metadata.get('Acceptance met?')
+                if ok:
+                    print('good good')
+                    good_runs += 1
+                elif not existing_analysis.metadata.get['Exclude?']:
+                    print('outside acceptance but allowed')
+                    good_runs += 1
+            except:
+                print('Weighing not complete')
+            i += 1
+        except KeyError:
+            break
+
+    run_1_no = int(run_id.strip('run_'))
+
+    return good_runs, run_1_no # returns integers for each
