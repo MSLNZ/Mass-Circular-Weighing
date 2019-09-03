@@ -79,6 +79,19 @@ class SchemeTable(QtWidgets.QTableWidget):
         except AttributeError:
             log.error('Incomplete data in selected row')
 
+    def get_se_row_dict(self, row):
+        se_row_data = {}
+        try:
+            se_row_data['scheme_entry'] = self.cellWidget(row, 0).text()
+            se_row_data['nominal'] = self.cellWidget(row, 1).text()
+            se_row_data['bal_alias'] = self.cellWidget(row, 2).currentText()
+            se_row_data['num_runs'] = self.cellWidget(row, 3).text()
+
+            return se_row_data
+
+        except AttributeError:
+            log.error('Incomplete data in selected row')
+
     def update_se_status(self, row, status):
         self.cellWidget(row, 4).setText(status)
 

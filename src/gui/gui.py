@@ -6,6 +6,7 @@ from src.log import log
 from src.gui.widgets.housekeeping import Housekeeping
 from src.gui.widgets.scheme_table import SchemeTable
 from src.gui.circweigh_popup import WeighingThread
+from src.routines.run_circ_weigh import analyse_all_weighings_in_file
 from src.routines.collate_data import collate_all_weighings
 from src.gui.masscalc_popup import MassCalcThread
 
@@ -14,14 +15,18 @@ def make_table_panel():
     check_ses = Button(text='Check scheme entries', left_click=check_scheme, )
     save_ses = Button(text='Save scheme entries', left_click=save_scheme, )
     run_row = Button(text='Do weighing(s) for selected scheme entry', left_click=collect_n_good_runs, )
-    collate_data = Button(text='Display weighing results', left_click=display_results, )
+    reanalyse_row = Button(text='Reanalyse weighing(s) for selected scheme entry', left_click=reanalyse_weighings, )
+    display_data = Button(text='Display selected weighing', left_click=display_se_results, )
+    collate_data = Button(text='Display collated results', left_click=display_collated)
 
     buttons = QtWidgets.QWidget()
     button_group = QtWidgets.QGridLayout()
     button_group.addWidget(check_ses, 0, 0)
     button_group.addWidget(save_ses, 1, 0)
     button_group.addWidget(run_row, 0, 1)
-    button_group.addWidget(collate_data, 1, 1)
+    button_group.addWidget(reanalyse_row, 1, 1)
+    button_group.addWidget(display_data, 0, 2)
+    button_group.addWidget(collate_data, 1, 2)
     buttons.setLayout(button_group)
 
     central_panel_group = QtWidgets.QGroupBox('Weighing Scheme Details')
@@ -41,6 +46,17 @@ def save_scheme():
     filename = housekeeping.client + '_Scheme.xls'
     schemetable.save_scheme(folder, filename)
 
+def get_se_row():
+    row = schemetable.currentRow()
+    if row == -1:
+        log.warn('No row selected')
+        return
+    log.info('Row ' + str(row + 1) + ' selected for weighing')
+
+    se_row_data = schemetable.get_se_row_dict(row)
+
+    return se_row_data
+
 def collect_n_good_runs():
     try:
         housekeeping.cfg.bal_class
@@ -48,36 +64,41 @@ def collect_n_good_runs():
         housekeeping.initialise_cfg()
 
     info = housekeeping.info
-    row = schemetable.currentRow()
-    if row == -1:
-        log.warn('No row selected')
-        return
-    log.info('Row ' + str(row + 1) + ' selected for weighing')
 
-    #schemetable.update_se_status(row, 'Started')
-
-    se_row_data = schemetable.get_row_info(row)
-
+    se_row_data = get_se_row()
     weigh_thread.show(se_row_data, info)
 
-    #while not thread.good_runs:
-    #    sleep(15)
+def reanalyse_weighings():
+    se_row_data = get_se_row()
+    filename = housekeeping.client+'_'+se_row_data['nominal']
+    analyse_all_weighings_in_file(housekeeping.folder, filename, se_row_data['scheme_entry'],
+                                  timed=housekeeping.timed, drift=housekeeping.drift)
+    if housekeeping.drift:
+        log.info('Weighing re-analysed using ' + housekeeping.drift + ' correction')
+    else:
+        log.info('Weighing re-analysed using optimal drift correction')
 
-    #schemetable.update_se_status(row, 'Finished')
+def display_se_results():
+    pass
 
-def display_results():
+def display_collated():
+    try:
+        client = housekeeping.client
+        client_wt_IDs = housekeeping.client_masses
+        check_wt_IDs = housekeeping.cfg.all_checks['weight ID']
+        std_masses = housekeeping.cfg.all_stds
+    except:
+        housekeeping.initialise_cfg()
     data = collate_all_weighings(schemetable, housekeeping)
     mass_thread.show(data)
 
-def final_mass_calc():
     filesavepath = ''
-    client = housekeeping.info.client
-    client_wt_IDs = housekeeping.client_masses
-    check_wt_IDs = housekeeping.cfg.all_checks['weight ID']
-    std_masses = housekeeping.cfg.self.all_stds
+
 
 
 sys.excepthook = excepthook
+
+# could ask user to load config file here?
 
 gui = application()
 

@@ -45,26 +45,26 @@ if __name__ == "__main__":
     ### initialise configuration
     cfg = Configuration(config, 'MET16A', 'MET16B')
 
-    client = 'Demo_prompt'
-    folder = r'C:\Users\r.hawke.IRL\PycharmProjects\test_json_files\Demo1'  # use full path
+    client = 'AsureQ_Mar'
+    folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\AsureQ_Mar'  # use full path
 
     ### specify balance to use for weighing, and weights in comparison
-    scheme_entry = "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" #"1a 1b 1c 1d" # "5000 5000MA 5000MB"
+    scheme_entry = "500 500MA 500MB" #"3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" #"1a 1b 1c 1d" # "5000 5000MA 5000MB"
 
     #"2000 2000MA 2000MB"  "1000 1000MA 1000MB"
     # "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example
     # "1 1s 0.5+0.5s" #
-    nominal_mass = 1000  # nominal mass in g
-    bal_alias = 'AX10005' # codename for balance
+    nominal_mass = 500  # nominal mass in g
+    bal_alias = 'MDE-demo' # codename for balance
     omega_alias = 'Omega'
 
     filename = client + '_' + str(nominal_mass) # + '_' + run_id
 
-    for i in range(1):
-        do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
-                        omega_alias=omega_alias, timed=False, drift='linear drift')
+    # for i in range(1):
+    #     do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
+    #                     omega_alias=omega_alias, timed=False, drift='linear drift')
 
-    #analyse_all_weighings_in_file(folder, filename, scheme_entry, timed=False, drift='linear drift')#None)
+    analyse_all_weighings_in_file(folder, filename, scheme_entry, timed=False, drift='quadratic drift')#None)
 
     #inputdata = collate_a_data_from_json(folder, filename, scheme_entry)  # gets data in g
 

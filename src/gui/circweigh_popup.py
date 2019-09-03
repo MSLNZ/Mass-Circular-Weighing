@@ -20,58 +20,54 @@ class WeighingWorker(Worker):
         self.callback_read = call_read
         self.se_row_data = se_row_data
         self.info = info
-        self.good_runs = 0
+        self.good_runs = self.se_row_data['Good runs']
 
     def process(self):
         # collating and sorting metadata
-        se = self.se_row_data[0]
-        nom_mass_str = self.se_row_data[1]
-        bal_alias = self.se_row_data[2]
-        num_runs = self.se_row_data[3]
-        client = self.info['Client']
-        folder = self.info['Folder']
-        omega_alias = self.info['Omega logger']
-        timed = self.info['Use measurement times?']
-        drift = self.info['Drift correction']
+        se = self.se_row_data['scheme_entry']
+
         cfg = self.info['CFG']
-        bal = cfg.get_bal_instance(bal_alias)
-        mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
-        ac = cfg.acceptance_criteria(bal_alias, float(nom_mass_str))
+        bal = cfg.get_bal_instance(self.se_row_data['bal_alias'])
+        mode = cfg.equipment[self.se_row_data['bal_alias']].user_defined['weighing_mode']
+        ac = cfg.acceptance_criteria(self.se_row_data['bal_alias'], float(self.se_row_data['nominal']))
 
         # get OMEGA instance if available
-        if omega_alias:
-            omega_instance = cfg.get_omega_instance(omega_alias)
+        if self.info['Omega logger']:
+            omega_instance = cfg.get_omega_instance(self.info['Omega logger'])
         else:
             omega_instance = None
 
         # collect metadata
         metadata = {
-            'Client': client, 'Balance': bal_alias, 'Unit': bal.unit, 'Nominal mass (g)': float(nom_mass_str),
+            'Client': self.info['Client'], 'Balance': self.se_row_data['bal_alias'],
+            'Unit': bal.unit, 'Nominal mass (g)': float(self.se_row_data['nominal']),
         }
         for key, value in ac.items():
             metadata[key] = value
-
-        # get any existing data for scheme_entry
-        filename = client + '_' + nom_mass_str  # + '_' + run_id
-        url = folder + "\\" + filename + '.json'
-        root = check_for_existing_weighdata(folder, url, se)
-        run_id_1 = get_next_run_id(root, se)
 
         log.debug(str(self.info))
 
         run = 0
         bad_runs = 0
-        run_no_1 = int(run_id_1.strip('run_'))
-        while run < float(num_runs)+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS:
-            self.callback_run(self.good_runs, bad_runs, num_runs)
-            run_id = 'run_' + str(round(run_no_1+run, 0))
-            weighing_root = do_circ_weighing(bal, se, root, url, run_id,
+
+        if self.se_row_data['First run no.'] > 1:
+            print('not first run')
+
+        while run < float(self.se_row_data['num_runs'])+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS:
+
+            self.callback_run(self.good_runs, bad_runs, self.se_row_data['num_runs'])
+
+            run_id = 'run_' + str(round(self.se_row_data['First run no.']+run, 0))
+
+            weighing_root = do_circ_weighing(bal, se, self.se_row_data['root'], self.se_row_data['url'], run_id,
                                         callback1=self.callback_cp, callback2=self.callback_read, omega=omega_instance,
                                         **metadata,)
             if weighing_root:
-                weighanalysis = analyse_weighing(root, url, se, run_id, timed=timed, drift=drift)
-                if weighanalysis.metadata.get['Acceptance met?']:
-                    print('good weighing')
+                weighanalysis = analyse_weighing(self.se_row_data['root'], self.se_row_data['url'], se, run_id,
+                                                 timed=self.info['Use measurement times?'],
+                                                 drift=self.info['Drift correction'])
+                ok = weighanalysis.metadata.get('Acceptance met?')
+                if ok:
                     self.good_runs += 1
                 elif mode == 'aw' and not weighanalysis.metadata.get['Exclude?']:
                     print('outside acceptance but allowed')
@@ -81,14 +77,14 @@ class WeighingWorker(Worker):
             else:
                 return self.good_runs
 
-            if self.good_runs == float(num_runs):
+            if self.good_runs == float(self.se_row_data['num_runs']):
                 break
 
             run += 1
             bal._want_abort = False
 
         if bad_runs == MAX_BAD_RUNS:
-            log.error('Completed ' + str(self.good_runs) + ' acceptable weighings of ' + num_runs)
+            log.error('Completed ' + str(self.good_runs) + ' acceptable weighings of ' + self.se_row_data['num_runs'])
             return self.good_runs
 
         print('Finished weighings for ' + se)
@@ -139,14 +135,29 @@ class WeighingThread(Thread):
         self.se_row_data = se_row_data
         self.info = info
 
-        self.scheme_entry.setText(se_row_data[0])
-        self.nominal_mass.setText(se_row_data[1])
-        self.num_runs = se_row_data[3]
+        self.scheme_entry.setText(self.se_row_data['scheme_entry'])
+        self.nominal_mass.setText(se_row_data['nominal'])
+        self.num_runs = se_row_data['num_runs']
+
+        self.check_for_existing()
 
         self.window.show()
 
     def start_weighing(self, ):
+        self.check_for_existing()
         self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.info)
+
+
+    def check_for_existing(self):
+        filename = self.info['Client'] + '_' + self.se_row_data['nominal']  # + '_' + run_id
+        url = self.info['Folder'] + "\\" + filename + '.json'
+        root = check_for_existing_weighdata(self.info['Folder'], url, self.se_row_data['scheme_entry'])
+        good_runs, run_no_1 = check_existing_runs(root, self.se_row_data['scheme_entry'])
+        self.se_row_data['url'] = url
+        self.se_row_data['root'] = root
+        self.se_row_data['Good runs'] = good_runs
+        self.se_row_data['First run no.'] = run_no_1
+        self.update_run_no(good_runs, 0, self.num_runs)
 
     def update_run_no(self, good, bad, tot):
         self.run_id.setText('{} of {} ({} bad)'.format(good+1, tot, bad))

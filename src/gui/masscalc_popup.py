@@ -1,3 +1,5 @@
+import numpy as np
+
 from src.constants import MU_STR
 from msl.qt import QtWidgets, Button, excepthook
 from msl.qt.threading import Thread, Worker
@@ -38,6 +40,17 @@ class DiffsTable(QtWidgets.QTableWidget):
             self.cellWidget(i, 6).setChecked(True)
         self.resizeColumnsToContents()
 
+    def get_checked_rows(self, ):
+        inputdata = np.empty(0,
+                             dtype =[('+ weight group', object), ('- weight group', object),
+                                     ('mass difference (g)', 'float64'),
+                                     ('balance uncertainty ('+MU_STR+'g)', 'float64')])
+        for i in range(self.rowCount()):
+            if self.cellWidget(i, 6): # if checked
+                # get data
+                return inputdata
+
+
 #class FinalMassTable()
 
 
@@ -46,27 +59,35 @@ class CalcWorker(Worker):
     def __init__(self, table):
         super(CalcWorker, self).__init__()
         self.table = table
+        #self.inputdata = np.empty(0,
+        #dtype =[('+ weight group', object), ('- weight group', object),
+        #       ('mass difference (g)', 'float64'), ('balance uncertainty ('+MU_STR+'g)', 'float64')])
+
 
     def process(self):
         # collating and sorting metadata
         print("oh hello, let's do a calculation")
+        print(self.table)
+        # inputdata = self.table.get_checked_rows()
+        # final mass calc takes: filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None
 
 
 class MassCalcThread(Thread):
 
     def __init__(self, ):
         super(MassCalcThread, self).__init__(CalcWorker)
+        self.table = None
 
     def make_window(self, data):
-        table = DiffsTable(data)
-        do_calc = Button(text='Do calculation', left_click=self.start)
+        self.table = DiffsTable(data)
+        do_calc = Button(text='Do calculation', left_click=self.start_finalmasscalc)
 
         self.window = QtWidgets.QWidget()
         self.window.setWindowTitle('Final Mass Calculation')
 
         status = QtWidgets.QWidget()
         status_layout = QtWidgets.QVBoxLayout()
-        status_layout.addWidget(table)
+        status_layout.addWidget(self.table)
         status.setLayout(status_layout)
 
         panel = QtWidgets.QGridLayout()
@@ -83,7 +104,7 @@ class MassCalcThread(Thread):
         print('showing')
 
     def start_finalmasscalc(self, ):
-        self.start()
+        self.start(self.table)
 
     def update_weigh_matrix(self, ):
         # make array

@@ -13,7 +13,7 @@ class Housekeeping(QtWidgets.QWidget):
         self.config_io = Browse(config_default, 'shell32|4')
         self.folder_io = Browse(save_folder_default, 'shell32|4')
         self.client_io = QtWidgets.QLineEdit('AsureQ_Mar')
-        self.client_masses_io = QtWidgets.QTextEdit('1 2 5 10 20 50 100 200 500 1000 2000 5000')
+        self.client_masses_io = QtWidgets.QTextEdit('1 2 5 10 20 50 100 200 200d 500 1000 2000 5000')
 
         self.cb_stds_io = QtWidgets.QComboBox()
         self.cb_stds_io.addItems(stds)
@@ -144,7 +144,7 @@ class Housekeeping(QtWidgets.QWidget):
             'Standard mass set': self.std_set,
             'Check mass set':self.check_set,
             'Omega logger': self.omega,
-            'Drift correction': self.drift_io.currentText(),
+            'Drift correction': self.drift,
             'Use measurement times?':  str(self.timed),
             'Correlations between standards?': self.correlations,}
         return info
