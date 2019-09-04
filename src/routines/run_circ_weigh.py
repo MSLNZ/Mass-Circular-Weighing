@@ -1,7 +1,7 @@
 import os
 from msl.io import JSONWriter, read
 from src.routines.circ_weigh_class import CircWeigh
-from src.constants import IN_DEGREES_C, SUFFIX, SQRT_F, EXCL, MU_STR
+from src.constants import IN_DEGREES_C, SUFFIX, MU_STR
 from time import perf_counter
 from datetime import datetime
 import numpy as np
@@ -125,12 +125,12 @@ def check_ambient_pre(omega):
 
     Parameters
     ----------
-    omega : dict
+    omega : :class:`dict`
         dict of OMEGA instance and limits on ambient conditions
 
     Returns
     -------
-    ambient_pre : dict
+    ambient_pre : :class:`dict`
         dict of ambient conditions at start of weighing: {'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
         If OMEGA instance unavailable, returns 20+IN_DEGREES_C and 50%.
     """
@@ -170,14 +170,14 @@ def check_ambient_post(omega, ambient_pre):
 
     Parameters
     ----------
-    omega : dict
+    omega : :class:`dict`
         dict of OMEGA instance and limits on ambient conditions
-    ambient_pre : dict
+    ambient_pre : :class:`dict`
         dict of ambient conditions at start of weighing: {'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
 
     Returns
     -------
-    ambient_post : dict
+    ambient_post : :class:`dict`
         dict of ambient conditions at end of weighing, and evaluation of overall conditions during measurement.
         dict has key-value pairs {'T_post'+IN_DEGREES_C: float, 'RH_post (%)': float, 'Ambient OK?': bool}
     """
@@ -203,7 +203,33 @@ def check_ambient_post(omega, ambient_pre):
     return ambient_post
 
 
-def analyse_weighing(root, url, se, run_id, timed=False, drift=None):
+def analyse_weighing(root, url, se, run_id, timed=False, drift=None, SQRT_F=1.4, EXCL=3):
+    """Analyse a single circular weighing measurement using methods in circ_weigh_class
+
+    Parameters
+    ----------
+    root : :class:`root`
+        see msl.io for details
+    url : path
+        path to json file containing raw data
+    se : :class:`str`
+        scheme entry
+    run_id : :class:`str`
+        string in format run_1
+    timed : :class:`bool`, optional
+        if :data:`True`, uses times from weighings, otherwise assumes equally spaced in time
+    drift : :class:`str`, optional
+        set desired drift correction, e.g. 'quadratic drift'.  If :data:`None`, routine selects optimal drift correction
+    SQRT_F : :class:`float`, optional
+        criterion for accepting single weighing analysis, default set to 1.4
+    EXCL : :class:`float`, optional
+        criterion for excluding a single weighing within an automatic weighing sequence, default set arbitrarily at 3
+
+    Returns
+    -------
+    :class:`root`
+        the original root object with new analysis data
+    """
     schemefolder = root['Circular Weighings'][se]
     weighdata = schemefolder['measurement_' + run_id]
 
@@ -213,17 +239,18 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None):
     weighing = CircWeigh(se)
     if timed:
         times = np.reshape(weighdata[:, :, 0], weighing.num_readings)
-        weighing.generate_design_matrices(times)
     else:
-        weighing.generate_design_matrices(times=[])
-
-    d = weighing.determine_drift(weighdata[:, :, 1])  # allows program to select optimum drift correction
+        times=[]
+    weighing.generate_design_matrices(times)
 
     if not drift:
-        drift = d
-
-    log.info('Residual std dev. for each drift order:\n'
-             + str(weighing.stdev))
+        drift = weighing.determine_drift(weighdata[:, :, 1])  # allows program to select optimum drift correctiond
+        log.info('Residual std dev. for each drift order:\n'
+                 + str(weighing.stdev))
+    else:
+        weighing.expected_vals_drift(weighdata[:, :, 1], drift)
+        log.info('Residual std dev. for '+drift+' correction:\n'
+                 + str(weighing.stdev))
 
     massunit = weighdata.metadata.get('Unit')
     log.info('Selected ' + drift + ' correction (in ' + massunit + ' per reading):\n'
@@ -234,8 +261,7 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None):
     log.info('Differences (in ' + massunit + '):\n'
              + str(weighing.grpdiffs))
 
-    # save analysis to json file
-    # (note that any previous analysis for the same run is not saved in the new json file)
+    # save new analysis in json file
     weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
 
@@ -267,7 +293,7 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None):
 
     root.save(url=url, mode='w', encoding='utf-8', ensure_ascii=False)
 
-    log.info('Circular weighing complete')
+    log.info('Circular weighing analysis for '+se+', '+run_id+' complete')
 
     return weighanalysis
 

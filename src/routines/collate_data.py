@@ -2,7 +2,7 @@
 
 import os
 from msl.io import read
-from ..constants import MU_STR, SUFFIX, SQRT_F
+from ..constants import MU_STR, SUFFIX
 from ..log import log
 import numpy as np
 
@@ -11,7 +11,7 @@ def collate_all_weighings(schemetable, housekeeping):
     folder = housekeeping.folder
     client = housekeeping.client
     cfg = housekeeping.cfg
-    if not cfg:
+    if not cfg.SQRT_F:
         housekeeping.initialise_cfg()
         cfg = housekeeping.cfg
 
@@ -26,7 +26,7 @@ def collate_all_weighings(schemetable, housekeeping):
             bal_alias = schemetable.cellWidget(row, 2).currentText()
             mode = 'aw' # cfg.equipment[bal_alias].user_defined['weighing_mode']
             if mode == 'aw':
-                newdata = collate_a_data_from_json(folder, filename, schemetable.cellWidget(row, 0).text())
+                newdata = collate_a_data_from_json(folder, filename, schemetable.cellWidget(row, 0).text(), cfg.SQRT_F)
             else:
                 newdata = collate_m_data_from_json(folder, filename, schemetable.cellWidget(row, 0).text())
             dlen = data.shape[0]
@@ -43,7 +43,7 @@ def collate_all_weighings(schemetable, housekeeping):
     return data
 
 
-def collate_a_data_from_json(folder, filename, scheme_entry):
+def collate_a_data_from_json(folder, filename, scheme_entry, SQRT_F):
     """Use this function for an automatic weighing where individual weighings are not likely to meet SQRT_F criterion,
     but the ensemble average is.
 
@@ -52,6 +52,7 @@ def collate_a_data_from_json(folder, filename, scheme_entry):
     folder
     filename
     scheme_entry
+    SQRT_F
 
     The json file must have analysis datasets with fields and formats as follows:
     dtype = [('+ weight group', 'O'), ('- weight group', 'O'), ('mass difference', '<f8'), ...

@@ -23,6 +23,9 @@ class Configuration(object):
         self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/'+stdset).text, 'std')
         self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+checkset).text, 'check')
 
+        self.SQRT_F = float(self.cfg.root.find('acceptance_criteria/SQRT_F').text)
+        self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
+
     def get_bal_instance(self, alias, strict=True):
         """Selects balance class and returns balance instance
 
@@ -83,7 +86,8 @@ class Configuration(object):
         Returns
         -------
         dict of {'Max stdev from CircWeigh (ug)': float,
-                 'Stdev for balance (ug)': float}
+                 'Stdev for balance (ug)': float,
+                 }
         """
         record = self.equipment.get(alias)
         if not record:
@@ -117,8 +121,10 @@ class Configuration(object):
 
         for row in store:
             if float(row[index_map['load min']]) <= nominal_mass <= float(row[index_map['load max']]):
-                return {'Max stdev from CircWeigh ('+MU_STR+'g)': float(row[index_map['acceptable']]),
-                        'Stdev for balance ('+MU_STR+'g)': float(row[index_map['residuals']])/2}
+                return {
+                    'Max stdev from CircWeigh ('+MU_STR+'g)': float(row[index_map['acceptable']]),
+                    'Stdev for balance ('+MU_STR+'g)': float(row[index_map['residuals']])/2,
+                }
 
         raise ValueError('Nominal mass out of range of balance')
 

@@ -25,6 +25,10 @@
     <acceptance_criteria>
           <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
           <sheet>AcceptanceCriteria</sheet>
+          <SQRT_F>1.4</SQRT_F>  <!-- criterion for accepting single weighing analysis -->
+          <EXCL>3</EXCL> <!-- criterion for excluding a single weighing within an automatic weighing sequence
+                            from the final averaging (and from any tally of happy weighings).
+                            Currently set to a rather arbitrary value without any experimental basis... -->
     </acceptance_criteria>
 
     <!-- Specify all standard sets available for weighings. -->

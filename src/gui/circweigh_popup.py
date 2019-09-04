@@ -63,9 +63,10 @@ class WeighingWorker(Worker):
                                         callback1=self.callback_cp, callback2=self.callback_read, omega=omega_instance,
                                         **metadata,)
             if weighing_root:
-                weighanalysis = analyse_weighing(self.se_row_data['root'], self.se_row_data['url'], se, run_id,
-                                                 timed=self.info['Use measurement times?'],
-                                                 drift=self.info['Drift correction'])
+                weighanalysis = analyse_weighing(
+                    self.se_row_data['root'], self.se_row_data['url'], se, run_id, SQRT_F=cfg.SQRT_F, EXCL=cfg.EXCL,
+                    timed=self.info['Use measurement times?'], drift=self.info['Drift correction'],
+                )
                 ok = weighanalysis.metadata.get('Acceptance met?')
                 if ok:
                     self.good_runs += 1
