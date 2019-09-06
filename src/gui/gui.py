@@ -66,7 +66,12 @@ def collect_n_good_runs():
     info = housekeeping.info
 
     se_row_data = get_se_row()
-    weigh_thread.show(se_row_data, info)
+
+    weigh_thread = WeighingThread()
+    all_my_threads.append(weigh_thread)
+    good_runs = weigh_thread.show(se_row_data, info)
+    print(good_runs, 'in main gui')
+
 
 def reanalyse_weighings():
     se_row_data = get_se_row()
@@ -83,18 +88,28 @@ def display_se_results():
 
 def display_collated():
     try:
+        folder = housekeeping.folder
         client = housekeeping.client
         client_wt_IDs = housekeeping.client_masses
         check_wt_IDs = housekeeping.cfg.all_checks['weight ID']
         std_masses = housekeeping.cfg.all_stds
     except:
         housekeeping.initialise_cfg()
+
     data = collate_all_weighings(schemetable, housekeeping)
-    mass_thread.show(data)
 
-    filesavepath = ''
+    fmc_info = {'url': housekeeping.folder + "\\" + housekeeping.client + '_finalmasscalc.json',
+                'Client': housekeeping.client,
+                'client_wt_IDs': housekeeping.client_masses,
+                'check_wt_IDs': housekeeping.cfg.all_checks['weight ID'],
+                'std_masses': housekeeping.cfg.all_stds,
+                'nbc': True,
+                'corr': housekeeping.correlations,
+    }
+    mass_thread.show(data, fmc_info)
 
 
+all_my_threads = []
 
 sys.excepthook = excepthook
 
@@ -102,7 +117,6 @@ sys.excepthook = excepthook
 
 gui = application()
 
-weigh_thread = WeighingThread()
 mass_thread = MassCalcThread()
 
 w = QtWidgets.QWidget()
@@ -123,3 +137,10 @@ w.setLayout(layout)
 
 w.show()
 gui.exec()
+
+
+def clean_up_thread(self, thread_instance):
+    for i, item in enumerate(all_my_threads):
+        if thread_instance is item:
+            del all_my_threads[i]
+            break

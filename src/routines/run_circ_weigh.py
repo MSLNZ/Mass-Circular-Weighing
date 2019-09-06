@@ -262,6 +262,19 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, SQRT_F=1.4,
              + str(weighing.grpdiffs))
 
     # save new analysis in json file
+    print(id(schemefolder), id(root[schemefolder.name]))
+    print(root.tree())
+    #for k, v in root.items():
+    #    print(k, v)
+    #print(schemefolder.name+'/analysis_'+run_id)
+    a = root.remove(schemefolder.name+'/analysis_'+run_id)
+    #schemefolder.remove('analysis_'+run_id)
+    print(id(schemefolder), id(root[schemefolder.name]))
+    print(root.tree())
+    #print('removed', a)
+    #for k, v in root.items():
+    #    print(k, v)
+    print(schemefolder.name+'/analysis_'+run_id)
     weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
 
@@ -330,21 +343,23 @@ def check_existing_runs(root, scheme_entry):
         try:
             existing_mmt = root['Circular Weighings'][scheme_entry]['measurement_' + run_id]
             print(run_id, 'complete?', existing_mmt.metadata.get('Weighing complete'))
-            try:
-                existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
-                ok = existing_analysis.metadata.get('Acceptance met?')
-                if ok:
-                    print('good good')
-                    good_runs += 1
-                elif not existing_analysis.metadata.get['Exclude?']:
-                    print('outside acceptance but allowed')
-                    good_runs += 1
-            except:
-                print('Weighing not complete')
-            i += 1
+            if existing_mmt.metadata.get('Weighing complete'):
+                try:
+                    existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
+                    ok = existing_analysis.metadata.get('Acceptance met?')
+                    if ok:
+                        print('good good')
+                        good_runs += 1
+                    elif not existing_analysis.metadata.get['Exclude?']:
+                        print('outside acceptance but allowed')
+                        good_runs += 1
+                except:
+                    print('Weighing not accepted')
         except KeyError:
             break
+        i += 1
 
     run_1_no = int(run_id.strip('run_'))
 
     return good_runs, run_1_no # returns integers for each
+

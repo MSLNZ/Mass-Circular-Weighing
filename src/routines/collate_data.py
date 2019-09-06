@@ -24,7 +24,7 @@ def collate_all_weighings(schemetable, housekeeping):
         if schemetable.cellWidget(row, 1).text():
             filename = client + '_' + schemetable.cellWidget(row, 1).text()
             bal_alias = schemetable.cellWidget(row, 2).currentText()
-            mode = 'aw' # cfg.equipment[bal_alias].user_defined['weighing_mode']
+            mode = 'aw' #cfg.equipment[bal_alias].user_defined['weighing_mode']
             if mode == 'aw':
                 newdata = collate_a_data_from_json(folder, filename, schemetable.cellWidget(row, 0).text(), cfg.SQRT_F)
             else:
@@ -66,7 +66,8 @@ def collate_a_data_from_json(folder, filename, scheme_entry, SQRT_F):
     """
     url = folder + "\\" + filename + '.json'
     if not os.path.isfile(url):
-        raise IOError('File does not exist {!r}'.format(url))
+        log.warning('File does not yet exist {!r}'.format(url))
+        return None
 
     root = read(url)
     wt_grps = scheme_entry.split()
@@ -156,7 +157,7 @@ def collate_m_data_from_json(folder, filename, scheme_entry):
     if os.path.isfile(url):
         root = read(url)
     else:
-        log.error('No such file exists')  # TODO: could upgrade this to raise error if needed
+        log.warning('File does not yet exist {!r}'.format(url))
         return None
 
     for dataset in root.datasets():

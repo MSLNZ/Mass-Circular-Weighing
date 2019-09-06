@@ -1,11 +1,13 @@
 import numpy as np
 
 from src.constants import MU_STR
+
 from msl.qt import QtWidgets, Button, excepthook
 from msl.qt.threading import Thread, Worker
 
 from src.log import log
 
+from src.routines.final_mass_calc import final_mass_calc
 
 def label(name):
     return QtWidgets.QLabel(name)
@@ -46,9 +48,16 @@ class DiffsTable(QtWidgets.QTableWidget):
                                      ('mass difference (g)', 'float64'),
                                      ('balance uncertainty ('+MU_STR+'g)', 'float64')])
         for i in range(self.rowCount()):
-            if self.cellWidget(i, 6): # if checked
-                # get data
-                return inputdata
+            if self.cellWidget(i, 6).isChecked(): # if checked
+                #['+ weight group', '- weight group', 'mass difference (g)', 'residual ('+MU_STR+'g)', 'balance uncertainty ('+MU_STR+'g)', 'acceptance met', 'included'
+                dlen = inputdata.shape[0]
+                inputdata.resize(dlen + 1)
+                inputdata[-1:]['+ weight group'] = self.cellWidget(i, 0).text()
+                inputdata[-1:]['- weight group'] = self.cellWidget(i, 1).text()
+                inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 2).text()
+                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 4).text()
+
+        return inputdata
 
 
 #class FinalMassTable()
@@ -56,20 +65,28 @@ class DiffsTable(QtWidgets.QTableWidget):
 
 class CalcWorker(Worker):
 
-    def __init__(self, table):
+    def __init__(self, table, fmc_info,):
         super(CalcWorker, self).__init__()
         self.table = table
-        #self.inputdata = np.empty(0,
-        #dtype =[('+ weight group', object), ('- weight group', object),
-        #       ('mass difference (g)', 'float64'), ('balance uncertainty ('+MU_STR+'g)', 'float64')])
-
+        self.fmc_info = fmc_info
 
     def process(self):
         # collating and sorting metadata
         print("oh hello, let's do a calculation")
         print(self.table)
-        # inputdata = self.table.get_checked_rows()
-        # final mass calc takes: filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None
+        inputdata = self.table.get_checked_rows()
+        print(inputdata)
+        #final mass calc takes: filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None
+        final_mass_calc(
+            self.fmc_info['url'],
+            self.fmc_info['Client'],
+            self.fmc_info['client_wt_IDs'],
+            self.fmc_info['check_wt_IDs'],
+            self.fmc_info['std_masses'],
+            inputdata,
+            nbc=self.fmc_info['nbc'],
+            corr=self.fmc_info['corr'],
+        )
 
 
 class MassCalcThread(Thread):
@@ -77,6 +94,7 @@ class MassCalcThread(Thread):
     def __init__(self, ):
         super(MassCalcThread, self).__init__(CalcWorker)
         self.table = None
+        self.fmc_info = None
 
     def make_window(self, data):
         self.table = DiffsTable(data)
@@ -98,13 +116,13 @@ class MassCalcThread(Thread):
         rect = QtWidgets.QDesktopWidget()
         #self.window.move(rect.width() * 0.05, rect.height() * 0.55)
 
-    def show(self, data):
+    def show(self, data, fmc_info):
         self.make_window(data)
+        self.fmc_info = fmc_info
         self.window.show()
-        print('showing')
 
-    def start_finalmasscalc(self, ):
-        self.start(self.table)
+    def start_finalmasscalc(self):
+        self.start(self.table, self.fmc_info, )
 
     def update_weigh_matrix(self, ):
         # make array
