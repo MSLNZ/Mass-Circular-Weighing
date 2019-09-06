@@ -26,7 +26,8 @@ balances = [                # available balances - can we get these from the con
     "AT106",
 ]
 omega_loggers = [           # available Omega Loggers
-    "Omega",
+    "mass 1",
+    "mass 2",
 ]
 MAX_BAD_RUNS = 3
 
