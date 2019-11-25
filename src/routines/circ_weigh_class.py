@@ -96,7 +96,7 @@ class CircWeigh(object):
         Parameters
         ----------
         dataset : array
-            array from h5py dataset object e.g. weighing[:,:]
+            array from dataset object e.g. weighing[:,:]
 
         Returns
         -------
@@ -104,30 +104,46 @@ class CircWeigh(object):
             Order of drift correction which gives the smallest standard deviation
 
         """
-        # convert data array to 1D list
-        y_col = np.reshape(dataset, self.num_readings)
-
-        # calculate vector of expected values
         for drift, xT in self.t_matrices.items():
-            xTx_inv = np.linalg.inv(np.dot(xT, self.matrices[drift]))
-            log.debug('xTx_inv = '+str(xTx_inv)+' for '+drift)
-            self.b[drift] = np.linalg.multi_dot([xTx_inv, xT, y_col])
-            log.debug('b = '+str(self.b)+' for '+drift)
-
-            # calculate the residuals, variance and variance-covariance matrix:
-            self.residuals[drift] = y_col - np.dot(self.matrices[drift], self.b[drift])
-            log.debug('residuals for '+drift+' are '+str(self.residuals[drift]))
-
-            var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (self.num_readings - self.num_wtgrps - self._driftorder[drift])
-            log.debug('variance, \u03C3\u00b2, for '+drift+' is: '+str(var.item(0)))
-            self.stdev[drift] = np.round(np.sqrt(var.item(0)),8)
-            log.debug('residual standard deviation, \u03C3, for '+drift+' is: '+str(self.stdev[drift]))
-
-            self.varcovar[drift] = np.multiply(var, xTx_inv)
-            log.debug('variance-covariance matrix, C = '+str(self.varcovar[drift])+
-                      ' for '+str(self.num_wtgrps)+' items and '+drift+' correction')
+            self.expected_vals_drift(dataset, drift)
 
         return min(self.stdev, key=self.stdev.get)
+
+    def expected_vals_drift(self, dataset, drift):
+        """This method takes a dataset from a weighing and calculates expected values, residuals, standard deviation,
+         and variance-covariance matrices for a given drift correction option.
+         All matrices are stored as instance variables.
+
+        Parameters
+        ----------
+        dataset : array
+            array from dataset object e.g. weighing[:,:]
+        drift : str
+            allowed strings are keys in _driftorder
+        """
+        # convert data array to 1D list
+        y_col = np.reshape(dataset, self.num_readings)
+        xT = self.t_matrices[drift]
+
+        # calculate vector of expected values
+        xTx_inv = np.linalg.inv(np.dot(xT, self.matrices[drift]))
+        log.debug('xTx_inv = ' + str(xTx_inv) + ' for ' + drift)
+        self.b[drift] = np.linalg.multi_dot([xTx_inv, xT, y_col])
+        log.debug('b = ' + str(self.b) + ' for ' + drift)
+
+        # calculate the residuals, variance and variance-covariance matrix:
+        self.residuals[drift] = y_col - np.dot(self.matrices[drift], self.b[drift])
+        log.debug('residuals for ' + drift + ' are ' + str(self.residuals[drift]))
+
+        var = np.dot(self.residuals[drift].T, self.residuals[drift]) / (
+                    self.num_readings - self.num_wtgrps - self._driftorder[drift])
+        log.debug('variance, \u03C3\u00b2, for ' + drift + ' is: ' + str(var.item(0)))
+        self.stdev[drift] = np.round(np.sqrt(var.item(0)), 8)
+        log.debug('residual standard deviation, \u03C3, for ' + drift + ' is: ' + str(self.stdev[drift]))
+
+        self.varcovar[drift] = np.multiply(var, xTx_inv)
+        log.debug('variance-covariance matrix, C = ' + str(self.varcovar[drift]) +
+                  ' for ' + str(self.num_wtgrps) + ' items and ' + drift + ' correction')
 
     def drift_coeffs(self, drift):
         """For non-zero drift correction, this method takes the variance-covariance matrix from determine_drift,

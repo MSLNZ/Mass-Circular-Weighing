@@ -1,13 +1,13 @@
-from src.application import Application
+from src.configuration import Configuration
 
 
 
 config = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\config.xml'
 ### initialise application
-app = Application(config)
+cfg = Configuration(config)
 
 
-omega = app.get_omega_instance('Omega')
+omega = cfg.get_omega_instance('Omega')
 ambient = omega.get_t_rh()
 
 print(ambient)

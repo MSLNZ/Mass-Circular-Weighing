@@ -1,7 +1,7 @@
 from msl.qt import QtWidgets, Button
 from src.log import log
 from src.constants import config_default, save_folder_default, stds, omega_loggers
-from src.application import Application
+from src.configuration import Configuration
 
 from src.gui.widgets.browse import Browse, label
 
@@ -12,13 +12,14 @@ class Housekeeping(QtWidgets.QWidget):
 
         self.config_io = Browse(config_default, 'shell32|4')
         self.folder_io = Browse(save_folder_default, 'shell32|4')
-        self.client_io = QtWidgets.QLineEdit('Client')
-        self.client_masses_io = QtWidgets.QLineEdit('1 2 5 10 20 50')
+        self.client_io = QtWidgets.QLineEdit('AsureQ_Mar')
+        self.client_masses_io = QtWidgets.QTextEdit('1 2 5 10 20 50 100 200 200d 500 1000 2000 5000')
 
         self.cb_stds_io = QtWidgets.QComboBox()
         self.cb_stds_io.addItems(stds)
         self.cb_checks_io = QtWidgets.QComboBox()
         self.cb_checks_io.addItems(stds)
+        self.cb_checks_io.setCurrentText('MET16B')
 
         self.omega_io = QtWidgets.QComboBox()
         self.omega_io.addItems(omega_loggers)
@@ -31,8 +32,8 @@ class Housekeeping(QtWidgets.QWidget):
 
         self.corr_io = QtWidgets.QLineEdit('None')
 
-        self.app = None
-        self.go = Button(text='Confirm set up', left_click=self.initialise_app)
+        self.cfg = None
+        self.go = Button(text='Confirm set up', left_click=self.initialise_cfg)
 
     def arrange_housekeeping_box(self):
         self.formGroup = QtWidgets.QGroupBox()
@@ -86,7 +87,7 @@ class Housekeeping(QtWidgets.QWidget):
 
     @property
     def client_masses(self):
-        return self.client_masses_io.text()
+        return self.client_masses_io.toPlainText()
 
     @property
     def std_set(self):
@@ -116,7 +117,7 @@ class Housekeeping(QtWidgets.QWidget):
     def correlations(self):
         return self.corr_io.text()
 
-    def initialise_app(self):
+    def initialise_cfg(self):
         log.info('Config file: '+ self.config)
         log.info('Save folder: ' + self.folder)
         log.info('Client: ' + self.client)
@@ -128,14 +129,14 @@ class Housekeeping(QtWidgets.QWidget):
         log.info('Use measurement times? ' + str(self.timed))
         log.info('Correlations between standards? ' + self.correlations)
 
-        self.app = Application(self.config, self.std_set, self.check_set)
+        self.cfg = Configuration(self.config, self.std_set, self.check_set)
 
         return True
 
     @property
     def info(self):
         info = {
-            'App': self.app,
+            'CFG': self.cfg,
             'Config file': self.config,
             'Folder': self.folder,
             'Client': self.client,
@@ -143,7 +144,7 @@ class Housekeeping(QtWidgets.QWidget):
             'Standard mass set': self.std_set,
             'Check mass set':self.check_set,
             'Omega logger': self.omega,
-            'Drift correction': self.drift_io.currentText(),
+            'Drift correction': self.drift,
             'Use measurement times?':  str(self.timed),
             'Correlations between standards?': self.correlations,}
         return info

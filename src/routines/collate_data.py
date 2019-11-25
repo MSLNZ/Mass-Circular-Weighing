@@ -2,12 +2,48 @@
 
 import os
 from msl.io import read
-from ..constants import MU_STR, SUFFIX, SQRT_F
+from ..constants import MU_STR, SUFFIX
 from ..log import log
 import numpy as np
 
 
-def collate_a_data_from_json(folder, filename, scheme_entry):
+def collate_all_weighings(schemetable, housekeeping):
+    folder = housekeeping.folder
+    client = housekeeping.client
+    cfg = housekeeping.cfg
+    if not cfg.SQRT_F:
+        housekeeping.initialise_cfg()
+        cfg = housekeeping.cfg
+
+    data = np.empty(0,
+                    dtype=[('+ weight group', object), ('- weight group', object),
+                           ('mass difference (g)', 'float64'), ('residual (' + MU_STR + 'g)', 'float64'),
+                           ('balance uncertainty (' + MU_STR + 'g)', 'float64'), ('Acceptance met?', bool)])
+
+    for row in range(schemetable.rowCount()):
+        if schemetable.cellWidget(row, 1).text():
+            filename = client + '_' + schemetable.cellWidget(row, 1).text()
+            bal_alias = schemetable.cellWidget(row, 2).currentText()
+            mode = 'aw' #cfg.equipment[bal_alias].user_defined['weighing_mode']
+            if mode == 'aw':
+                newdata = collate_a_data_from_json(folder, filename, schemetable.cellWidget(row, 0).text(), cfg.SQRT_F)
+            else:
+                newdata = collate_m_data_from_json(folder, filename, schemetable.cellWidget(row, 0).text())
+            dlen = data.shape[0]
+            if newdata is not None:
+                ndlen = newdata.shape[0]
+                data.resize(dlen + ndlen)
+                data[-len(newdata):]['+ weight group'] = newdata[:]['+ weight group']
+                data[-len(newdata):]['- weight group'] = newdata[:]['- weight group']
+                data[-len(newdata):]['mass difference (g)'] = newdata[:]['mass difference (g)']
+                data[-len(newdata):]['residual (' + MU_STR + 'g)'] = newdata[:]['residual (' + MU_STR + 'g)']
+                data[-len(newdata):]['balance uncertainty ('+MU_STR+'g)'] = newdata[:]['balance uncertainty ('+MU_STR+'g)']
+                data[-len(newdata):]['Acceptance met?'] = newdata[:]['Acceptance met?']
+
+    return data
+
+
+def collate_a_data_from_json(folder, filename, scheme_entry, SQRT_F):
     """Use this function for an automatic weighing where individual weighings are not likely to meet SQRT_F criterion,
     but the ensemble average is.
 
@@ -16,6 +52,7 @@ def collate_a_data_from_json(folder, filename, scheme_entry):
     folder
     filename
     scheme_entry
+    SQRT_F
 
     The json file must have analysis datasets with fields and formats as follows:
     dtype = [('+ weight group', 'O'), ('- weight group', 'O'), ('mass difference', '<f8'), ...
@@ -29,7 +66,8 @@ def collate_a_data_from_json(folder, filename, scheme_entry):
     """
     url = folder + "\\" + filename + '.json'
     if not os.path.isfile(url):
-        raise IOError('File does not exist {!r}'.format(url))
+        log.warning('File does not yet exist {!r}'.format(url))
+        return None
 
     root = read(url)
     wt_grps = scheme_entry.split()
@@ -59,30 +97,35 @@ def collate_a_data_from_json(folder, filename, scheme_entry):
 
     inputdata = np.empty(num_wt_grps-1,
                          dtype=[('+ weight group', object), ('- weight group', object),
-                                ('mass difference (g)', 'float64'),
-                                ('balance uncertainty (' + MU_STR + 'g)', 'float64')])
+                               ('mass difference (g)', 'float64'),
+                               ('residual (' + MU_STR + 'g)', 'float64'),
+                               ('balance uncertainty (' + MU_STR + 'g)', 'float64'),
+                               ('Acceptance met?', object)])
 
-    acceptable = True
     massdiff = np.empty(num_wt_grps)
     stdevs = np.empty(num_wt_grps)
+    acceptable = np.empty(num_wt_grps)
     for i, grp in enumerate(wt_grps):
         massdiff[i] = collated[grp][0]
         stdevs[i] = collated[grp][1]
-        if not collated[grp][1] < SQRT_F*collated['Max stdev'][0]*SUFFIX['ug']:
+        acceptable[i] = collated[grp][1] < SQRT_F*collated['Max stdev'][0]*SUFFIX['ug']
+        if not acceptable[i]:
             log.warning('Stdev of differences for + weight group ' + grp + ' falls outside acceptable limits')
-            acceptable = False
 
     if not (np.round(np.sum(massdiff), 12) == 0):
         log.warning('Mass differences for ' + scheme_entry + ' do not sum to zero within reasonable limits')
-        acceptable = False
+        for i in range(len(acceptable)):
+            acceptable[i] = False
 
     inputdata[:]['+ weight group'] = wt_grps[:-1]
     inputdata[:]['- weight group'] = np.roll(wt_grps, -1)[:-1]
     inputdata[:]['mass difference (g)'] = massdiff[:-1]
+    inputdata[:]['residual (' + MU_STR + 'g)'] = stdevs[:-1]
+    inputdata[:]['Acceptance met?'] = acceptable[:-1]
     for row in range(num_wt_grps - 1):
         inputdata[row:]['balance uncertainty ('+MU_STR+'g)'] = collated['Stdev'][0]
 
-    return inputdata, acceptable
+    return inputdata
 
 
 def collate_m_data_from_json(folder, filename, scheme_entry):
@@ -107,25 +150,25 @@ def collate_m_data_from_json(folder, filename, scheme_entry):
     """
     inputdata = np.empty(0,
                          dtype=[('+ weight group', object), ('- weight group', object),
-                               ('mass difference (g)', 'float64'), ('balance uncertainty ('+MU_STR+'g)', 'float64')])
+                                ('mass difference (g)', 'float64'), ('residual ('+MU_STR+'g)', 'float64'),
+                                ('balance uncertainty ('+MU_STR+'g)', 'float64'), ('Acceptance met?', bool)])
 
     url = folder + "\\" + filename + '.json'
     if os.path.isfile(url):
         root = read(url)
     else:
-        print('No such file exists')  # TODO: could upgrade this to raise error if needed
+        log.warning('File does not yet exist {!r}'.format(url))
         return None
 
     for dataset in root.datasets():
         dname = dataset.name.split('_')  # split('/')[-1].
 
-        ok = dataset.metadata.get('Acceptance met?')
-        if dname[0][-8:] == 'analysis' and ok:
+        if dname[0][-8:] == 'analysis':# and ok:
             run_id = 'run_' + dname[2]
 
             meta = root.require_dataset(root['Circular Weighings'][scheme_entry].name + '/measurement_' + run_id)
             stdev = meta.metadata.get('Stdev for balance ('+MU_STR+'g)')
-
+            ok = dataset.metadata.get('Acceptance met?')
             bal_unit = dataset.metadata.get('Mass unit')
 
             i_len = inputdata.shape[0]
@@ -134,8 +177,10 @@ def collate_m_data_from_json(folder, filename, scheme_entry):
             inputdata[i_len:]['+ weight group'] = dataset['+ weight group'][:-1]
             inputdata[i_len:]['- weight group'] = dataset['- weight group'][:-1]
             inputdata[i_len:]['mass difference (g)'] = dataset['mass difference'][:-1]*SUFFIX[bal_unit]
+            inputdata[i_len:]['residual ('+MU_STR+'g)'] = dataset['residual'][:-1] * SUFFIX[bal_unit] / SUFFIX['ug']
             for row in range(d_len - 1):
                 inputdata[i_len+row:]['balance uncertainty ('+MU_STR+'g)'] = stdev
+                inputdata[i_len + row:]['Acceptance met?'] = ok
 
     return inputdata
 

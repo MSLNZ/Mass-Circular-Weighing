@@ -1,7 +1,6 @@
 from msl.equipment import Config
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
-from src.equip.omega import Omega
 
 from .constants import MU_STR
 from .log import log
@@ -9,7 +8,7 @@ from .log import log
 import numpy as np
 
 
-class Application(object):
+class Configuration(object):
 
     def __init__(self, config, stdset, checkset):
 
@@ -22,6 +21,9 @@ class Application(object):
 
         self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/'+stdset).text, 'std')
         self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+checkset).text, 'check')
+
+        self.SQRT_F = float(self.cfg.root.find('acceptance_criteria/SQRT_F').text)
+        self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
 
     def get_bal_instance(self, alias, strict=True):
         """Selects balance class and returns balance instance
@@ -49,14 +51,26 @@ class Application(object):
         Parameters
         ----------
         alias : str
-            alias for OMEGA logger in config file
+            alias for OMEGA logger. Must be either mass 1, mass 2 or temperature 1
 
         Returns
         -------
-        OMEGA instance
+        dict
+            dict of OMEGA instance and limits on ambient conditions
         """
+        omega = {
+            'Inst': alias,
 
-        return Omega(self.equipment[alias])
+            'MIN_T': float(self.cfg.root.find('min_temp').text),
+            'MAX_T': float(self.cfg.root.find('max_temp').text),
+            'MAX_T_CHANGE': float(self.cfg.root.find('max_temp_change').text),
+
+            'MIN_RH': float(self.cfg.root.find('min_rh').text),
+            'MAX_RH': float(self.cfg.root.find('max_rh').text),
+            'MAX_RH_CHANGE': float(self.cfg.root.find('max_rh_change').text),
+        }
+
+        return omega
 
     def acceptance_criteria(self, alias, nominal_mass):
         """Calculates acceptance criteria for a circular weighing
@@ -71,7 +85,8 @@ class Application(object):
         Returns
         -------
         dict of {'Max stdev from CircWeigh (ug)': float,
-                 'Stdev for balance (ug)': float}
+                 'Stdev for balance (ug)': float,
+                 }
         """
         record = self.equipment.get(alias)
         if not record:
@@ -105,8 +120,10 @@ class Application(object):
 
         for row in store:
             if float(row[index_map['load min']]) <= nominal_mass <= float(row[index_map['load max']]):
-                return {'Max stdev from CircWeigh ('+MU_STR+'g)': float(row[index_map['acceptable']]),
-                        'Stdev for balance ('+MU_STR+'g)': float(row[index_map['residuals']])/2}
+                return {
+                    'Max stdev from CircWeigh ('+MU_STR+'g)': float(row[index_map['acceptable']]),
+                    'Stdev for balance ('+MU_STR+'g)': float(row[index_map['residuals']])/2,
+                }
 
         raise ValueError('Nominal mass out of range of balance')
 
@@ -154,9 +171,10 @@ def load_stds_from_set_file(path, wtset):
                 line = line.strip('\n').split(', ')
                 for i, key in enumerate(['nominal (g)', 'mass values (g)', 'uncertainties ('+MU_STR+'g)']):
                     value = line[i].strip(' ').strip('\"\",')
+                    trunc_val = ('{:g}'.format((float(value))))
                     if i == 0:
-                        stds['weight ID'].append(value + stds['Set Identifier'])  #
-                    stds[key].append(np.float(value))
+                        stds['weight ID'].append(trunc_val + stds['Set Identifier'])  #
+                    stds[key].append(np.float(trunc_val))
 
                 line = fp.readline()
         else:
