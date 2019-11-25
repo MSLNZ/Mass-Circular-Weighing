@@ -25,7 +25,7 @@ balances = [                # available balances - can we get these from the con
     "AB204-S",
     "AT106",
 ]
-omega_loggers = [           # available Omega Loggers
+omega_loggers = [           # available Omega Loggers. These names must match Emile's software
     "mass 1",
     "mass 2",
 ]

@@ -1,5 +1,5 @@
 
-from msl.qt import QtGui, QtWidgets, Button, excepthook, Logger
+from msl.qt import QtGui, QtWidgets, Button, excepthook, Logger, Signal
 from msl.qt.threading import Thread, Worker
 
 from src.constants import MAX_BAD_RUNS, FONTSIZE
@@ -12,6 +12,8 @@ def label(name):
 
 
 class WeighingWorker(Worker):
+
+    good_runs_signal = Signal(int)
 
     def __init__(self, call_run, call_cp, call_read, se_row_data, info):
         super(WeighingWorker, self).__init__()
@@ -78,6 +80,8 @@ class WeighingWorker(Worker):
             else:
                 return self.good_runs
 
+            self.good_runs_signal.emit(self.good_runs)
+
             if self.good_runs == float(self.se_row_data['num_runs']):
                 break
 
@@ -123,14 +127,16 @@ class WeighingThread(Thread):
         status.setLayout(status_layout)
 
         start_weighing = Button(text='Start weighing(s)', left_click=self.start_weighing, )
+        close_weighing = Button(text='Finish weighing', left_click=self.close_weighing, )
 
         panel = QtWidgets.QGridLayout()
         panel.addWidget(status, 0, 0)
         panel.addWidget(start_weighing, 1, 1)
+        panel.addWidget(close_weighing, 2, 1)
 
         self.window.setLayout(panel)
         rect = QtWidgets.QDesktopWidget()
-        self.window.move(rect.width() * 0.05, rect.height() * 0.55)
+        self.window.move(rect.width() * 0.05, rect.height() * 0.45)
 
     def show(self, se_row_data, info):
         self.se_row_data = se_row_data
@@ -146,12 +152,17 @@ class WeighingThread(Thread):
 
     def start_weighing(self, ):
         self.check_for_existing()
+        print(self.se_row_data['root'])
         self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.info)
 
+    def close_weighing(self, ):
+        print(self.se_row_data['Good runs'], 'in weighing widget')
+        self.window.close()
 
     def check_for_existing(self):
         filename = self.info['Client'] + '_' + self.se_row_data['nominal']  # + '_' + run_id
         url = self.info['Folder'] + "\\" + filename + '.json'
+        print(url)
         root = check_for_existing_weighdata(self.info['Folder'], url, self.se_row_data['scheme_entry'])
         good_runs, run_no_1 = check_existing_runs(root, self.se_row_data['scheme_entry'])
         self.se_row_data['url'] = url
@@ -169,11 +180,6 @@ class WeighingThread(Thread):
 
     def update_reading(self, reading, unit):
         self.reading.setText('{} {}'.format(reading, unit))
-
-    def update_weigh_matrix(self, c, p, num_cyc, num_pos, reading, ):
-        # make array
-        print('here but not really!?!')
-        pass
 
 
 

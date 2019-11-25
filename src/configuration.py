@@ -1,7 +1,6 @@
 from msl.equipment import Config
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
-# from src.equip.omega import Omega
 
 from .constants import MU_STR
 from .log import log
@@ -52,7 +51,7 @@ class Configuration(object):
         Parameters
         ----------
         alias : str
-            alias for OMEGA logger in config file. Must be either mass 1, mass 2 or temperature 1
+            alias for OMEGA logger. Must be either mass 1, mass 2 or temperature 1
 
         Returns
         -------
