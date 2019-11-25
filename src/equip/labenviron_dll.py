@@ -3,7 +3,9 @@ from datetime import date, datetime
 import ctypes #import byref, c_int32, create_string_buffer, c_int16
 
 from msl.loadlib import Server32, Client64
+from src.log import log
 
+diff = datetime(1970, 1, 1) - datetime(1904, 1, 1)
 
 class Labview32(Server32):
     def __init__(self, host, port, quiet, **kwargs):
@@ -56,7 +58,6 @@ class Labview32(Server32):
 
         """
         # inputs
-        #
         probe = ctypes.c_int32(probe)
         serverip = ctypes.create_string_buffer(b'131.203.14.103')
         ithxname = ctypes.create_string_buffer(omega_alias.encode('utf-8'))
@@ -74,7 +75,7 @@ class Labview32(Server32):
         len4 = ctypes.c_int32(128)  # expected length of error string
 
         # outputs
-        x_data = (ctypes.c_double * len2.value)()  # Can't pickle c_long_Array_3000 or c_double_Array_3000. c_float breaks it properly
+        x_data = (ctypes.c_double * len2.value)()
         y_data = (ctypes.c_double * len3.value)()
         error = ctypes.create_string_buffer(len4.value)
         status = ctypes.c_int16()
@@ -90,44 +91,105 @@ class LabEnviron64(Client64):
 
     def __init__(self):
         super(LabEnviron64, self).__init__(module32='labenviron_dll', append_sys_path=os.path.dirname(__file__))
-        self.size = None
-        self.date_start = None
-        self.date_end = None
-
-    def get_size(self, omega_alias, probe, date_start=None, date_end=None):
-        self.date_start = date_start
-        self.date_end = date_end
-        self.size, status, error = self.request32('get_size', omega_alias, probe, date_start=date_start, date_end=date_end)
-        return self.size, status, error
 
     def get_data(self, omega_alias, probe, date_start=None, date_end=None,):
+        size, status, error = self.request32('get_size', omega_alias, probe, date_start=date_start, date_end=date_end)
+        if error:
+            log.error(error)
+            return None, None
+
         x_data, y_data, status, error = self.request32('get_data', omega_alias, probe,
-                                                       date_start=date_start, date_end=date_end, xy_size=self.size)
-        return x_data, y_data, status, error
+                                                       date_start=date_start, date_end=date_end, xy_size=size)
+        if error:
+            log.error(error)
+            return None, None
+
+        return x_data, y_data
+
+    def get_average_temp(self, omega_alias, date_start=None, date_end=None,):
+        time1, temp1 = self.get_data(omega_alias, 0, date_start=date_start, date_end=date_end,)
+        time2, temp2 = self.get_data(omega_alias, 3, date_start=date_start, date_end=date_end,)
+
+        time = time1
+        temp = temp1
+        for t in range(len(time1)):
+            time[t] = round((time1[t] + time2[t])/2, 3)
+            time[t] = datetime.fromtimestamp(time[t])-diff
+            temp[t] = round((temp1[t] + temp2[t])/2, 3)
+
+        return time, temp
+
+    def get_average_rh(self, omega_alias, date_start=None, date_end=None,):
+        time1, rh1 = self.get_data(omega_alias, 1, date_start=date_start, date_end=date_end,)
+        time2, rh2 = self.get_data(omega_alias, 4, date_start=date_start, date_end=date_end,)
+
+        time = time1
+        rh = rh1
+        for t in range(len(time1)):
+            time[t] = round((time1[t] + time2[t])/2, 3)
+            time[t] = datetime.fromtimestamp(time[t])-diff
+            rh[t] = round((rh1[t] + rh2[t])/2, 3)
+
+        return time, rh
+
+    def get_t_rh_now(self, omega_alias):
+        tempdata_start = self.get_average_temp(omega_alias)
+        rhdata_start = self.get_average_rh(omega_alias)
+
+        return tempdata_start[0][-1], tempdata_start[1][-1], rhdata_start[1][-1]
+
+    def get_t_rh_during(self, omega_alias, start):
+        tempdata_end = self.get_average_temp(omega_alias, date_start=start)
+        rhdata_end = self.get_average_rh(omega_alias, date_start=start)
+
+        t1 = tempdata_end[0][:].index(start)
+        return tempdata_end[1][t1:], rhdata_end[1][t1:]
+
 
 
 if __name__ == '__main__':
     dll = LabEnviron64()
     diff = datetime(1970, 1, 1) - datetime(1904, 1, 1)
-    size, status, error = dll.get_size('mass 2', 0, date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
-    #print(size, status, error)
-    data = dll.get_data('mass 2', 0,  date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
+    # size, status, error = dll.get_size('mass 2', 0, date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
+    # print(size, status, error)
+    # data = dll.get_data('mass 2', 0,  date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
+    # print(data[0][0])
+    #
+    # print(datetime.fromtimestamp(data[0][0])-diff, data[1][0])
+    #
+    # #print(size, status, error)
+    # tempdata = dll.get_average_temp('mass 2',  date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
+    # print(tempdata[0][3], tempdata[1][3])
+    # rhdata = dll.get_average_rh('mass 2',  date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
+    # print(rhdata[0][3], rhdata[1][3])
 
-    print(datetime.fromtimestamp(data[0][0])-diff, data[1][0])
+    print('Initial ambient conditions')
+    date_start, t_start, rh_start = dll.get_t_rh_now('mass 2')
 
+    print(date_start, t_start, rh_start)
 
+    # tempdata_start = dll.get_average_temp('mass 2', date_start)
+    # # rhdata_start = dll.get_average_rh('mass 2', date_start)
+    # #
+    # print(tempdata_start[0][-3:], tempdata_start[1][-3:])
+    #
+    # print(len(tempdata_start[0]))
+    # print()
 
-'''
-wnat to record max and min temp during weighing? e.g. check initial is ok, then
+    from time import sleep
+    sleep(126)
 
-def get_t_rh(self):
-        connection = self.record.connect()
-        t1, rh1 = connection.temperature_humidity(probe=1, nbytes=12)
-        t2, rh2 = connection.temperature_humidity(probe=2, nbytes=12)
+    print(dll.get_t_rh_during('mass 2', date_start,))
 
-        ambient = {
-            'RH (%)': np.round((rh1 + rh2)/2, 3),
-            'T'+IN_DEGREES_C: np.round((t1 + t2)/2, 3),
-        }
+    date_end = date.today()
+    tempdata_end = dll.get_average_temp('mass 2', date_start, date_end)
+    rhdata_end = dll.get_average_rh('mass 2', date_start, date_end)
 
-        return ambient'''
+    print(len(tempdata_end[0]))
+    # print(tempdata_end[0][:], tempdata_end[1][:])
+
+    t1 = tempdata_end[0][:].index(date_start)
+    print(tempdata_end[1][t1:])
+
+    # print(rhdata_end[0][len(tempdata_start[0])-1:], rhdata_end[1][len(tempdata_start[0])-1:])
+

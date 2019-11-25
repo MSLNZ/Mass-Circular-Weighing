@@ -1,7 +1,7 @@
 from msl.equipment import Config
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
-from src.equip.omega import Omega
+# from src.equip.omega import Omega
 
 from .constants import MU_STR
 from .log import log
@@ -52,7 +52,7 @@ class Configuration(object):
         Parameters
         ----------
         alias : str
-            alias for OMEGA logger in config file
+            alias for OMEGA logger in config file. Must be either mass 1, mass 2 or temperature 1
 
         Returns
         -------
@@ -60,7 +60,7 @@ class Configuration(object):
             dict of OMEGA instance and limits on ambient conditions
         """
         omega = {
-            'Inst': Omega(self.equipment[alias]),
+            'Inst': alias,
 
             'MIN_T': float(self.cfg.root.find('min_temp').text),
             'MAX_T': float(self.cfg.root.find('max_temp').text),

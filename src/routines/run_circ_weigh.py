@@ -2,11 +2,13 @@ import os
 from msl.io import JSONWriter, read
 from src.routines.circ_weigh_class import CircWeigh
 from src.constants import IN_DEGREES_C, SUFFIX, MU_STR
+from src.equip.labenviron_dll import LabEnviron64
 from time import perf_counter
 from datetime import datetime
 import numpy as np
 from src.log import log
 
+dll = LabEnviron64()
 
 def check_for_existing_weighdata(folder, url, se):
 
@@ -56,8 +58,6 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     if not ambient_pre:
         log.info('Measurement not started due to unsuitable ambient conditions')
         return False
-    for key, value in ambient_pre.items():
-        metadata[key] = value
 
     weighing = CircWeigh(se)
     positionstr = ''
@@ -72,6 +72,10 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
              '\n' + positionstr.strip('\n'))
 
     data = np.empty(shape=(weighing.num_cycles, weighing.num_wtgrps, 2))
+    print(data)
+    print(root['Circular Weighings'])
+    print(se)
+    print(root['Circular Weighings'][se])
     weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)
     weighdata.add_metadata(**metadata)
 
@@ -126,29 +130,22 @@ def check_ambient_pre(omega):
     Parameters
     ----------
     omega : :class:`dict`
-        dict of OMEGA instance and limits on ambient conditions
+        dict of OMEGA alias and limits on ambient conditions
 
     Returns
     -------
     ambient_pre : :class:`dict`
-        dict of ambient conditions at start of weighing: {'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
-        If OMEGA instance unavailable, returns 20+IN_DEGREES_C and 50%.
+        dict of ambient conditions at start of weighing:
+        {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
     """
+    log.info('Collecting ambient conditions from omega '+omega['Inst'])
 
-    try:
-        ambient = omega['Inst'].get_t_rh()
-    except ConnectionAbortedError:
-        try:
-            ambient = omega['Inst'].get_t_rh()
-        except ConnectionAbortedError:
-            log.error('Omega logger is not present or could not be read')
-            #ambient_pre = {'T_pre' + IN_DEGREES_C: 20.0, 'RH_pre (%)': 50.0}
-            return False
+    date_start, t_start, rh_start = dll.get_t_rh_now(str(omega['Inst']))
 
-    ambient_pre = {'T_pre'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_pre (%)': ambient['RH (%)']}
+    ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: t_start, 'RH_pre (%)': rh_start, }
     log.info('Ambient conditions:\n'+
-             'Temperature'+IN_DEGREES_C+': '+str(ambient['T'+IN_DEGREES_C])+
-             '; Humidity (%): '+str(ambient['RH (%)']))
+             'Temperature'+IN_DEGREES_C+': '+str(ambient_pre['T_pre'+IN_DEGREES_C])+
+             '; Humidity (%): '+str(ambient_pre['RH_pre (%)']))
 
     if omega['MIN_T'] < ambient_pre['T_pre'+IN_DEGREES_C] < omega['MAX_T']:
         log.info('Ambient temperature OK for weighing')
@@ -171,34 +168,33 @@ def check_ambient_post(omega, ambient_pre):
     Parameters
     ----------
     omega : :class:`dict`
-        dict of OMEGA instance and limits on ambient conditions
+        dict of OMEGA alias and limits on ambient conditions
     ambient_pre : :class:`dict`
-        dict of ambient conditions at start of weighing: {'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
+        dict of ambient conditions at start of weighing:
+        {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
 
     Returns
     -------
     ambient_post : :class:`dict`
         dict of ambient conditions at end of weighing, and evaluation of overall conditions during measurement.
-        dict has key-value pairs {'T_post'+IN_DEGREES_C: float, 'RH_post (%)': float, 'Ambient OK?': bool}
+        dict has key-value pairs {'T_post'+IN_DEGREES_C: list of floats, 'RH_post (%)': list of floats, 'Ambient OK?': bool}
     """
+    log.info('Collecting ambient conditions from omega'+omega['Inst'])
 
-    try:
-        ambient = omega['Inst'].get_t_rh()
-        ambient_post = {'T_post'+IN_DEGREES_C: ambient['T'+IN_DEGREES_C], 'RH_post (%)': ambient['RH (%)']}
-        log.info('Ambient conditions:\n'+str(ambient_post))
+    t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), ambient_pre['Start time'])
 
-        if (ambient_pre['T_pre'+IN_DEGREES_C] - ambient_post['T_post'+IN_DEGREES_C]) ** 2 > omega['MAX_T_CHANGE']**2:
-            ambient_post['Ambient OK?'] = False
-            log.warning('Ambient temperature change during weighing exceeds quality criteria')
-        elif (ambient_pre['RH_pre (%)'] - ambient_post['RH_post (%)']) ** 2 > omega['MAX_RH_CHANGE']**2:
-            ambient_post['Ambient OK?'] = False
-            log.warning('Ambient humidity change during weighing exceeds quality criteria')
-        else:
-            log.info('Ambient conditions OK during weighing')
-            ambient_post['Ambient OK?'] = True
-    except:
-        log.error('Omega logger is not present or could not be read')
-        ambient_post = {'T_post'+IN_DEGREES_C: None, 'RH_post (%)': None, 'Ambient OK?': None}
+    ambient_post = {'T'+IN_DEGREES_C: t_data, 'RH (%)': rh_data}
+    log.info('Ambient conditions:\n'+str(ambient_post))
+
+    if (max(t_data) - min(t_data)) ** 2 > omega['MAX_T_CHANGE']**2:
+        ambient_post['Ambient OK?'] = False
+        log.warning('Ambient temperature change during weighing exceeds quality criteria')
+    elif (max(rh_data) - min(rh_data)) ** 2 > omega['MAX_RH_CHANGE']**2:
+        ambient_post['Ambient OK?'] = False
+        log.warning('Ambient humidity change during weighing exceeds quality criteria')
+    else:
+        log.info('Ambient conditions OK during weighing')
+        ambient_post['Ambient OK?'] = True
 
     return ambient_post
 
@@ -262,21 +258,23 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, SQRT_F=1.4,
              + str(weighing.grpdiffs))
 
     # save new analysis in json file
-    print(id(schemefolder), id(root[schemefolder.name]))
-    print(root.tree())
+    # print(id(schemefolder), id(root[schemefolder.name]))
+    # print(root.tree())
     #for k, v in root.items():
     #    print(k, v)
     #print(schemefolder.name+'/analysis_'+run_id)
     a = root.remove(schemefolder.name+'/analysis_'+run_id)
-    #schemefolder.remove('analysis_'+run_id)
-    print(id(schemefolder), id(root[schemefolder.name]))
-    print(root.tree())
-    #print('removed', a)
-    #for k, v in root.items():
-    #    print(k, v)
-    print(schemefolder.name+'/analysis_'+run_id)
+    # #schemefolder.remove('analysis_'+run_id)
+    # print(id(schemefolder), id(root[schemefolder.name]))
+    # print(root.tree())
+    # #print('removed', a)
+    # #for k, v in root.items():
+    # #    print(k, v)
+    # print(schemefolder.name+'/analysis_'+run_id)
     weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
+
+    # print(root.tree())
 
     max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)')
 

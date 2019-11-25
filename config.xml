@@ -8,9 +8,6 @@
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
     <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
 
-    <!-- Specify equipment for ambient sensing. -->
-    <equipment alias="mass 2" manufacturer="OMEGA" model="iTHX-W"/>
-
     <!-- Specify the limits for ambient conditions to begin weighing. -->
     <min_temp units="C">18.1</min_temp>
     <max_temp units="C">30</max_temp>

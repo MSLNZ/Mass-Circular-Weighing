@@ -1,6 +1,6 @@
 import logging
 
-logging.basicConfig(format = '%(asctime)s %(module)s %(levelname)s %(message)s', level = logging.CRITICAL)
+logging.basicConfig(format = '%(asctime)s %(module)s %(levelname)s %(message)s', level = logging.INFO)
 
 log = logging.getLogger("daqseq")
-log.setLevel(100)
+# log.setLevel(100)
