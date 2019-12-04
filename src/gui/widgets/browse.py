@@ -12,9 +12,9 @@ class Browse(QtWidgets.QWidget):
 
         self.textbox = QtWidgets.QLineEdit(default)
         self.button = Button(icon=icon, left_click=self.display_folder)
-        self.button.add_menu_item('Mass drive', triggered=self.mass_drive_selected)
-        self.button.add_menu_item('H: drive', triggered=self.hdrive_selected)
-        self.button.add_menu_item('Sample data', triggered=self.sampledata_selected)
+        self.button.add_menu_item(text='Mass drive', triggered=self.mass_drive_selected)
+        self.button.add_menu_item(text='H: drive', triggered=self.hdrive_selected)
+        self.button.add_menu_item(text='Sample data', triggered=self.sampledata_selected)
         #self.button.add_menu_item('open browser', shortcut='CTRL+O')
 
         hbox = QtWidgets.QHBoxLayout()
@@ -23,7 +23,7 @@ class Browse(QtWidgets.QWidget):
         self.setLayout(hbox)
 
     def display_folder(self):
-        folder_text = prompt.folder(self.textbox.text())
+        folder_text = prompt.folder(title=self.textbox.text(), directory=self.textbox.text())
         self.textbox.setText(folder_text)
 
     def mass_drive_selected(self):

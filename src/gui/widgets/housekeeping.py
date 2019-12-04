@@ -12,14 +12,15 @@ class Housekeeping(QtWidgets.QWidget):
 
         self.config_io = Browse(config_default, 'shell32|4')
         self.folder_io = Browse(save_folder_default, 'shell32|4')
-        self.client_io = QtWidgets.QLineEdit('AsureQ_Mar')
-        self.client_masses_io = QtWidgets.QTextEdit('1 2 5 10 20 50 100 200 200d 500 1000 2000 5000')
+        self.client_io = QtWidgets.QLineEdit('LUCY')
+        self.client_masses_io = QtWidgets.QTextEdit('10000MA 10000MB 20000RA 20000RB 20000RC 20000RD')
+        # 1 2 5 10 20 50 100 200 200d 500 1000 2000 5000
 
         self.cb_stds_io = QtWidgets.QComboBox()
         self.cb_stds_io.addItems(stds)
         self.cb_checks_io = QtWidgets.QComboBox()
         self.cb_checks_io.addItems(stds)
-        self.cb_checks_io.setCurrentText('MET16B')
+        self.cb_checks_io.setCurrentText('MET19B')
 
         self.omega_io = QtWidgets.QComboBox()
         self.omega_io.addItems(omega_loggers)
@@ -148,3 +149,25 @@ class Housekeeping(QtWidgets.QWidget):
             'Use measurement times?':  str(self.timed),
             'Correlations between standards?': self.correlations,}
         return info
+
+
+if __name__ == "__main__":
+    import sys
+    from msl.qt import application, excepthook
+
+    sys.excepthook = excepthook
+
+    gui = application()
+
+    housekeeping = Housekeeping()
+    lhs_panel_group = housekeeping.lhs_panel_group()
+
+    w = QtWidgets.QWidget()
+
+    layout = QtWidgets.QHBoxLayout()
+    layout.addWidget(lhs_panel_group)
+
+    w.setLayout(layout)
+
+    w.show()
+    gui.exec()

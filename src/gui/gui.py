@@ -121,7 +121,7 @@ mass_thread = MassCalcThread()
 
 w = QtWidgets.QWidget()
 rect = QtWidgets.QDesktopWidget()
-w.setFixedSize(rect.width()*0.9, rect.height()*0.45)
+# w.setFixedSize(rect.width(), rect.height()*0.45)
 w.setWindowTitle('Mass Calibration: Main Window')
 
 housekeeping = Housekeeping()

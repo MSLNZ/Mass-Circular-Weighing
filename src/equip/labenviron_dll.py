@@ -11,7 +11,7 @@ class Labview32(Server32):
     def __init__(self, host, port, quiet, **kwargs):
         super(Labview32, self).__init__(
             os.path.join(os.path.dirname(__file__),
-            r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing\resources\LabEnviron_V1.2.dll'),
+            r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\resources\LabEnviron_V1.2.dll'),
             'cdll', host, port, quiet)
 
     def get_size(self, omega_alias, probe, date_start, date_end):

@@ -135,8 +135,8 @@ class WeighingThread(Thread):
         panel.addWidget(close_weighing, 2, 1)
 
         self.window.setLayout(panel)
-        rect = QtWidgets.QDesktopWidget()
-        self.window.move(rect.width() * 0.05, rect.height() * 0.45)
+        # rect = QtWidgets.QDesktopWidget()
+        # self.window.move(rect.width() * 0.05, rect.height() * 0.45)
 
     def show(self, se_row_data, info):
         self.se_row_data = se_row_data

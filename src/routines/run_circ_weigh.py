@@ -30,8 +30,13 @@ def check_for_existing_weighdata(folder, url, se):
             os.makedirs(folder)
         print('Creating new file for weighing')
         root = JSONWriter()
-        circularweighings = root.require_group('Circular Weighings')
-        circularweighings.require_group(se)
+
+    for name, value in root.items():
+        print(name, repr(value))
+    circularweighings = root.require_group('Circular Weighings')
+    circularweighings.require_group(se)
+    for name, value in root.items():
+        print(name, repr(value))
 
     return root
 
@@ -183,7 +188,10 @@ def check_ambient_post(omega, ambient_pre):
 
     t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), ambient_pre['Start time'])
 
-    ambient_post = {'T'+IN_DEGREES_C: t_data, 'RH (%)': rh_data}
+    ambient_post = {
+        'T'+IN_DEGREES_C: str(min(t_data))+' to '+str(max(t_data)),
+        'RH (%)': str(min(rh_data))+' to '+str(max(rh_data))
+    }
     log.info('Ambient conditions:\n'+str(ambient_post))
 
     if (max(t_data) - min(t_data)) ** 2 > omega['MAX_T_CHANGE']**2:

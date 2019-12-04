@@ -11,9 +11,12 @@ SUFFIX = {'µg': 1e-6, 'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
 DEGREE_SIGN = '°'           # \xb0
 IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 
-config_default = os.path.abspath(os.path.join('..', 'config.xml'))
-save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\AsureQ_Mar'
+config_default = os.path.abspath(os.path.join(r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing', 'config.xml'))
+save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\testing'
+# I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
 stds = [                    # options for standards and check masses
+    'MET19A',
+    'MET19B',
     'MET16A',
     'MET16B',
     'WV',
@@ -24,6 +27,7 @@ balances = [                # available balances - can we get these from the con
     "CCE605",
     "AB204-S",
     "AT106",
+    "LUCY",
 ]
 omega_loggers = [           # available Omega Loggers. These names must match Emile's software
     "mass 1",

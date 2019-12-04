@@ -7,6 +7,7 @@
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
     <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
+    <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
 
     <!-- Specify the limits for ambient conditions to begin weighing. -->
     <min_temp units="C">18.1</min_temp>
@@ -30,6 +31,8 @@
 
     <!-- Specify all standard sets available for weighings. -->
     <standards>
+          <MET19A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19A.set</MET19A>
+          <MET19B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19B.set</MET19B>
           <MET16A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16A.set</MET16A>
           <MET16B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16B.set</MET16B>
     </standards>
