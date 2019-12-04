@@ -31,12 +31,12 @@ def check_for_existing_weighdata(folder, url, se):
         print('Creating new file for weighing')
         root = JSONWriter()
 
-    for name, value in root.items():
-        print(name, repr(value))
-    circularweighings = root.require_group('Circular Weighings')
-    circularweighings.require_group(se)
-    for name, value in root.items():
-        print(name, repr(value))
+    root.require_group('Circular Weighings')
+
+    try:
+        root['Circular Weighings'][se]
+    except KeyError:
+        root['Circular Weighings'].require_group(se)
 
     return root
 
@@ -80,7 +80,8 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     print(data)
     print(root['Circular Weighings'])
     print(se)
-    print(root['Circular Weighings'][se])
+    for name, value in root.items():
+        print(name, repr(value))
     weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)
     weighdata.add_metadata(**metadata)
 
