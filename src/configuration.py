@@ -37,13 +37,13 @@ class Configuration(object):
 
         Returns
         -------
-        Balance instance
+        Balance instance, mode
         """
 
         mode = self.equipment[alias].user_defined['weighing_mode']
         bal = self.bal_class[mode](self.equipment[alias])
 
-        return bal
+        return bal, mode
 
     def get_omega_instance(self, alias):
         """Gets instance of OMEGA logger for ambient measurements

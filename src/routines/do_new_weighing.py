@@ -9,7 +9,7 @@ import numpy as np
 def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
                     omega_alias=None, timed=False, drift='quadratic drift'):
     # get balance instance
-    balance = cfg.get_bal_instance(bal_alias)
+    balance, mode = cfg.get_bal_instance(bal_alias)
     ac = cfg.acceptance_criteria(bal_alias, nominal_mass)
 
     # get OMEGA instance if available

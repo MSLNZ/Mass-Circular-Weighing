@@ -29,8 +29,7 @@ class WeighingWorker(Worker):
         se = self.se_row_data['scheme_entry']
 
         cfg = self.info['CFG']
-        bal = cfg.get_bal_instance(self.se_row_data['bal_alias'])
-        mode = cfg.equipment[self.se_row_data['bal_alias']].user_defined['weighing_mode']
+        bal, mode = cfg.get_bal_instance(self.se_row_data['bal_alias'])
         ac = cfg.acceptance_criteria(self.se_row_data['bal_alias'], float(self.se_row_data['nominal']))
 
         # get OMEGA instance if available
@@ -103,6 +102,8 @@ class WeighingThread(Thread):
 
         self.se_row_data = None
         self.info = None
+        self.cfg = None
+        self.bal, self.mode = None, None
 
         self.window = QtWidgets.QWidget()
         f = QtGui.QFont()
@@ -116,7 +117,8 @@ class WeighingThread(Thread):
         self.position = label('0')
         self.reading = label('0')
 
-        status = QtWidgets.QWidget()
+        status = QtWidgets.QGroupBox()
+        # status = QtWidgets.QWidget()
         status_layout = QtWidgets.QFormLayout()
         status_layout.addRow(label('Scheme Entry'), self.scheme_entry)
         status_layout.addRow(label('Nominal mass (g)'), self.nominal_mass)
@@ -126,21 +128,35 @@ class WeighingThread(Thread):
         status_layout.addRow(label('Reading'), self.reading)
         status.setLayout(status_layout)
 
+        zero = Button(text='Zero balance', left_click=self.zero_balance, )
+        scale = Button(text='Scale adjustment', left_click=self.scale, )
+        tare = Button(text='Tare balance', left_click=self.tare, )
         start_weighing = Button(text='Start weighing(s)', left_click=self.start_weighing, )
+        cancel_weighing = Button(text='Cancel weighing(s)', left_click=self.cancel_weighing, )
         close_weighing = Button(text='Finish weighing', left_click=self.close_weighing, )
 
-        panel = QtWidgets.QGridLayout()
-        panel.addWidget(status, 0, 0)
-        panel.addWidget(start_weighing, 1, 1)
-        panel.addWidget(close_weighing, 2, 1)
+        controls = QtWidgets.QGroupBox()
+        controls_layout = QtWidgets.QGridLayout()
+        controls_layout.addWidget(zero, 1, 0)
+        controls_layout.addWidget(scale, 2, 0)
+        controls_layout.addWidget(tare, 3, 0)
+        controls_layout.addWidget(start_weighing, 1, 1)
+        controls_layout.addWidget(cancel_weighing, 2, 1)
+        controls_layout.addWidget(close_weighing, 3, 1)
+        controls.setLayout(controls_layout)
 
-        self.window.setLayout(panel)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(status)
+        layout.addWidget(controls)
+        self.window.setLayout(layout)
         # rect = QtWidgets.QDesktopWidget()
         # self.window.move(rect.width() * 0.05, rect.height() * 0.45)
 
     def show(self, se_row_data, info):
         self.se_row_data = se_row_data
         self.info = info
+        self.cfg = self.info['CFG']
+        self.bal, self.mode = self.cfg.get_bal_instance(self.se_row_data['bal_alias'])
 
         self.scheme_entry.setText(self.se_row_data['scheme_entry'])
         self.nominal_mass.setText(se_row_data['nominal'])
@@ -150,13 +166,26 @@ class WeighingThread(Thread):
 
         self.window.show()
 
+    def zero_balance(self):
+        self.bal.zero_bal()
+
+    def scale(self):
+        self.bal.scale_adjust()
+
+    def tare(self):
+        self.bal.tare_bal()
+
     def start_weighing(self, ):
         self.check_for_existing()
         print(self.se_row_data['root'])
         self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.info)
 
+    def cancel_weighing(self, ):
+        pass
+
     def close_weighing(self, ):
         print(self.se_row_data['Good runs'], 'in weighing widget')
+        #TODO: make this emit to update the status in the main gui??
         self.window.close()
 
     def check_for_existing(self):
