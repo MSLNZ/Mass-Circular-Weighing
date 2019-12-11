@@ -32,11 +32,7 @@ def check_for_existing_weighdata(folder, url, se):
         root = JSONWriter()
 
     root.require_group('Circular Weighings')
-
-    try:
-        root['Circular Weighings'][se]
-    except KeyError:
-        root['Circular Weighings'].require_group(se)
+    root['Circular Weighings'].require_group(se)
 
     return root
 
