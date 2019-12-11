@@ -15,7 +15,7 @@ class WeighingWorker(Worker):
 
     good_runs_signal = Signal(int)
 
-    def __init__(self, call_run, call_cp, call_read, se_row_data, info):
+    def __init__(self, call_run, call_cp, call_read, se_row_data, info, bal, mode):
         super(WeighingWorker, self).__init__()
         self.callback_run = call_run
         self.callback_cp = call_cp
@@ -23,13 +23,14 @@ class WeighingWorker(Worker):
         self.se_row_data = se_row_data
         self.info = info
         self.good_runs = self.se_row_data['Good runs']
+        self.bal = bal
+        self.mode = mode
 
     def process(self):
         # collating and sorting metadata
         se = self.se_row_data['scheme_entry']
 
         cfg = self.info['CFG']
-        bal, mode = cfg.get_bal_instance(self.se_row_data['bal_alias'])
         ac = cfg.acceptance_criteria(self.se_row_data['bal_alias'], float(self.se_row_data['nominal']))
 
         # get OMEGA instance if available
@@ -41,7 +42,7 @@ class WeighingWorker(Worker):
         # collect metadata
         metadata = {
             'Client': self.info['Client'], 'Balance': self.se_row_data['bal_alias'],
-            'Unit': bal.unit, 'Nominal mass (g)': float(self.se_row_data['nominal']),
+            'Unit': self.bal.unit, 'Nominal mass (g)': float(self.se_row_data['nominal']),
         }
         for key, value in ac.items():
             metadata[key] = value
@@ -57,10 +58,13 @@ class WeighingWorker(Worker):
         while run < float(self.se_row_data['num_runs'])+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS:
 
             self.callback_run(self.good_runs, bad_runs, self.se_row_data['num_runs'])
+            if self.good_runs > float(self.se_row_data['num_runs']) - 1:
+                log.info('Finished weighings for ' + se)
+                break
 
             run_id = 'run_' + str(round(self.se_row_data['First run no.']+run, 0))
 
-            weighing_root = do_circ_weighing(bal, se, self.se_row_data['root'], self.se_row_data['url'], run_id,
+            weighing_root = do_circ_weighing(self.bal, se, self.se_row_data['root'], self.se_row_data['url'], run_id,
                                         callback1=self.callback_cp, callback2=self.callback_read, omega=omega_instance,
                                         **metadata,)
             if weighing_root:
@@ -71,7 +75,7 @@ class WeighingWorker(Worker):
                 ok = weighanalysis.metadata.get('Acceptance met?')
                 if ok:
                     self.good_runs += 1
-                elif mode == 'aw' and not weighanalysis.metadata.get['Exclude?']:
+                elif self.mode == 'aw' and not weighanalysis.metadata.get['Exclude?']:
                     print('outside acceptance but allowed')
                     self.good_runs += 1
                 else:
@@ -81,17 +85,12 @@ class WeighingWorker(Worker):
 
             self.good_runs_signal.emit(self.good_runs)
 
-            if self.good_runs == float(self.se_row_data['num_runs']):
-                break
-
             run += 1
-            bal._want_abort = False
+            # self.bal._want_abort = False
 
         if bad_runs == MAX_BAD_RUNS:
             log.error('Completed ' + str(self.good_runs) + ' acceptable weighings of ' + self.se_row_data['num_runs'])
-            return self.good_runs
 
-        print('Finished weighings for ' + se)
         return self.good_runs
 
 
@@ -177,21 +176,19 @@ class WeighingThread(Thread):
 
     def start_weighing(self, ):
         self.check_for_existing()
-        print(self.se_row_data['root'])
-        self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.info)
+        self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.info, self.bal, self.mode)
 
     def cancel_weighing(self, ):
         pass
 
     def close_weighing(self, ):
-        print(self.se_row_data['Good runs'], 'in weighing widget')
-        #TODO: make this emit to update the status in the main gui??
+        print(self.se_row_data['Good runs'], 'good runs in weighing widget')
+        #TODO: use collected emitted data to update the status in the main gui??
         self.window.close()
 
     def check_for_existing(self):
         filename = self.info['Client'] + '_' + self.se_row_data['nominal']  # + '_' + run_id
         url = self.info['Folder'] + "\\" + filename + '.json'
-        print(url)
         root = check_for_existing_weighdata(self.info['Folder'], url, self.se_row_data['scheme_entry'])
         good_runs, run_no_1 = check_existing_runs(root, self.se_row_data['scheme_entry'])
         self.se_row_data['url'] = url
@@ -209,6 +206,3 @@ class WeighingThread(Thread):
 
     def update_reading(self, reading, unit):
         self.reading.setText('{} {}'.format(reading, unit))
-
-
-
