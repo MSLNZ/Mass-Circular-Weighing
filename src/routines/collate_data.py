@@ -23,13 +23,14 @@ def collate_all_weighings(schemetable, housekeeping):
     for row in range(schemetable.rowCount()):
         if schemetable.cellWidget(row, 1).text():
             filename = client + '_' + schemetable.cellWidget(row, 1).text()
-            print(filename, schemetable.cellWidget(row, 0).text())
+            url = os.path.join(folder, filename + '.json')
+            print(filename, url, schemetable.cellWidget(row, 0).text())
             bal_alias = schemetable.cellWidget(row, 2).currentText()
             mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
             if mode == 'aw':
-                newdata = collate_a_data_from_json(folder, filename, schemetable.cellWidget(row, 0).text(), cfg.SQRT_F)
+                newdata = collate_a_data_from_json(url, schemetable.cellWidget(row, 0).text(), cfg.SQRT_F)
             else:
-                newdata = collate_m_data_from_json(folder, filename, schemetable.cellWidget(row, 0).text())
+                newdata = collate_m_data_from_json(url, schemetable.cellWidget(row, 0).text())
             dlen = data.shape[0]
             if newdata is not None:
                 ndlen = newdata.shape[0]
@@ -44,16 +45,16 @@ def collate_all_weighings(schemetable, housekeeping):
     return data
 
 
-def collate_a_data_from_json(folder, filename, scheme_entry, SQRT_F):
+def collate_a_data_from_json(url, scheme_entry, SQRT_F):
     """Use this function for an automatic weighing where individual weighings are not likely to meet SQRT_F criterion,
     but the ensemble average is.
 
     Parameters
     ----------
-    folder
-    filename
-    scheme_entry
-    SQRT_F
+    url : path
+        to json file containing weighing data
+    scheme_entry : str
+    SQRT_F : float
 
     The json file must have analysis datasets with fields and formats as follows:
     dtype = [('+ weight group', 'O'), ('- weight group', 'O'), ('mass difference', '<f8'), ...
@@ -65,8 +66,6 @@ def collate_a_data_from_json(folder, filename, scheme_entry, SQRT_F):
     [1] bool indicating whether average data meets acceptance criteria for weighing
 
     """
-    url = folder + "\\" + filename + '.json'
-    print(url)
     if not os.path.isfile(url):
         log.warning('File does not yet exist {!r}'.format(url))
         return None
@@ -83,7 +82,6 @@ def collate_a_data_from_json(folder, filename, scheme_entry, SQRT_F):
         exclude = dataset.metadata.get('Exclude?')
 
         if dname[0][-8:] == 'analysis' and not exclude:
-            print(dname, scheme_entry)
             run_id = 'run_' + dname[2]
             meta = root.require_dataset(root['Circular Weighings'][scheme_entry].name + '/measurement_' + run_id)
             collated['Stdev'].append(meta.metadata.get('Stdev for balance (' + MU_STR + 'g)'))
@@ -130,15 +128,13 @@ def collate_a_data_from_json(folder, filename, scheme_entry, SQRT_F):
     return inputdata
 
 
-def collate_m_data_from_json(folder, filename, scheme_entry):
+def collate_m_data_from_json(url, scheme_entry):
     """Use this function to collate one or two runs from an mde or mw weighing
 
     Parameters
     ----------
-    folder : path
+    url : path
         path to folder where json file resides
-    filename : str
-        name of json file (without ending)
     scheme_entry : str
         masses in scheme entry separated by spaces and + only
 
@@ -155,13 +151,11 @@ def collate_m_data_from_json(folder, filename, scheme_entry):
                                 ('mass difference (g)', 'float64'), ('residual ('+MU_STR+'g)', 'float64'),
                                 ('balance uncertainty ('+MU_STR+'g)', 'float64'), ('Acceptance met?', bool)])
 
-    url = folder + "\\" + filename + '.json'
-    if os.path.isfile(url):
-        root = read(url)
-    else:
+    if not os.path.isfile(url):
         log.warning('File does not yet exist {!r}'.format(url))
         return None
 
+    root = read(url)
     for dataset in root['Circular Weighings'][scheme_entry].datasets():
         dname = dataset.name.split('_')  # split('/')[-1].
 
