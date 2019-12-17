@@ -23,8 +23,9 @@ def collate_all_weighings(schemetable, housekeeping):
     for row in range(schemetable.rowCount()):
         if schemetable.cellWidget(row, 1).text():
             filename = client + '_' + schemetable.cellWidget(row, 1).text()
+            print(filename, schemetable.cellWidget(row, 0).text())
             bal_alias = schemetable.cellWidget(row, 2).currentText()
-            mode = 'aw' #cfg.equipment[bal_alias].user_defined['weighing_mode']
+            mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
             if mode == 'aw':
                 newdata = collate_a_data_from_json(folder, filename, schemetable.cellWidget(row, 0).text(), cfg.SQRT_F)
             else:
@@ -65,6 +66,7 @@ def collate_a_data_from_json(folder, filename, scheme_entry, SQRT_F):
 
     """
     url = folder + "\\" + filename + '.json'
+    print(url)
     if not os.path.isfile(url):
         log.warning('File does not yet exist {!r}'.format(url))
         return None
@@ -76,13 +78,13 @@ def collate_a_data_from_json(folder, filename, scheme_entry, SQRT_F):
     for grp in wt_grps:
         collated[grp] = []
 
-    for dataset in root.datasets():
+    for dataset in root['Circular Weighings'][scheme_entry].datasets():
         dname = dataset.name.split('_')  # split('/')[-1].
         exclude = dataset.metadata.get('Exclude?')
 
         if dname[0][-8:] == 'analysis' and not exclude:
+            print(dname, scheme_entry)
             run_id = 'run_' + dname[2]
-
             meta = root.require_dataset(root['Circular Weighings'][scheme_entry].name + '/measurement_' + run_id)
             collated['Stdev'].append(meta.metadata.get('Stdev for balance (' + MU_STR + 'g)'))
             collated['Max stdev'].append(meta.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)'))
@@ -160,7 +162,7 @@ def collate_m_data_from_json(folder, filename, scheme_entry):
         log.warning('File does not yet exist {!r}'.format(url))
         return None
 
-    for dataset in root.datasets():
+    for dataset in root['Circular Weighings'][scheme_entry].datasets():
         dname = dataset.name.split('_')  # split('/')[-1].
 
         if dname[0][-8:] == 'analysis':# and ok:

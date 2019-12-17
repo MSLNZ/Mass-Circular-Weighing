@@ -13,7 +13,7 @@ class Housekeeping(QtWidgets.QWidget):
         self.config_io = Browse(config_default, 'shell32|4')
         self.folder_io = Browse(save_folder_default, 'shell32|4')
         self.client_io = QtWidgets.QLineEdit('LUCY')
-        self.client_masses_io = QtWidgets.QTextEdit('10000MA 10000MB 20000RA 20000RB 20000RC 20000RD')
+        self.client_masses_io = QtWidgets.QTextEdit('5000MA 5000MB 10000MA 10000MB 20000RA 20000RB 20000RC 20000RD')
         # 1 2 5 10 20 50 100 200 200d 500 1000 2000 5000
 
         self.cb_stds_io = QtWidgets.QComboBox()
