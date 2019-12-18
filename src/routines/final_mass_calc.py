@@ -17,10 +17,8 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
         list of client wt IDs as str, as used in the circular weighing scheme
     check_wt_IDs : list
         list of check wt IDs as str, as used in the circular weighing scheme
-    std_masses : numpy array
-        fill array using np.empty(num_stds, dtype={
-            'names': ('std weight ID', 'std mass values (g)', 'std uncertainties (ug)'),
-            'formats': (object, np.float, np.float)})
+    std_masses : dict
+        keys: 'nominal (g)', 'mass values (g)', 'uncertainties (ug)', 'weight ID', 'Set Identifier', 'Calibrated'
     inputdata : numpy structured array
         use format np.asarray(<data>, dtype =[('+ weight group', object), ('- weight group', object),
         ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
@@ -55,14 +53,26 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     })
     log.info('Check masses: '+str(check_wt_IDs))
 
-    num_stds = len(std_masses)
-    scheme_std.add_metadata(**{'Number of masses': num_stds})
-    scheme_std.create_dataset('std mass values', data=std_masses)
-    log.info('Standards:\nstd weight ID, std mass values (g), std uncertainties (ug)\n'+str(std_masses))
+    num_stds = len(std_masses['mass values (g)'])
+    std_masses_dataarray = np.empty(num_stds, dtype={
+            'names': ('std weight ID', 'nominal (g)', 'std mass values (g)', 'std uncertainties (ug)'),
+            'formats': (object, np.float, np.float, np.float)})
+    std_masses_dataarray['std weight ID'] = std_masses['weight ID']
+    std_masses_dataarray['nominal (g)'] = std_masses['nominal (g)']
+    std_masses_dataarray['std mass values (g)'] = std_masses['mass values (g)']
+    std_masses_dataarray['std uncertainties (ug)'] = std_masses['uncertainties (ug)']
+
+    scheme_std.add_metadata(**{
+        'Number of masses': num_stds,
+        'Set Identifier': std_masses['Set Identifier'],
+        'Calibrated': std_masses['Calibrated'],
+    })
+    scheme_std.create_dataset('std mass values', data=std_masses_dataarray)
+    log.info('Standards:'+str(std_masses['weight ID']))
 
     num_unknowns = num_client_masses + num_check_masses + num_stds
     log.info('Number of unknowns = '+str(num_unknowns))
-    allmassIDs = np.append(np.append(client_wt_IDs, check_wt_IDs), std_masses['std weight ID'])
+    allmassIDs = np.append(np.append(client_wt_IDs, check_wt_IDs), std_masses['weight ID'])
     # note that stds are grouped last
 
     # Create design matrix and collect relevant data
@@ -87,12 +97,12 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
         differences[rowcounter] = entry[2]
         uncerts[rowcounter] = entry[3]
         rowcounter += 1
-    for std in std_masses['std weight ID']:
+    for std in std_masses['weight ID']:
         designmatrix[rowcounter, np.where(allmassIDs == std)] = 1
         rowcounter += 1
 
-    differences = np.append(differences, std_masses['std mass values (g)'])     # corresponds to Y, in g
-    uncerts = np.append(uncerts, std_masses['std uncertainties (ug)'])          # balance uncertainties in ug
+    differences = np.append(differences, std_masses['mass values (g)'])     # corresponds to Y, in g
+    uncerts = np.append(uncerts, std_masses['uncertainties (ug)'])          # balance uncertainties in ug
 
     # Calculate least squares solution, following the mathcad example in Tech proc MSLT.M.001.008
     x = designmatrix
@@ -103,10 +113,10 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
 
     rmeas = np.identity(num_obs)
     if type(corr) == np.ndarray:                        # Add off-diagonal terms for correlations
-        for mass1 in std_masses['std weight ID']:
-            i = np.where(std_masses['std weight ID'] == mass1)
-            for mass2 in std_masses['std weight ID']:
-                j = np.where(std_masses['std weight ID'] == mass2)
+        for mass1 in std_masses['weight ID']:
+            i = np.where(std_masses['weight ID'] == mass1)
+            for mass2 in std_masses['weight ID']:
+                j = np.where(std_masses['weight ID'] == mass2)
                 rmeas[len(inputdata)+i[0], len(inputdata)+j[0]] = corr[i, j]
         log.debug('rmeas matrix includes correlations for stds:\n'+str(rmeas[:, -num_stds:]))
 
@@ -133,7 +143,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
         dtype =[('+ weight group', object), ('- weight group', object), ('mass difference (g)', 'float64'),
                 ('balance uncertainty (ug)', 'float64'), ('residual (ug)', 'float64')])
     inputdatares['+ weight group'][0:len(inputdata)] = inputdata['+ weight group']
-    inputdatares['+ weight group'][len(inputdata):] = std_masses['std weight ID']
+    inputdatares['+ weight group'][len(inputdata):] = std_masses['weight ID']
     inputdatares['- weight group'][0:len(inputdata)] = inputdata['- weight group']
     inputdatares['mass difference (g)'] = differences
     inputdatares['balance uncertainty (ug)'] = uncerts

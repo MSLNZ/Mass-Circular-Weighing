@@ -13,6 +13,17 @@ def label(name):
     return QtWidgets.QLabel(name)
 
 
+def filter_IDs(ID_list, inputdata):
+    relevant_IDs = []
+    for item in ID_list:
+        if item in inputdata['+ weight group']:
+            relevant_IDs.append(item)
+        elif item in inputdata['- weight group']:
+            relevant_IDs.append(item)
+
+    return relevant_IDs
+
+
 class DiffsTable(QtWidgets.QTableWidget):
 
     def __init__(self, data):
@@ -72,11 +83,11 @@ class CalcWorker(Worker):
 
     def process(self):
         # collating and sorting metadata
-        print("oh hello, let's do a calculation")
-        print(self.table)
         inputdata = self.table.get_checked_rows()
-        print(inputdata)
-        #final mass calc takes: filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None
+        print(self.fmc_info)
+        self.fmc_info['client_wt_IDs'] = filter_IDs(self.fmc_info['client_wt_IDs'].split(), inputdata)
+        self.fmc_info['check_wt_IDs'] = filter_IDs(self.fmc_info['check_wt_IDs'], inputdata)
+        print(self.fmc_info)
         final_mass_calc(
             self.fmc_info['url'],
             self.fmc_info['Client'],
