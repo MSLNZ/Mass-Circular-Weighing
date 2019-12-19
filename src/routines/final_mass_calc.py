@@ -15,8 +15,9 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
         name of client
     client_wt_IDs : list
         list of client wt IDs as str, as used in the circular weighing scheme
-    check_wt_IDs : list
+    check_wt_IDs : list or None
         list of check wt IDs as str, as used in the circular weighing scheme
+        None if no check weights are used
     std_masses : dict
         keys: 'nominal (g)', 'mass values (g)', 'uncertainties (ug)', 'weight ID', 'Set Identifier', 'Calibrated'
     inputdata : numpy structured array
@@ -46,12 +47,14 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     })
     log.info('Client masses: '+str(client_wt_IDs))
 
+    log.info('Check masses: ' + str(check_wt_IDs))
+    if not check_wt_IDs:
+        check_wt_IDs = []
     num_check_masses = len(check_wt_IDs)
     scheme_check.add_metadata(**{
         'Number of masses': num_check_masses,
         'check weight ID': check_wt_IDs
     })
-    log.info('Check masses: '+str(check_wt_IDs))
 
     num_stds = len(std_masses['mass values (g)'])
     std_masses_dataarray = np.empty(num_stds, dtype={
@@ -152,7 +155,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     flag = []
     for entry in inputdatares:
         if entry[4] > 2*entry[3]:
-            flag.append(entry[0] + ' - ' + entry[1])
+            flag.append(str(entry[0]) + ' - ' + str(entry[1]))
 
     # uncertainty due to no buoyancy correction
     if nbc:

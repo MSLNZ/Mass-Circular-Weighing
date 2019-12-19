@@ -7,13 +7,25 @@ client = 'Hort. Research'
 client_wt_IDs = ['100', '50', '20', '20d', '10', '5', '2', '2d', '1']
 check_wt_IDs = ['5w', '1w']
 
-num_stds = 7
-std_masses = np.empty(num_stds, dtype={
-    'names': ('std weight ID', 'nominal (g)', 'std mass values (g)', 'std uncertainties (ug)'),
-    'formats': (object, np.float, np.float, np.float)})
+std_masses = {}
+# num_stds = 7
+# np.empty(num_stds, dtype={
+#     'names': ('std weight ID', 'nominal (g)', 'std mass values (g)', 'std uncertainties (ug)'),
+#     'formats': (object, np.float, np.float, np.float)})
 
-std_masses['std weight ID'] = ['100s', '50s', '20s', '10s', '5s', '2s', '1s']
-std_masses['std mass values (g)'] = [
+std_masses['Set Identifier'] = 'S'
+std_masses['Calibrated'] = '2000'
+std_masses['weight ID'] = ['100s', '50s', '20s', '10s', '5s', '2s', '1s']
+std_masses['nominal (g)'] = [
+    100,
+    50,
+    20,
+    10,
+    5,
+    2,
+    1
+]
+std_masses['mass values (g)'] = [
     100.000059108,
     50.000053126,
     19.999998346,
@@ -22,7 +34,7 @@ std_masses['std mass values (g)'] = [
     1.999996291,
     0.999956601
 ]
-std_masses['std uncertainties (ug)'] = [
+std_masses['uncertainties (ug)'] = [
     4.008,
     2.624,
     2.088,

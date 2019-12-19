@@ -137,9 +137,14 @@ class SchemeTable(QtWidgets.QTableWidget):
                 scheme_entry = self.cellWidget(i, 0).text()
                 for wtgrp in scheme_entry.split():
                     for mass in wtgrp.split('+'):
-                        if mass not in housekeeping.client_masses \
-                                and mass not in housekeeping.cfg.all_checks['weight ID'] \
-                                and mass not in housekeeping.cfg.all_stds['weight ID']:
+                        if mass in housekeeping.client_masses:
+                            log.debug(mass + ' in client set')
+                        elif mass in housekeeping.cfg.all_stds['weight ID']:
+                            log.debug(mass + ' in std set')
+                        elif housekeeping.cfg.all_checks is not None \
+                                and mass in housekeeping.cfg.all_checks['weight ID']:
+                            log.debug(mass + ' in check set')
+                        else:
                             log.error(mass + ' is not in any of the specified mass sets.')
 
             except AttributeError:

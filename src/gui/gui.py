@@ -91,17 +91,21 @@ def display_collated():
         folder = housekeeping.folder
         client = housekeeping.client
         client_wt_IDs = housekeeping.client_masses
-        check_wt_IDs = housekeeping.cfg.all_checks['weight ID']
         std_masses = housekeeping.cfg.all_stds
     except:
         housekeeping.initialise_cfg()
+
+    if housekeeping.cfg.all_checks is not None:
+        check_wt_IDs = housekeeping.cfg.all_checks['weight ID']
+    else:
+        check_wt_IDs = None
 
     data = collate_all_weighings(schemetable, housekeeping)
 
     fmc_info = {'url': housekeeping.folder + "\\" + housekeeping.client + '_finalmasscalc.json',
                 'Client': housekeeping.client,
                 'client_wt_IDs': housekeeping.client_masses,
-                'check_wt_IDs': housekeeping.cfg.all_checks['weight ID'],
+                'check_wt_IDs': check_wt_IDs,
                 'std_masses': housekeeping.cfg.all_stds,
                 'nbc': True,
                 'corr': housekeeping.correlations,

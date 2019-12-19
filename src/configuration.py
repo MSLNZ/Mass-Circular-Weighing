@@ -20,8 +20,10 @@ class Configuration(object):
         # TODO: add aw class for automatic loading balance
 
         self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/'+stdset).text, 'std')
-        self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+checkset).text, 'check')
-
+        if checkset is not None:
+            self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+checkset).text, 'check')
+        else:
+            self.all_checks = None
         self.SQRT_F = float(self.cfg.root.find('acceptance_criteria/SQRT_F').text)
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
 

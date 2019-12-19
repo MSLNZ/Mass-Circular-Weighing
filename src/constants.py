@@ -20,6 +20,7 @@ stds = [                    # options for standards and check masses
     'MET16A',
     'MET16B',
     'WV',
+    'None',
 ]
 balances = [                # available balances - can we get these from the config file? e.g. get all equipment aliases
     "MDE-demo",

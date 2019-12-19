@@ -84,10 +84,9 @@ class CalcWorker(Worker):
     def process(self):
         # collating and sorting metadata
         inputdata = self.table.get_checked_rows()
-        print(self.fmc_info)
         self.fmc_info['client_wt_IDs'] = filter_IDs(self.fmc_info['client_wt_IDs'].split(), inputdata)
-        self.fmc_info['check_wt_IDs'] = filter_IDs(self.fmc_info['check_wt_IDs'], inputdata)
-        print(self.fmc_info)
+        if self.fmc_info['check_wt_IDs'] is not None:
+            self.fmc_info['check_wt_IDs'] = filter_IDs(self.fmc_info['check_wt_IDs'], inputdata)
         final_mass_calc(
             self.fmc_info['url'],
             self.fmc_info['Client'],
