@@ -135,7 +135,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     psi_bmeas = np.linalg.inv(psi_bmeas_inv)
 
     b = np.linalg.multi_dot([psi_bmeas, xT, psi_y_inv, differences])
-    log.info('Mass values before corrections are: '+str(b))
+    log.info('Mass values before corrections:\n'+str(b))
 
     r0 = (differences - np.dot(x, b))*1e6               # residuals, converted from g to ug
     sum_residues_squared = np.dot(r0, r0)
@@ -218,6 +218,9 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
                                 metadata={'headers': ['Weight ID', 'Set ID', 'Mass value (g)', 'Uncertainty (ug)', '95% CI']})
 
     finalmasscalc.save(mode='w')
+
+    log.info('Mass calculation saved to {!r}'.format(filesavepath))
+
     return finalmasscalc
 
 
