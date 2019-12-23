@@ -88,7 +88,7 @@ class CalcWorker(Worker):
         if self.fmc_info['check_wt_IDs'] is not None:
             self.fmc_info['check_wt_IDs'] = filter_IDs(self.fmc_info['check_wt_IDs'], inputdata)
         final_mass_calc(
-            self.fmc_info['url'],
+            self.fmc_info['Folder'],
             self.fmc_info['Client'],
             self.fmc_info['client_wt_IDs'],
             self.fmc_info['check_wt_IDs'],

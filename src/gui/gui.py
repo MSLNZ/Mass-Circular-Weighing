@@ -102,7 +102,7 @@ def display_collated():
 
     data = collate_all_weighings(schemetable, housekeeping)
 
-    fmc_info = {'url': housekeeping.folder + "\\" + housekeeping.client + '_finalmasscalc.json',
+    fmc_info = {'Folder': housekeeping.folder,
                 'Client': housekeeping.client,
                 'client_wt_IDs': housekeeping.client_masses,
                 'check_wt_IDs': check_wt_IDs,

@@ -1,16 +1,17 @@
+import os
 from datetime import datetime
 import numpy as np
-from msl.io import JSONWriter
+from msl.io import JSONWriter, read
 from src.log import log
 
 
-def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None):
+def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None):
     """Calculates mass values using matrix least squares methods
 
     Parameters
     ----------
-    filesavepath : url
-        where to save json file with output data; ideally an absolute path
+    folder : url
+        folder in which to save json file with output data; ideally an absolute path
     client : str
         name of client
     client_wt_IDs : list
@@ -31,6 +32,9 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     """
 
     # initialisation
+    filesavepath = os.path.join(folder, client + '_finalmasscalc.json')
+    make_backup(folder, filesavepath, client, )
+
     metadata = {'Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'), "Client": client}
     finalmasscalc = JSONWriter(filesavepath, metadata=metadata)
 
@@ -45,9 +49,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
         'Number of masses': num_client_masses,
         'client weight ID': client_wt_IDs
     })
-    log.info('Client masses: '+str(client_wt_IDs))
 
-    log.info('Check masses: ' + str(check_wt_IDs))
     if not check_wt_IDs:
         check_wt_IDs = []
     num_check_masses = len(check_wt_IDs)
@@ -55,6 +57,10 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
         'Number of masses': num_check_masses,
         'check weight ID': check_wt_IDs
     })
+
+    log.info('Beginning mass calculation with the following inputs\n' +
+             'Client masses: '+str(client_wt_IDs)+ '\n' +
+             'Check masses: ' + str(check_wt_IDs))
 
     num_stds = len(std_masses['mass values (g)'])
     std_masses_dataarray = np.empty(num_stds, dtype={
@@ -71,7 +77,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
         'Calibrated': std_masses['Calibrated'],
     })
     scheme_std.create_dataset('std mass values', data=std_masses_dataarray)
-    log.info('Standards:'+str(std_masses['weight ID']))
+    log.info('Standards: '+str(std_masses['weight ID']))
 
     num_unknowns = num_client_masses + num_check_masses + num_stds
     log.info('Number of unknowns = '+str(num_unknowns))
@@ -85,7 +91,7 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     designmatrix = np.zeros((num_obs, num_unknowns))
     rowcounter = 0
 
-    log.info('Input data: \n+ weight group, - weight group, mass difference (g), balance uncertainty (ug)'
+    log.debug('Input data: \n+ weight group, - weight group, mass difference (g), balance uncertainty (ug)'
              '\n'+str(inputdata))
     for entry in inputdata:
         #log.debug(str(entry[0])+str(entry[1])+str(entry[2])+str(entry[3]))
@@ -135,11 +141,11 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     psi_bmeas = np.linalg.inv(psi_bmeas_inv)
 
     b = np.linalg.multi_dot([psi_bmeas, xT, psi_y_inv, differences])
-    log.info('Mass values before corrections:\n'+str(b))
+    log.debug('Mass values before corrections:\n'+str(b))
 
     r0 = (differences - np.dot(x, b))*1e6               # residuals, converted from g to ug
     sum_residues_squared = np.dot(r0, r0)
-    log.info('Residuals:\n'+str(np.round(r0, 4)))       # also save as column with input data for checking
+    log.debug('Residuals:\n'+str(np.round(r0, 4)))       # also save as column with input data for checking
 
     inputdatares = np.empty(
         num_obs,
@@ -198,7 +204,8 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
         summarytable[i, 3] = np.round(std_uncert_b[i], 3)
         summarytable[i, 4] = np.round(2*std_uncert_b[i],3)
 
-    log.info('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (ug), 95% CI\n'+str(summarytable))
+    log.info('Found least squares solution')
+    log.debug('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (ug), 95% CI\n'+str(summarytable))
 
     leastsq_meta = {
         'Number of observations': num_obs,
@@ -222,6 +229,20 @@ def final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masse
     log.info('Mass calculation saved to {!r}'.format(filesavepath))
 
     return finalmasscalc
+
+
+def make_backup(folder, filesavepath, client, ):
+    if os.path.isfile(filesavepath):
+        existing_root = read(filesavepath, encoding='utf-8')
+        if not os.path.exists(folder + "\\backups\\"):
+            os.makedirs(folder + "\\backups\\")
+        new_index = len(os.listdir(folder + "\\backups\\"))
+        new_file = str(folder + "\\backups\\" + client + '_finalmasscalc_backup{}.json'.format(new_index))
+        existing_root.is_read_only = False
+        root = JSONWriter()
+        root.set_root(existing_root)
+        root.save(root=existing_root, url=new_file, mode='w', encoding='utf-8', ensure_ascii=False)
+        log.info('Backup of previous Final Mass Calc saved as {}'.format(new_file))
 
 
 '''
