@@ -53,15 +53,19 @@ class Configuration(object):
         Parameters
         ----------
         alias : str
-            alias for OMEGA logger. Must be either mass 1, mass 2 or temperature 1
+            alias for balance in config file where entry is present in Ambient monitoring column in balance register.
+            If balance uses an OMEGA logger, entry must be either mass 1, mass 2 or temperature 1
 
         Returns
         -------
         dict
-            dict of OMEGA instance and limits on ambient conditions
+            dict of ambient logger instance and limits on ambient conditions
         """
+        omega_details = self.equipment[alias].user_defined['ambient_monitoring'].split(", sensor ")
+
         omega = {
-            'Inst': alias,
+            'Inst': omega_details[0],
+            'Sensor': int(omega_details[1]),
 
             'MIN_T': float(self.cfg.root.find('min_temp').text),
             'MAX_T': float(self.cfg.root.find('max_temp').text),

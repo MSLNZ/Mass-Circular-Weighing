@@ -33,11 +33,12 @@ class WeighingWorker(Worker):
         cfg = self.info['CFG']
         ac = cfg.acceptance_criteria(self.se_row_data['bal_alias'], float(self.se_row_data['nominal']))
 
-        # get OMEGA instance if available
-        if self.info['Omega logger']:
-            omega_instance = cfg.get_omega_instance(self.info['Omega logger'])
-        else:
-            omega_instance = None
+        # get OMEGA or Vaisala instance
+        # if self.info['Omega logger']:
+        #     omega_instance = cfg.get_omega_instance(self.info['Omega logger'])
+        # else:
+        #     omega_instance = None
+        omega_instance = cfg.get_omega_instance(self.se_row_data['bal_alias'])
 
         # collect metadata
         metadata = {

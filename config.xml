@@ -39,7 +39,7 @@
 
     <!-- Specify the Equipment-Register Databases to load equipment records from. -->
     <registers>
-      <register team="M&amp;P" user_defined="weighing_mode, stable_wait, unit, resolution">
+      <register team="M&amp;P" user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution">
           <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>

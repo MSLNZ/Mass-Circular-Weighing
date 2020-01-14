@@ -106,41 +106,35 @@ class LabEnviron64(Client64):
 
         return x_data, y_data
 
-    def get_average_temp(self, omega_alias, date_start=None, date_end=None,):
-        time1, temp1 = self.get_data(omega_alias, 0, date_start=date_start, date_end=date_end,)
-        time2, temp2 = self.get_data(omega_alias, 3, date_start=date_start, date_end=date_end,)
+    def get_temp(self, omega_alias, probe, date_start=None, date_end=None,):
+        time, temp = self.get_data(omega_alias, probe, date_start=date_start, date_end=date_end,)
 
-        time = time1
-        temp = temp1
-        for t in range(len(time1)):
-            time[t] = round((time1[t] + time2[t])/2, 3)
+        for t in range(len(time)):
             time[t] = datetime.fromtimestamp(time[t])-diff
-            temp[t] = round((temp1[t] + temp2[t])/2, 3)
 
         return time, temp
 
-    def get_average_rh(self, omega_alias, date_start=None, date_end=None,):
-        time1, rh1 = self.get_data(omega_alias, 1, date_start=date_start, date_end=date_end,)
-        time2, rh2 = self.get_data(omega_alias, 4, date_start=date_start, date_end=date_end,)
+    def get_rh(self, omega_alias, probe, date_start=None, date_end=None,):
+        time, rh = self.get_data(omega_alias, 1, date_start=date_start, date_end=date_end,)
 
-        time = time1
-        rh = rh1
-        for t in range(len(time1)):
-            time[t] = round((time1[t] + time2[t])/2, 3)
+        for t in range(len(time)):
             time[t] = datetime.fromtimestamp(time[t])-diff
-            rh[t] = round((rh1[t] + rh2[t])/2, 3)
 
         return time, rh
 
-    def get_t_rh_now(self, omega_alias):
-        tempdata_start = self.get_average_temp(omega_alias)
-        rhdata_start = self.get_average_rh(omega_alias)
+    def get_t_rh_now(self, omega_alias, sensor):
+        t_probe = (sensor - 1)*3
+        rh_probe = 1 + (sensor - 1)*3
+        tempdata_start = self.get_temp(omega_alias, t_probe)
+        rhdata_start = self.get_rh(omega_alias, rh_probe)
 
         return tempdata_start[0][-1], tempdata_start[1][-1], rhdata_start[1][-1]
 
-    def get_t_rh_during(self, omega_alias, start):
-        tempdata_end = self.get_average_temp(omega_alias, date_start=start)
-        rhdata_end = self.get_average_rh(omega_alias, date_start=start)
+    def get_t_rh_during(self, omega_alias, sensor, start):
+        t_probe = (sensor - 1)*3
+        rh_probe = 1 + (sensor - 1)*3
+        tempdata_end = self.get_temp(omega_alias, t_probe, date_start=start)
+        rhdata_end = self.get_rh(omega_alias, rh_probe, date_start=start)
 
         t1 = tempdata_end[0][:].index(start)
         return tempdata_end[1][t1:], rhdata_end[1][t1:]
@@ -164,7 +158,7 @@ if __name__ == '__main__':
     # print(rhdata[0][3], rhdata[1][3])
 
     print('Initial ambient conditions')
-    date_start, t_start, rh_start = dll.get_t_rh_now('mass 2')
+    date_start, t_start, rh_start = dll.get_t_rh_now('mass 2', 1)
 
     print(date_start, t_start, rh_start)
 
@@ -179,11 +173,11 @@ if __name__ == '__main__':
     from time import sleep
     sleep(126)
 
-    print(dll.get_t_rh_during('mass 2', date_start,))
+    print(dll.get_t_rh_during('mass 2', 1, date_start,))
 
     date_end = date.today()
-    tempdata_end = dll.get_average_temp('mass 2', date_start, date_end)
-    rhdata_end = dll.get_average_rh('mass 2', date_start, date_end)
+    tempdata_end = dll.get_temp('mass 2', 0, date_start, date_end)
+    rhdata_end = dll.get_rh('mass 2', 1, date_start, date_end)
 
     print(len(tempdata_end[0]))
     # print(tempdata_end[0][:], tempdata_end[1][:])

@@ -13,10 +13,11 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
     ac = cfg.acceptance_criteria(bal_alias, nominal_mass)
 
     # get OMEGA instance if available
-    if omega_alias:
-        omega_instance = cfg.get_omega_instance(omega_alias)
-    else:
-        omega_instance=None
+    # if omega_alias:
+    #     omega_instance = cfg.get_omega_instance(omega_alias)
+    # else:
+    #     omega_instance=None
+    omega_instance = cfg.get_omega_instance(bal_alias)
 
     # collect metadata
     metadata = {

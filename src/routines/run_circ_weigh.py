@@ -54,6 +54,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
     metadata['Mmt Timestamp'] = datetime.now().isoformat(sep=' ', timespec='minutes')
     metadata['Time unit'] = 'min'
+    metadata['Ambient monitoring'] = omega
 
     ambient_pre = check_ambient_pre(omega)
     if not ambient_pre:
@@ -141,8 +142,9 @@ def check_ambient_pre(omega):
         {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
     """
     log.info('Collecting ambient conditions from omega '+omega['Inst'])
+    print('Sensor', omega['Sensor'])
 
-    date_start, t_start, rh_start = dll.get_t_rh_now(str(omega['Inst']))
+    date_start, t_start, rh_start = dll.get_t_rh_now(str(omega['Inst']), omega['Sensor'])
 
     ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: t_start, 'RH_pre (%)': rh_start, }
     log.info('Ambient conditions:\n'+
@@ -183,7 +185,7 @@ def check_ambient_post(omega, ambient_pre):
     """
     log.info('Collecting ambient conditions from omega'+omega['Inst'])
 
-    t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), ambient_pre['Start time'])
+    t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), omega['Sensor'], ambient_pre['Start time'])
 
     ambient_post = {
         'T'+IN_DEGREES_C: str(min(t_data))+' to '+str(max(t_data)),
