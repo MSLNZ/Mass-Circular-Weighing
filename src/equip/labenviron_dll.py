@@ -96,12 +96,14 @@ class LabEnviron64(Client64):
         size, status, error = self.request32('get_size', omega_alias, probe, date_start=date_start, date_end=date_end)
         if error:
             log.error(error)
+            print('error 1')
             return None, None
 
         x_data, y_data, status, error = self.request32('get_data', omega_alias, probe,
                                                        date_start=date_start, date_end=date_end, xy_size=size)
         if error:
             log.error(error)
+            print('error 2')
             return None, None
 
         return x_data, y_data
@@ -115,7 +117,7 @@ class LabEnviron64(Client64):
         return time, temp
 
     def get_rh(self, omega_alias, probe, date_start=None, date_end=None,):
-        time, rh = self.get_data(omega_alias, 1, date_start=date_start, date_end=date_end,)
+        time, rh = self.get_data(omega_alias, probe, date_start=date_start, date_end=date_end,)
 
         for t in range(len(time)):
             time[t] = datetime.fromtimestamp(time[t])-diff
@@ -171,13 +173,13 @@ if __name__ == '__main__':
     # print()
 
     from time import sleep
-    sleep(126)
+    sleep(66)
 
-    print(dll.get_t_rh_during('mass 2', 1, date_start,))
+    print(dll.get_t_rh_during('mass 1', 1, date_start,))
 
     date_end = date.today()
-    tempdata_end = dll.get_temp('mass 2', 0, date_start, date_end)
-    rhdata_end = dll.get_rh('mass 2', 1, date_start, date_end)
+    tempdata_end = dll.get_temp('mass 1', 0, date_start, date_end)
+    rhdata_end = dll.get_rh('mass 1', 1, date_start, date_end)
 
     print(len(tempdata_end[0]))
     # print(tempdata_end[0][:], tempdata_end[1][:])
