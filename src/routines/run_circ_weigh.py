@@ -1,7 +1,7 @@
 import os
 from msl.io import JSONWriter, read
 from src.routines.circ_weigh_class import CircWeigh
-from src.constants import IN_DEGREES_C, SUFFIX, MU_STR
+from src.constants import IN_DEGREES_C, SUFFIX, MU_STR, local_backup
 from src.equip.labenviron_dll import LabEnviron64
 from time import perf_counter
 from datetime import datetime
@@ -50,7 +50,10 @@ def get_next_run_id(root, scheme_entry):
     return run_id
 
 
-def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, omega=None, **metadata):
+def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, omega=None,
+                     local_backup_folder=local_backup, **metadata):
+
+    local_backup_file = os.path.join(local_backup_folder, url.split('\\')[-1])
 
     metadata['Mmt Timestamp'] = datetime.now().isoformat(sep=' ', timespec='minutes')
     metadata['Time unit'] = 'min'
@@ -74,11 +77,6 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
              '\n' + positionstr.strip('\n'))
 
     data = np.empty(shape=(weighing.num_cycles, weighing.num_wtgrps, 2))
-    print(data)
-    print(root['Circular Weighings'])
-    print(se)
-    for name, value in root.items():
-        print(name, repr(value))
     weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)
     weighdata.add_metadata(**metadata)
 
@@ -102,7 +100,12 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                     time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
                 times.append(time)
                 weighdata[cycle, pos, :] = [time, reading]
-                root.save(url=url, mode='w', ensure_ascii=False)
+                try:
+                    root.save(url=url, mode='w', ensure_ascii=False)
+                except:
+                    log.debug('weighdata:\n' + str(weighdata[:, :, :]))
+                    root.save(url=local_backup_file, mode='w', ensure_ascii=False)
+                    log.warning('Data saved to local backup at '+local_backup_file)
                 bal.unload_bal(mass, pos)
         break
 
@@ -113,16 +116,24 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
         metadata['Weighing complete'] = True
         weighdata.add_metadata(**metadata)
-        root.save(url=url, mode='w', ensure_ascii=False)
-
-        log.debug('weighdata:\n'+str(weighdata[:, :, :]))
+        try:
+            root.save(url=url, mode='w', ensure_ascii=False)
+        except:
+            log.debug('weighdata:\n' + str(weighdata[:, :, :]))
+            root.save(url=local_backup_file, mode='w', ensure_ascii=False)
+            log.warning('Data saved to local backup: ' + local_backup_file)
 
         return root
 
     log.info('Circular weighing sequence aborted')
     metadata['Weighing complete'] = False
     weighdata.add_metadata(**metadata)
-    root.save(url=url, mode='w', ensure_ascii=False)
+    try:
+        root.save(url=url, mode='w', ensure_ascii=False)
+    except:
+        log.debug('weighdata:\n' + str(weighdata[:, :, :]))
+        root.save(url=local_backup_file, mode='w', ensure_ascii=False)
+        log.warning('Data saved to local backup file: ' + local_backup_file)
 
     return None
 
