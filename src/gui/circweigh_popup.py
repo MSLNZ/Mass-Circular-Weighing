@@ -53,8 +53,8 @@ class WeighingWorker(Worker):
         run = 0
         bad_runs = 0
 
-        if self.se_row_data['First run no.'] > 1:
-            print('not first run')
+        # if self.se_row_data['First run no.'] > 1:
+        #     print('not first run')
 
         while run < float(self.se_row_data['num_runs'])+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS:
 
@@ -184,7 +184,7 @@ class WeighingThread(Thread):
 
     def close_weighing(self, ):
         print(self.se_row_data['Good runs'], 'good runs in weighing widget')
-        #TODO: use collected emitted data to update the status in the main gui??
+        self.bal._want_abort = True
         self.window.close()
 
     def check_for_existing(self):
