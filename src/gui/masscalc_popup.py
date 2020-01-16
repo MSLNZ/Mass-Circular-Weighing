@@ -2,7 +2,7 @@ import numpy as np
 
 from src.constants import MU_STR
 
-from msl.qt import QtWidgets, Button, excepthook
+from msl.qt import QtWidgets, Button, excepthook, Signal, Slot
 from msl.qt.threading import Thread, Worker
 
 from src.log import log
@@ -96,72 +96,108 @@ class DiffsTable(QtWidgets.QTableWidget):
         return inputdata
 
 
-#class FinalMassTable()
+class MassValuesTable(QtWidgets.QTableWidget):
+
+    def __init__(self):
+        super(MassValuesTable, self).__init__()
+        self.setColumnCount(5)
+        self.setHorizontalHeaderLabels(
+            ["Weight ID", "Set ID", "Mass value (g)", "Uncertainty (ug)", "95% CI"]
+        )
+        self.resizeColumnsToContents()
+
+        self.make_rows(1)
+        # self.fill_table(data)
+
+    def make_rows(self, numrows):
+        self.setRowCount(numrows)
+        for i in range(self.rowCount()):
+            for j in range(5):
+                self.setCellWidget(i, j, QtWidgets.QLabel())
+
+    @Slot(object, object)
+    def update_table(self, data):
+        lend = len(data)
+        self.make_rows(lend)
+        for i in range(lend):
+            for j, item in enumerate(data[i]):
+                self.cellWidget(i, j).setText(str(item))
+        self.resizeColumnsToContents()
 
 
 class CalcWorker(Worker):
 
-    def __init__(self, table, fmc_info,):
+    def __init__(self, parent, table, fmc_info, mass_vals_table):
         super(CalcWorker, self).__init__()
+        self.parent = parent
         self.table = table
         self.fmc_info = fmc_info
+        self.mass_vals_table = mass_vals_table
+
+        self.fmc = None
 
     def process(self):
         # collating and sorting metadata
         inputdata = self.table.get_checked_rows()
-        self.fmc_info['client_wt_IDs'] = filter_IDs(self.fmc_info['client_wt_IDs'].split(), inputdata)
+        print(inputdata)
+        client_wt_IDs = filter_IDs(self.fmc_info['client_wt_IDs'], inputdata)
         if self.fmc_info['check_wt_IDs'] is not None:
-            self.fmc_info['check_wt_IDs'] = filter_IDs(self.fmc_info['check_wt_IDs'], inputdata)
-        self.fmc_info['std_masses'] = filter_stds(self.fmc_info['std_masses'], inputdata)
-        fmc = final_mass_calc(
+            check_wt_IDs = filter_IDs(self.fmc_info['check_wt_IDs'], inputdata)
+        std_masses = filter_stds(self.fmc_info['std_masses'], inputdata)
+        self.fmc = final_mass_calc(
             self.fmc_info['Folder'],
             self.fmc_info['Client'],
-            self.fmc_info['client_wt_IDs'],
-            self.fmc_info['check_wt_IDs'],
-            self.fmc_info['std_masses'],
+            client_wt_IDs,
+            check_wt_IDs,
+            std_masses,
             inputdata,
             nbc=self.fmc_info['nbc'],
             corr=self.fmc_info['corr'],
         )
-
-        return fmc
+        data = self.fmc['2: Matrix Least Squares Analysis']['Mass values from least squares solution']
+        self.parent.fmc_result.emit(self.mass_vals_table, data)
+        print('done updating')
 
 
 class MassCalcThread(Thread):
 
+    fmc_result = Signal(object, object)
+
     def __init__(self, ):
         super(MassCalcThread, self).__init__(CalcWorker)
-        self.table = None
+        self.inputdata_table = None
         self.fmc_info = None
+        self.mass_vals_table = None
+
+        self.fmc_result.connect(MassValuesTable.update_table)
 
     def make_window(self, data):
-        self.table = DiffsTable(data)
+        self.inputdata_table = DiffsTable(data)
         do_calc = Button(text='Do calculation', left_click=self.start_finalmasscalc)
+        self.mass_vals_table = MassValuesTable()
 
         self.window = QtWidgets.QWidget()
         self.window.setWindowTitle('Final Mass Calculation')
 
-        status = QtWidgets.QWidget()
-        status_layout = QtWidgets.QVBoxLayout()
-        status_layout.addWidget(self.table)
-        status.setLayout(status_layout)
-
-        panel = QtWidgets.QGridLayout()
-        panel.addWidget(status, 0, 0)
-        panel.addWidget(do_calc, 1, 1)
-
-        self.window.setLayout(panel)
+        window_layout = QtWidgets.QVBoxLayout()
+        window_layout.addWidget(self.inputdata_table)
+        window_layout.addWidget(do_calc)
+        window_layout.addWidget(self.mass_vals_table)
+        self.window.setLayout(window_layout)
         rect = QtWidgets.QDesktopWidget()
         #self.window.move(rect.width() * 0.05, rect.height() * 0.55)
 
     def show(self, data, fmc_info):
         self.make_window(data)
         self.fmc_info = fmc_info
+        self.fmc_info['client_wt_IDs'] = self.fmc_info['client_wt_IDs'].split()
         self.window.show()
 
     def start_finalmasscalc(self):
-        fmc = self.start(self.table, self.fmc_info, )
-        print('fmc done', fmc)
+        self.start(self, self.inputdata_table, self.fmc_info, self.mass_vals_table)
+
+
+
 
 
 
