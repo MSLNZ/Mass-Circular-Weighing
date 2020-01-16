@@ -16,12 +16,34 @@ def label(name):
 def filter_IDs(ID_list, inputdata):
     relevant_IDs = []
     for item in ID_list:
-        if item in inputdata['+ weight group']:
-            relevant_IDs.append(item)
-        elif item in inputdata['- weight group']:
+        if item in inputdata['+ weight group'] or item in inputdata['- weight group']:
             relevant_IDs.append(item)
 
     return relevant_IDs
+
+
+def filter_stds(std_masses, inputdata):
+    relevant_IDs = []
+    relevant_nominal = []
+    relevant_massvals = []
+    relevant_uncs = []
+
+    for i, item in enumerate(std_masses['weight ID']):
+        if item in inputdata['+ weight group'] or item in inputdata['- weight group']:
+            relevant_IDs.append(item)
+            relevant_nominal.append(std_masses['nominal (g)'][i])
+            relevant_massvals.append(std_masses['mass values (g)'][i])
+            relevant_uncs.append(std_masses['uncertainties (ug)'][i])
+
+    std_masses_new = {
+        'nominal (g)': relevant_nominal,
+        'mass values (g)': relevant_massvals,
+        'uncertainties (ug)': relevant_uncs,
+        'weight ID': relevant_IDs,
+        'Set Identifier': std_masses['Set Identifier'],
+        'Calibrated': std_masses['Calibrated'],
+    }
+    return std_masses_new
 
 
 class DiffsTable(QtWidgets.QTableWidget):
@@ -29,7 +51,10 @@ class DiffsTable(QtWidgets.QTableWidget):
     def __init__(self, data):
         super(DiffsTable, self).__init__()
         self.setColumnCount(7)
-        self.setHorizontalHeaderLabels(['+ weight group', '- weight group', 'mass difference (g)', 'residual ('+MU_STR+'g)', 'balance uncertainty ('+MU_STR+'g)', 'acceptance met', 'included'])
+        self.setHorizontalHeaderLabels(
+            ['+ weight group', '- weight group', 'mass difference (g)', 'balance uncertainty ('+MU_STR+'g)',
+             'acceptance met', 'residual ('+MU_STR+'g)', 'included']
+        )
         self.resizeColumnsToContents()
 
         self.make_rows(len(data))
@@ -47,7 +72,7 @@ class DiffsTable(QtWidgets.QTableWidget):
             for j, item in enumerate(entry):
                 if j == 2:
                     item = "{:+.9f}".format(item)
-                if j == 3:
+                if j == 5:
                     item = "{:+.3f}".format(item)
                 self.cellWidget(i, j).setText(str(item))
             self.cellWidget(i, 6).setChecked(True)
@@ -66,7 +91,7 @@ class DiffsTable(QtWidgets.QTableWidget):
                 inputdata[-1:]['+ weight group'] = self.cellWidget(i, 0).text()
                 inputdata[-1:]['- weight group'] = self.cellWidget(i, 1).text()
                 inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 2).text()
-                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 4).text()
+                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 3).text()
 
         return inputdata
 
@@ -87,7 +112,8 @@ class CalcWorker(Worker):
         self.fmc_info['client_wt_IDs'] = filter_IDs(self.fmc_info['client_wt_IDs'].split(), inputdata)
         if self.fmc_info['check_wt_IDs'] is not None:
             self.fmc_info['check_wt_IDs'] = filter_IDs(self.fmc_info['check_wt_IDs'], inputdata)
-        final_mass_calc(
+        self.fmc_info['std_masses'] = filter_stds(self.fmc_info['std_masses'], inputdata)
+        fmc = final_mass_calc(
             self.fmc_info['Folder'],
             self.fmc_info['Client'],
             self.fmc_info['client_wt_IDs'],
@@ -97,6 +123,8 @@ class CalcWorker(Worker):
             nbc=self.fmc_info['nbc'],
             corr=self.fmc_info['corr'],
         )
+
+        return fmc
 
 
 class MassCalcThread(Thread):
@@ -132,10 +160,8 @@ class MassCalcThread(Thread):
         self.window.show()
 
     def start_finalmasscalc(self):
-        self.start(self.table, self.fmc_info, )
+        fmc = self.start(self.table, self.fmc_info, )
+        print('fmc done', fmc)
 
-    def update_weigh_matrix(self, ):
-        # make array
-        print('looking for more data')
 
 
