@@ -12,7 +12,10 @@ DEGREE_SIGN = '°'           # \xb0
 IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 
 config_default = os.path.abspath(os.path.join(r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing', 'config.xml'))
-save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\testing'
+save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
+client_default = ' '
+client_masses_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000'
+
 # I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
 stds = [                    # options for standards and check masses
     'MET19A',

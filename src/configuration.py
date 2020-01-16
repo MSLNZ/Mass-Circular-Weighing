@@ -10,7 +10,7 @@ import numpy as np
 
 class Configuration(object):
 
-    def __init__(self, config, stdset, checkset):
+    def __init__(self, config, ):
 
         self.cfg = Config(config)               # loads cfg file
         self.db = self.cfg.database()           # loads database
@@ -19,13 +19,18 @@ class Configuration(object):
         self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': Balance}
         # TODO: add aw class for automatic loading balance
 
+        self.SQRT_F = float(self.cfg.root.find('acceptance_criteria/SQRT_F').text)
+        self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
+
+        self.all_stds = None
+        self.all_checks = None
+
+    def init_ref_mass_sets(self, stdset, checkset):
         self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/'+stdset).text, 'std')
         if checkset is not None:
             self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+checkset).text, 'check')
         else:
             self.all_checks = None
-        self.SQRT_F = float(self.cfg.root.find('acceptance_criteria/SQRT_F').text)
-        self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
 
     def get_bal_instance(self, alias, strict=True):
         """Selects balance class and returns balance instance
@@ -161,9 +166,9 @@ def load_stds_from_set_file(path, wtset):
                 stds['Set Identifier'] = 'M'+set_name[1]
             else:
                 stds['Set Identifier'] = set_name[0]
-            log.info(wtset + ' weights use identifier ' + stds['Set Identifier'])
+            log.info(wtset + ' masses use identifier ' + stds['Set Identifier'])
             stds['Calibrated'] = set_name[-1]
-            log.info(wtset + ' weights were last calibrated in ' + stds['Calibrated'])
+            log.info(wtset + ' masses were last calibrated in ' + stds['Calibrated'])
             fp.readline()
 
             headerline = fp.readline().strip('\n')

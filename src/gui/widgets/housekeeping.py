@@ -1,6 +1,7 @@
+import os
 from msl.qt import QtWidgets, Button
 from src.log import log
-from src.constants import config_default, save_folder_default, stds, omega_loggers
+from src.constants import config_default, save_folder_default, client_default, client_masses_default, stds, omega_loggers
 from src.configuration import Configuration
 
 from src.gui.widgets.browse import Browse, label
@@ -11,10 +12,10 @@ class Housekeeping(QtWidgets.QWidget):
         super(Housekeeping, self).__init__()
 
         self.config_io = Browse(config_default, 'shell32|4')
+        self.load_from_config_but = Button(text='Load details from config file', left_click=self.load_from_config)
         self.folder_io = Browse(save_folder_default, 'shell32|4')
-        self.client_io = QtWidgets.QLineEdit('AsureQ_Mar')
-        self.client_masses_io = QtWidgets.QTextEdit('1 2 5 10 20 50 100 200 200d 500 1000 2000 5000')
-        # self.client_masses_io = QtWidgets.QTextEdit('5000MB 10000MB 20000RB 20000RC 20000RD')
+        self.client_io = QtWidgets.QLineEdit(client_default)
+        self.client_masses_io = QtWidgets.QTextEdit(client_masses_default)
 
         self.cb_stds_io = QtWidgets.QComboBox()
         self.cb_stds_io.addItems(stds)
@@ -41,6 +42,7 @@ class Housekeeping(QtWidgets.QWidget):
         formlayout = QtWidgets.QFormLayout()
 
         formlayout.addRow(label('Configuration file'), self.config_io)
+        formlayout.addRow(label(' '), self.load_from_config_but)
         formlayout.addRow(label('Folder for saving data'), self.folder_io)
         formlayout.addRow(label('Client'), self.client_io)
         formlayout.addRow(label('List of client masses'), self.client_masses_io)
@@ -73,6 +75,22 @@ class Housekeeping(QtWidgets.QWidget):
         lhs_panel_group.setLayout(lhs_panel_layout)
 
         return lhs_panel_group
+
+    def load_from_config(self):
+        if os.path.isfile(self.config):
+            self.cfg = Configuration(self.config)
+
+            self.folder_io.textbox.setText(self.cfg.cfg.root.find('save_folder').text)
+            self.client_io.setText(self.cfg.cfg.root.find('client').text)
+            self.client_masses_io.setText(self.cfg.cfg.root.find('client_masses').text)
+            self.cb_stds_io.setCurrentText(self.cfg.cfg.root.find('std_set').text)
+            self.cb_checks_io.setCurrentText(self.cfg.cfg.root.find('check_set').text)
+            self.drift_io.setCurrentText(self.cfg.cfg.root.find('drift').text)
+            self.timed_io.setCurrentText(self.cfg.cfg.root.find('use_times').text)
+            self.corr_io.setText(self.cfg.cfg.root.find('correlations').text)
+
+        else:
+            log.error('Config file does not exist at {!r}'.format(self.config))
 
     @property
     def config(self):
@@ -127,12 +145,13 @@ class Housekeeping(QtWidgets.QWidget):
         log.info('Client masses: ' + self.client_masses)
         log.info('Standard mass set: ' + self.std_set)
         log.info('Check mass set: ' + str(self.check_set))
-        log.info('Omega logger: ' + self.omega)
-        log.info('Drift correction: ' + self.drift_io.currentText())
-        log.info('Use measurement times? ' + str(self.timed))
-        log.info('Correlations between standards? ' + self.correlations)
+        log.debug('Omega logger: ' + self.omega)
+        log.debug('Drift correction: ' + self.drift_io.currentText())
+        log.debug('Use measurement times? ' + str(self.timed))
+        log.debug('Correlations between standards? ' + self.correlations)
 
-        self.cfg = Configuration(self.config, self.std_set, self.check_set)
+        self.cfg = Configuration(self.config)
+        self.cfg.init_ref_mass_sets(self.std_set, self.check_set)
 
         return True
 

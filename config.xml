@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
   <msl>
 
+    <!-- Specify client-specific information. -->
+    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MPI_Jan</save_folder>
+    <client>MPI_Jan</client>
+    <client_masses>20BZB 20BZC</client_masses>
+    <std_set>MET19A</std_set>
+    <check_set>MET19B</check_set>
+    <drift>auto</drift>
+    <use_times>YES</use_times>
+    <correlations>None</correlations>
+
     <!-- Specify all balances available for weighings. -->
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
     <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
