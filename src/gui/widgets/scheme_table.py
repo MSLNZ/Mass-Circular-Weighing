@@ -11,9 +11,9 @@ class SchemeTable(QtWidgets.QTableWidget):
     def __init__(self):
         super(SchemeTable, self).__init__()
         self.setAcceptDrops(True)
-        self.setColumnCount(5)
+        self.setColumnCount(4)
         self.make_rows(10)
-        self.setHorizontalHeaderLabels(['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# Runs', 'Status'])
+        self.setHorizontalHeaderLabels(['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# Runs'])
         self.resizeColumnsToContents()
         header = self.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
@@ -36,7 +36,6 @@ class SchemeTable(QtWidgets.QTableWidget):
         self.setCellWidget(row_no, 1, QtWidgets.QLineEdit())
         self.setCellWidget(row_no, 2, balance_io)
         self.setCellWidget(row_no, 3, QtWidgets.QSpinBox())
-        self.setCellWidget(row_no, 4, QtWidgets.QLabel())
 
     def vert_header_menu(self, pos):
         row = self.currentRow()
@@ -91,9 +90,6 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         except AttributeError:
             log.error('Incomplete data in selected row')
-
-    def update_se_status(self, row, status):
-        self.cellWidget(row, 4).setText(status)
 
     def dragEnterEvent(self, event):
         paths = io.get_drag_enter_paths(event, pattern='*.xls*')
