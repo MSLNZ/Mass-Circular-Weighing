@@ -17,8 +17,8 @@ def collate_all_weighings(schemetable, housekeeping):
 
     data = np.empty(0,
                     dtype=[('+ weight group', object), ('- weight group', object),
-                           ('mass difference (g)', 'float64'), ('residual (' + MU_STR + 'g)', 'float64'),
-                           ('balance uncertainty (' + MU_STR + 'g)', 'float64'), ('Acceptance met?', bool)])
+                           ('mass difference (g)', 'float64'), ('balance uncertainty (' + MU_STR + 'g)', 'float64'),
+                           ('Acceptance met?', bool), ('residual (' + MU_STR + 'g)', 'float64')])
 
     for row in range(schemetable.rowCount()):
         if schemetable.cellWidget(row, 1).text():
@@ -63,6 +63,7 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
     -------
     tuple of
     [0] structured array of averaged weighing data in grams, if meets acceptance criteria, else None
+    NOTE that the average currently ignores the first of the weighings
     [1] bool indicating whether average data meets acceptance criteria for weighing
 
     """
@@ -93,7 +94,7 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
                 collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])
 
     for key, value in collated.items():
-        collated[key] = (np.average(value), np.std(value))
+        collated[key] = (np.average(value[1:]), np.std(value[1:]))
 
     inputdata = np.empty(num_wt_grps-1,
                          dtype=[('+ weight group', object), ('- weight group', object),

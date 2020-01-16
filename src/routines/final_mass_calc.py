@@ -147,16 +147,17 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     sum_residues_squared = np.dot(r0, r0)
     log.debug('Residuals:\n'+str(np.round(r0, 4)))       # also save as column with input data for checking
 
-    inputdatares = np.empty(
-        num_obs,
-        dtype =[('+ weight group', object), ('- weight group', object), ('mass difference (g)', 'float64'),
-                ('balance uncertainty (ug)', 'float64'), ('residual (ug)', 'float64')])
-    inputdatares['+ weight group'][0:len(inputdata)] = inputdata['+ weight group']
-    inputdatares['+ weight group'][len(inputdata):] = std_masses['weight ID']
-    inputdatares['- weight group'][0:len(inputdata)] = inputdata['- weight group']
-    inputdatares['mass difference (g)'] = differences
-    inputdatares['balance uncertainty (ug)'] = uncerts
-    inputdatares['residual (ug)'] = np.round(r0, 3)
+    inputdatares = np.empty((num_obs, 5), dtype=object)
+        # dtype =[('+ weight group', object), ('- weight group', object), ('mass difference (g)', object),
+        #         ('balance uncertainty (ug)', 'float64'), ('residual (ug)', 'float64')])
+    inputdatares[0:len(inputdata), 0] = inputdata['+ weight group']
+    inputdatares[len(inputdata):, 0] = std_masses['weight ID']
+    inputdatares[0:len(inputdata), 1] = inputdata['- weight group']
+    # for i, diff in enumerate(differences):
+    #     inputdatares[i, 2] = np.round(diff, 9) #"{:.9f}".format(diff) ### want json to print all 9 decimal places!
+    inputdatares[:, 2] = differences
+    inputdatares[:, 3] = uncerts
+    inputdatares[:, 4] = np.round(r0, 3)
 
     flag = []
     for entry in inputdatares:
@@ -168,7 +169,7 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
         cmx1 = np.ones(num_client_masses+num_check_masses)  # from above, stds are added last
         cmx1 = np.append(cmx1, np.zeros(num_stds))          # 1's for unknowns, 0's for reference stds
 
-        reluncert = 0.10                                    # relative uncertainty in ppm for no buoyancy correction
+        reluncert = 0.03                                    # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1
         unbc = reluncert * b * cmx1                         # vector of length num_unknowns. TP wrongly has * 1e-6
         uunbc = np.vstack(unbc) * np.hstack(unbc)           # square matrix of dim num_obs
         rnbc = np.identity(num_unknowns)                    # add off-diagonals for any correlations
@@ -220,9 +221,13 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
         leastsq_meta['Residuals greater than 2u'] = flag
 
     leastsq_data = finalmasscalc.create_group('2: Matrix Least Squares Analysis', metadata=leastsq_meta)
-    leastsq_data.create_dataset('Input data with least squares residuals', data=inputdatares)
+    leastsq_data.create_dataset('Input data with least squares residuals', data=inputdatares,
+                                metadata={'headers':
+                                              ['+ weight group', '- weight group', 'mass difference (g)',
+                                               'balance uncertainty (ug)', 'residual (ug)']})
     leastsq_data.create_dataset('Mass values from least squares solution', data=summarytable,
-                                metadata={'headers': ['Weight ID', 'Set ID', 'Mass value (g)', 'Uncertainty (ug)', '95% CI']})
+                                metadata={'headers':
+                                              ['Weight ID', 'Set ID', 'Mass value (g)', 'Uncertainty (ug)', '95% CI']})
 
     finalmasscalc.save(mode='w')
 
