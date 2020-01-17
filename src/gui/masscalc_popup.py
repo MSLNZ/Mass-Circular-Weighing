@@ -47,14 +47,18 @@ def filter_stds(std_masses, inputdata):
 
 
 class DiffsTable(QtWidgets.QTableWidget):
+    """Displays structured data of amss differences obtained from collate_data, provided headings are as in following list:
+    ['+ weight group', '- weight group', 'mass difference (g)',
+    'balance uncertainty (' + MU_STR + 'g)', 'Acceptance met?', 'residual (' + MU_STR + 'g)']
+    """
 
     def __init__(self, data):
         super(DiffsTable, self).__init__()
-        self.setColumnCount(7)
-        self.setHorizontalHeaderLabels(
-            ['+ weight group', '- weight group', 'mass difference (g)', 'balance uncertainty ('+MU_STR+'g)',
-             'acceptance met', 'residual ('+MU_STR+'g)', 'included']
-        )
+        self.num_cols = 8
+        self.setColumnCount(self.num_cols)
+        self.headers = ['+ weight group', '- weight group', 'mass difference (g)', 'CW residual ('+MU_STR+'g)', 'CW sigma OK?',
+             'balance uncertainty ('+MU_STR+'g)', 'MLS residual', 'Include?']
+        self.setHorizontalHeaderLabels(self.headers)
         self.resizeColumnsToContents()
 
         self.make_rows(len(data))
@@ -63,19 +67,19 @@ class DiffsTable(QtWidgets.QTableWidget):
     def make_rows(self, numrows):
         self.setRowCount(numrows)
         for i in range(self.rowCount()):
-            for j in range(6):
+            for j in range(self.num_cols-1):
                 self.setCellWidget(i, j, QtWidgets.QLabel())
-            self.setCellWidget(i, 6, QtWidgets.QCheckBox())
+            self.setCellWidget(i, self.num_cols-1, QtWidgets.QCheckBox())
 
     def fill_table(self, data):
-        for i, entry in enumerate(data):
-            for j, item in enumerate(entry):
-                if j == 2:
-                    item = "{:+.9f}".format(item)
-                if j == 5:
-                    item = "{:+.3f}".format(item)
-                self.cellWidget(i, j).setText(str(item))
-            self.cellWidget(i, 6).setChecked(True)
+        for i in range(len(data)):
+            self.cellWidget(i, 0).setText(str(data['+ weight group'][i]))
+            self.cellWidget(i, 1).setText(str(data['- weight group'][i]))
+            self.cellWidget(i, 2).setText(str("{:+.9f}".format(data['mass difference (g)'][i])))
+            self.cellWidget(i, 3).setText(str("{:+.3f}".format(data['residual (' + MU_STR + 'g)'][i])))
+            self.cellWidget(i, 4).setText(str(data['Acceptance met?'][i]))
+            self.cellWidget(i, 5).setText(str(data['balance uncertainty (' + MU_STR + 'g)'][i]))
+            self.cellWidget(i, self.num_cols-1).setChecked(True)
         self.resizeColumnsToContents()
 
     def get_checked_rows(self, ):
@@ -84,16 +88,23 @@ class DiffsTable(QtWidgets.QTableWidget):
                                      ('mass difference (g)', 'float64'),
                                      ('balance uncertainty ('+MU_STR+'g)', 'float64')])
         for i in range(self.rowCount()):
-            if self.cellWidget(i, 6).isChecked(): # if checked
+            if self.cellWidget(i, self.num_cols-1).isChecked(): # if checked
                 #['+ weight group', '- weight group', 'mass difference (g)', 'residual ('+MU_STR+'g)', 'balance uncertainty ('+MU_STR+'g)', 'acceptance met', 'included'
                 dlen = inputdata.shape[0]
                 inputdata.resize(dlen + 1)
                 inputdata[-1:]['+ weight group'] = self.cellWidget(i, 0).text()
                 inputdata[-1:]['- weight group'] = self.cellWidget(i, 1).text()
                 inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 2).text()
-                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 3).text()
+                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 5).text()
 
         return inputdata
+
+    @Slot(object, object)
+    def update_resids(self, fmc_result):
+        resids = fmc_result['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
+        num_stds = fmc_result["1: Mass Sets"]["Standard"].metadata.get("Number of masses")
+        for i in range(len(resids[:, 4])-num_stds):
+            self.cellWidget(i, 6).setText(str("{:+.3f}".format(resids[i, 4])))
 
 
 class MassValuesTable(QtWidgets.QTableWidget):
@@ -130,20 +141,22 @@ class CalcWorker(Worker):
     def __init__(self, parent, table, fmc_info, mass_vals_table):
         super(CalcWorker, self).__init__()
         self.parent = parent
-        self.table = table
+        self.cw_data_table = table
         self.fmc_info = fmc_info
         self.mass_vals_table = mass_vals_table
 
         self.fmc = None
 
     def process(self):
-        # collating and sorting metadata
-        inputdata = self.table.get_checked_rows()
-        print(inputdata)
+        # collate and sort metadata
+        inputdata = self.cw_data_table.get_checked_rows()
         client_wt_IDs = filter_IDs(self.fmc_info['client_wt_IDs'], inputdata)
         if self.fmc_info['check_wt_IDs'] is not None:
             check_wt_IDs = filter_IDs(self.fmc_info['check_wt_IDs'], inputdata)
+        else:
+            check_wt_IDs = None
         std_masses = filter_stds(self.fmc_info['std_masses'], inputdata)
+        # send relevant information to matrix least squares mass calculation algorithm
         self.fmc = final_mass_calc(
             self.fmc_info['Folder'],
             self.fmc_info['Client'],
@@ -154,14 +167,16 @@ class CalcWorker(Worker):
             nbc=self.fmc_info['nbc'],
             corr=self.fmc_info['corr'],
         )
+        # update both tables in popup with results
         data = self.fmc['2: Matrix Least Squares Analysis']['Mass values from least squares solution']
         self.parent.fmc_result.emit(self.mass_vals_table, data)
-        print('done updating')
+        self.parent.fmc_resids.emit(self.cw_data_table, self.fmc)
 
 
 class MassCalcThread(Thread):
 
     fmc_result = Signal(object, object)
+    fmc_resids = Signal(object, object)
 
     def __init__(self, ):
         super(MassCalcThread, self).__init__(CalcWorker)
@@ -170,6 +185,7 @@ class MassCalcThread(Thread):
         self.mass_vals_table = None
 
         self.fmc_result.connect(MassValuesTable.update_table)
+        self.fmc_resids.connect(DiffsTable.update_resids)
 
     def make_window(self, data):
         self.inputdata_table = DiffsTable(data)
@@ -179,13 +195,17 @@ class MassCalcThread(Thread):
         self.window = QtWidgets.QWidget()
         self.window.setWindowTitle('Final Mass Calculation')
 
-        window_layout = QtWidgets.QVBoxLayout()
-        window_layout.addWidget(self.inputdata_table)
-        window_layout.addWidget(do_calc)
+        lhpanel = QtWidgets.QGroupBox()
+        lhpanel_layout = QtWidgets.QVBoxLayout()
+        lhpanel_layout.addWidget(self.inputdata_table)
+        lhpanel_layout.addWidget(do_calc)
+        lhpanel.setLayout(lhpanel_layout)
+        window_layout = QtWidgets.QHBoxLayout()
+        window_layout.addWidget(lhpanel)
         window_layout.addWidget(self.mass_vals_table)
         self.window.setLayout(window_layout)
-        rect = QtWidgets.QDesktopWidget()
-        #self.window.move(rect.width() * 0.05, rect.height() * 0.55)
+        # self.window.sizeAdjustPolicy(QtCore.QAbstractScrollArea.AdjustToContents) #QtWidgets.)
+        self.window.adjustSize()
 
     def show(self, data, fmc_info):
         self.make_window(data)

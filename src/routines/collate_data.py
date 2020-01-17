@@ -8,6 +8,21 @@ import numpy as np
 
 
 def collate_all_weighings(schemetable, housekeeping):
+    """Collects all data from acceptable weighings in existing json files created by all entries in schemetable
+
+    Parameters
+    ----------
+    schemetable : QWidget
+        taken from centre panel of main gui
+    housekeeping : QWidget
+        taken from LHS panel of main gui
+
+    Returns
+    -------
+    data : numpy structured array
+        must use headings as follows: '+ weight group', '- weight group', 'mass difference (g)', 'balance uncertainty ('+MU_STR+'g)',
+             'residual ('+MU_STR+'g)', 'Acceptance met?', 'included'
+    """
     folder = housekeeping.folder
     client = housekeeping.client
     cfg = housekeeping.cfg
@@ -47,7 +62,7 @@ def collate_all_weighings(schemetable, housekeeping):
 
 def collate_a_data_from_json(url, scheme_entry, SQRT_F):
     """Use this function for an automatic weighing where individual weighings are not likely to meet SQRT_F criterion,
-    but the ensemble average is.
+    but the ensemble average is.  NOTE that the average currently ignores the first of the weighings
 
     Parameters
     ----------
@@ -63,7 +78,6 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
     -------
     tuple of
     [0] structured array of averaged weighing data in grams, if meets acceptance criteria, else None
-    NOTE that the average currently ignores the first of the weighings
     [1] bool indicating whether average data meets acceptance criteria for weighing
 
     """
@@ -79,7 +93,7 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
         collated[grp] = []
 
     for dataset in root['Circular Weighings'][scheme_entry].datasets():
-        dname = dataset.name.split('_')  # split('/')[-1].
+        dname = dataset.name.split('_')
         exclude = dataset.metadata.get('Exclude?')
 
         if dname[0][-8:] == 'analysis' and not exclude:
@@ -90,11 +104,12 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
 
             bal_unit = dataset.metadata.get('Mass unit')
             for i in range(dataset.shape[0]):
-                key = dataset['+ weight group'][i]
-                collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])
+                key = dataset['+ weight group'][i]              # gets name of + weight group
+                collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])  # adds mass difference in g to list for that weight group
 
     for key, value in collated.items():
-        collated[key] = (np.average(value[1:]), np.std(value[1:]))
+        collated[key] = (np.average(value[1:]), np.std(value[1:], ddof=1))
+        # averages all but first circular weighing, std is that of sample not population
 
     inputdata = np.empty(num_wt_grps-1,
                          dtype=[('+ weight group', object), ('- weight group', object),
@@ -108,7 +123,7 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
     acceptable = np.empty(num_wt_grps)
     for i, grp in enumerate(wt_grps):
         massdiff[i] = collated[grp][0]
-        stdevs[i] = collated[grp][1]
+        stdevs[i] = collated[grp][1]  # note this is in g!
         acceptable[i] = collated[grp][1] < SQRT_F*collated['Max stdev'][0]*SUFFIX['ug']
         if not acceptable[i]:
             log.warning('Stdev of differences for + weight group ' + grp + ' falls outside acceptable limits')
@@ -121,7 +136,7 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
     inputdata[:]['+ weight group'] = wt_grps[:-1]
     inputdata[:]['- weight group'] = np.roll(wt_grps, -1)[:-1]
     inputdata[:]['mass difference (g)'] = massdiff[:-1]
-    inputdata[:]['residual (' + MU_STR + 'g)'] = stdevs[:-1]
+    inputdata[:]['residual (' + MU_STR + 'g)'] = stdevs[:-1] / SUFFIX['ug']
     inputdata[:]['Acceptance met?'] = acceptable[:-1]
     for row in range(num_wt_grps - 1):
         inputdata[row:]['balance uncertainty ('+MU_STR+'g)'] = collated['Stdev'][0]
