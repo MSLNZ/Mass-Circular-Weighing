@@ -199,8 +199,8 @@ def check_ambient_post(omega, ambient_pre):
     t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), omega['Sensor'], ambient_pre['Start time'])
 
     ambient_post = {
-        'T'+IN_DEGREES_C: str(min(t_data))+' to '+str(max(t_data)),
-        'RH (%)': str(min(rh_data))+' to '+str(max(rh_data))
+        'T'+IN_DEGREES_C: str(round(min(t_data), 3)) +' to '+str(round(max(t_data), 3)),
+        'RH (%)': str(round(min(rh_data), 3))+' to '+str(round(max(rh_data), 3)),
     }
     log.info('Ambient conditions:\n'+str(ambient_post))
 
@@ -217,7 +217,7 @@ def check_ambient_post(omega, ambient_pre):
     return ambient_post
 
 
-def analyse_weighing(root, url, se, run_id, timed=False, drift=None, SQRT_F=1.4, EXCL=3):
+def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3):
     """Analyse a single circular weighing measurement using methods in circ_weigh_class
 
     Parameters
@@ -234,8 +234,6 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, SQRT_F=1.4,
         if :data:`True`, uses times from weighings, otherwise assumes equally spaced in time
     drift : :class:`str`, optional
         set desired drift correction, e.g. 'quadratic drift'.  If :data:`None`, routine selects optimal drift correction
-    SQRT_F : :class:`float`, optional
-        criterion for accepting single weighing analysis, default set to 1.4
     EXCL : :class:`float`, optional
         criterion for excluding a single weighing within an automatic weighing sequence, default set arbitrarily at 3
 
@@ -275,24 +273,10 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, SQRT_F=1.4,
     log.info('Differences (in ' + massunit + '):\n'
              + str(weighing.grpdiffs))
 
-    # save new analysis in json file
-    # print(id(schemefolder), id(root[schemefolder.name]))
-    # print(root.tree())
-    #for k, v in root.items():
-    #    print(k, v)
-    #print(schemefolder.name+'/analysis_'+run_id)
     a = root.remove(schemefolder.name+'/analysis_'+run_id)
-    # #schemefolder.remove('analysis_'+run_id)
-    # print(id(schemefolder), id(root[schemefolder.name]))
-    # print(root.tree())
-    # #print('removed', a)
-    # #for k, v in root.items():
-    # #    print(k, v)
-    # print(schemefolder.name+'/analysis_'+run_id)
+
     weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
-
-    # print(root.tree())
 
     max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)')
 
@@ -303,7 +287,7 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, SQRT_F=1.4,
         'Uses mmt times': timed,
         'Mass unit': massunit,
         'Drift unit': massunit + ' per ' + weighing.trend,
-        'Acceptance met?': weighing.stdev[drift]*SUFFIX[massunit] < SQRT_F*max_stdev_circweigh*SUFFIX['ug'],
+        'Acceptance met?': weighing.stdev[drift]*SUFFIX[massunit] < max_stdev_circweigh*SUFFIX['ug'],
         'Exclude?': weighing.stdev[drift]*SUFFIX[massunit] > EXCL*max_stdev_circweigh*SUFFIX['ug']
     }
 
@@ -365,10 +349,10 @@ def check_existing_runs(root, scheme_entry):
                     existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
                     ok = existing_analysis.metadata.get('Acceptance met?')
                     if ok:
-                        print('good good')
+                        print('Weighing accepted')
                         good_runs += 1
                     elif not existing_analysis.metadata.get['Exclude?']:
-                        print('outside acceptance but allowed')
+                        print('Weighing outside acceptance but allowed')
                         good_runs += 1
                 except:
                     print('Weighing not accepted')

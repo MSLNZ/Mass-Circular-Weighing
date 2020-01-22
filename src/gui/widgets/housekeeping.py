@@ -1,7 +1,7 @@
 import os
 from msl.qt import QtWidgets, Button
 from src.log import log
-from src.constants import config_default, save_folder_default, client_default, client_masses_default, stds, omega_loggers
+from src.constants import config_default, save_folder_default, client_default, client_masses_default, stds
 from src.configuration import Configuration
 
 from src.gui.widgets.browse import Browse, label
@@ -22,9 +22,6 @@ class Housekeeping(QtWidgets.QWidget):
         self.cb_checks_io = QtWidgets.QComboBox()
         self.cb_checks_io.addItems(stds)
         self.cb_checks_io.setCurrentText('MET19B')
-
-        self.omega_io = QtWidgets.QComboBox()
-        self.omega_io.addItems(omega_loggers)
 
         self.drift_io = QtWidgets.QComboBox()
         self.drift_io.addItems(['<auto select>', 'no drift', 'linear drift', 'quadratic drift', 'cubic drift'])
@@ -48,7 +45,6 @@ class Housekeeping(QtWidgets.QWidget):
         formlayout.addRow(label('List of client masses'), self.client_masses_io)
         formlayout.addRow(label('Standard mass set'), self.cb_stds_io)
         formlayout.addRow(label('Check mass set'), self.cb_checks_io)
-        formlayout.addRow(label('Omega logger'), self.omega_io)
         self.formGroup.setLayout(formlayout)
 
         return self.formGroup
@@ -119,10 +115,6 @@ class Housekeeping(QtWidgets.QWidget):
         return self.cb_checks_io.currentText()
 
     @property
-    def omega(self):
-        return self.omega_io.currentText()
-
-    @property
     def drift(self):
         if self.drift_io.currentText() == '<auto select>':
             return None
@@ -145,7 +137,6 @@ class Housekeeping(QtWidgets.QWidget):
         log.info('Client masses: ' + self.client_masses)
         log.info('Standard mass set: ' + self.std_set)
         log.info('Check mass set: ' + str(self.check_set))
-        log.debug('Omega logger: ' + self.omega)
         log.debug('Drift correction: ' + self.drift_io.currentText())
         log.debug('Use measurement times? ' + str(self.timed))
         log.debug('Correlations between standards? ' + self.correlations)
@@ -165,7 +156,6 @@ class Housekeeping(QtWidgets.QWidget):
             'Client masses': self.client_masses,
             'Standard mass set': self.std_set,
             'Check mass set':self.check_set,
-            'Omega logger': self.omega,
             'Drift correction': self.drift,
             'Use measurement times?':  str(self.timed),
             'Correlations between standards?': self.correlations,}

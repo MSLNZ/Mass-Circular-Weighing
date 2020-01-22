@@ -2,22 +2,23 @@
   <msl>
 
     <!-- Specify client-specific information. -->
-    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MPI_Jan</save_folder>
-    <client>MPI_Jan</client>
-    <client_masses>20BZB 20BZC</client_masses>
+    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\WTA_check</save_folder>
+    <client>WTA_check</client>
+    <client_masses>2 2d 5</client_masses>
     <std_set>MET19A</std_set>
     <check_set>MET19B</check_set>
-    <drift>auto</drift>
-    <use_times>YES</use_times>
+    <drift>quadratic drift</drift>
+    <use_times>NO</use_times>
     <correlations>None</correlations>
 
     <!-- Specify all balances available for weighings. -->
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
+    <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
     <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
     <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
-    <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
+    <equipment alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
 
     <!-- Specify the limits for ambient conditions to begin weighing. -->
     <min_temp units="C">18.1</min_temp>

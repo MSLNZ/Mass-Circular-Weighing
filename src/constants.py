@@ -28,15 +28,12 @@ stds = [                    # options for standards and check masses
 ]
 balances = [                # available balances - can we get these from the config file? e.g. get all equipment aliases
     "MDE-demo",
+    "LUCY",
     "AX10005",
     "CCE605",
     "AB204-S",
     "AT106",
-    "LUCY",
-]
-omega_loggers = [           # available Omega Loggers. These names must match Emile's software
-    "mass 1",
-    "mass 2",
+    "UMX5",
 ]
 MAX_BAD_RUNS = 3
 

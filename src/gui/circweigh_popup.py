@@ -70,7 +70,7 @@ class WeighingWorker(Worker):
                                         **metadata,)
             if weighing_root:
                 weighanalysis = analyse_weighing(
-                    self.se_row_data['root'], self.se_row_data['url'], se, run_id, SQRT_F=cfg.SQRT_F, EXCL=cfg.EXCL,
+                    self.se_row_data['root'], self.se_row_data['url'], se, run_id, EXCL=cfg.EXCL,
                     timed=self.info['Use measurement times?'], drift=self.info['Drift correction'],
                 )
                 ok = weighanalysis.metadata.get('Acceptance met?')
