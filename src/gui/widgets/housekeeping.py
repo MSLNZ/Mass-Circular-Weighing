@@ -1,5 +1,5 @@
 import os
-from msl.qt import QtWidgets, Button
+from msl.qt import QtWidgets, Button, Signal
 from src.log import log
 from src.constants import config_default, save_folder_default, client_default, client_masses_default, stds
 from src.configuration import Configuration
@@ -8,6 +8,9 @@ from src.gui.widgets.browse import Browse, label
 
 
 class Housekeeping(QtWidgets.QWidget):
+
+    balance_list = Signal(list)
+
     def __init__(self):
         super(Housekeeping, self).__init__()
 
@@ -75,9 +78,11 @@ class Housekeeping(QtWidgets.QWidget):
     def load_from_config(self):
         if os.path.isfile(self.config):
             self.cfg = Configuration(self.config)
-
-            self.folder_io.textbox.setText(self.cfg.cfg.root.find('save_folder').text)
-            self.client_io.setText(self.cfg.cfg.root.find('client').text)
+            client = self.cfg.cfg.root.find('client').text
+            parent_folder = self.cfg.cfg.root.find('save_folder').text
+            folder = os.path.join(parent_folder, client)
+            self.folder_io.textbox.setText(folder)
+            self.client_io.setText(client)
             self.client_masses_io.setText(self.cfg.cfg.root.find('client_masses').text)
             self.cb_stds_io.setCurrentText(self.cfg.cfg.root.find('std_set').text)
             self.cb_checks_io.setCurrentText(self.cfg.cfg.root.find('check_set').text)
@@ -143,6 +148,11 @@ class Housekeeping(QtWidgets.QWidget):
 
         self.cfg = Configuration(self.config)
         self.cfg.init_ref_mass_sets(self.std_set, self.check_set)
+
+        bal_list = []
+        for item in self.cfg.equipment:
+            bal_list.append(item)
+        self.balance_list.emit(bal_list)
 
         return True
 

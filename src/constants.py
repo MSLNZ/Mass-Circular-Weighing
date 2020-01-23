@@ -17,7 +17,6 @@ save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Dat
 client_default = ' '
 client_masses_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000'
 
-# I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
 stds = [                    # options for standards and check masses
     'MET19A',
     'MET19B',
@@ -26,15 +25,7 @@ stds = [                    # options for standards and check masses
     'WV',
     'None',
 ]
-balances = [                # available balances - can we get these from the config file? e.g. get all equipment aliases
-    "MDE-demo",
-    "LUCY",
-    "AX10005",
-    "CCE605",
-    "AB204-S",
-    "AT106",
-    "UMX5",
-]
+
 MAX_BAD_RUNS = 3
 
 FONTSIZE = 32               # sets size of large pop-ups during circular weighing

@@ -1,6 +1,6 @@
 import sys
 
-from msl.qt import application, QtWidgets, Button, excepthook, Logger
+from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot
 
 from src.log import log
 from src.gui.widgets.housekeeping import Housekeeping
@@ -37,6 +37,9 @@ def make_table_panel():
 
     return central_panel_group
 
+@Slot(list)
+def update_balances(bal_list):
+    schemetable.update_balance_list(bal_list)
 
 def check_scheme():
     schemetable.check_scheme_entries(housekeeping)
@@ -71,7 +74,6 @@ def collect_n_good_runs():
     all_my_threads.append(weigh_thread)
     good_runs = weigh_thread.show(se_row_data, info)
     print(good_runs, 'in main gui')
-
 
 def reanalyse_weighings():
     se_row_data = get_se_row()
@@ -132,6 +134,8 @@ housekeeping = Housekeeping()
 lhs_panel_group = housekeeping.lhs_panel_group()
 schemetable = SchemeTable()
 central_panel_group = make_table_panel()
+
+housekeeping.balance_list.connect(update_balances)
 
 layout = QtWidgets.QHBoxLayout()
 layout.addWidget(lhs_panel_group, 3)

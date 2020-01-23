@@ -2,14 +2,14 @@
   <msl>
 
     <!-- Specify client-specific information. -->
-    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\WTA_check</save_folder>
-    <client>WTA_check</client>
+    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data</save_folder> <!-- parent folder -->
+    <client>WTA_check</client>      <!-- A new folder will be created with this name inside the parent folder -->
     <client_masses>2 2d 5</client_masses>
-    <std_set>MET19A</std_set>
+    <std_set>MET19A</std_set>       <!-- Use only names of sets as in <standards> below. -->
     <check_set>MET19B</check_set>
-    <drift>quadratic drift</drift>
-    <use_times>NO</use_times>
-    <correlations>None</correlations>
+    <drift>quadratic drift</drift>  <!-- Allowed options: auto select, linear drift, quadratic drift, cubic drift -->
+    <use_times>NO</use_times>       <!-- Allowed options: YES or NO -->
+    <correlations>None</correlations>       <!-- Allowed options: None, or matrix of correlations-->
 
     <!-- Specify all balances available for weighings. -->
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
@@ -40,7 +40,7 @@
                             Currently set to a rather arbitrary value without any experimental basis... -->
     </acceptance_criteria>
 
-    <!-- Specify all standard sets available for weighings. -->
+    <!-- Specify all standard sets available for weighing analysis. -->
     <standards>
           <MET19A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19A.set</MET19A>
           <MET19B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19B.set</MET19B>

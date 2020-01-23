@@ -3,13 +3,13 @@ import os
 
 from msl.qt import QtWidgets, QtCore, io, prompt
 from src.log import log
-from src.constants import balances
 
 
 class SchemeTable(QtWidgets.QTableWidget):
 
     def __init__(self):
         super(SchemeTable, self).__init__()
+        self.bal_list = []
         self.setAcceptDrops(True)
         self.setColumnCount(4)
         self.make_rows(10)
@@ -31,11 +31,21 @@ class SchemeTable(QtWidgets.QTableWidget):
 
     def set_cell_types(self, row_no):
         balance_io = QtWidgets.QComboBox()
-        balance_io.addItems(balances)
+        balance_io.addItems(self.bal_list)
         self.setCellWidget(row_no, 0, QtWidgets.QLineEdit())
         self.setCellWidget(row_no, 1, QtWidgets.QLineEdit())
         self.setCellWidget(row_no, 2, balance_io)
         self.setCellWidget(row_no, 3, QtWidgets.QSpinBox())
+
+    def update_balance_list(self, bal_list):
+        """Updates list of available balances as per list in selected config.xml file, keeping current selection"""
+        self.bal_list = bal_list
+        for row in range(self.rowCount()):
+            bal = self.cellWidget(row, 2).currentText()
+            self.cellWidget(row, 2).clear()
+            self.cellWidget(row, 2).addItems(self.bal_list)
+            if bal in self.bal_list:
+                self.cellWidget(row, 2).setCurrentIndex(self.cellWidget(row, 2).findText(bal))
 
     def vert_header_menu(self, pos):
         row = self.currentRow()
@@ -64,32 +74,6 @@ class SchemeTable(QtWidgets.QTableWidget):
 
     def delete_row(self, row):
         self.removeRow(row)
-
-    def get_row_info(self, row):
-        try:
-            scheme_entry = self.cellWidget(row, 0).text()
-            nominal = self.cellWidget(row, 1).text()
-            bal_alias = self.cellWidget(row, 2).currentText()
-            num_runs = self.cellWidget(row, 3).text()
-            scheme_entry_row = [scheme_entry, nominal, bal_alias, num_runs]
-
-            return scheme_entry_row
-
-        except AttributeError:
-            log.error('Incomplete data in selected row')
-
-    def get_se_row_dict(self, row):
-        se_row_data = {}
-        try:
-            se_row_data['scheme_entry'] = self.cellWidget(row, 0).text()
-            se_row_data['nominal'] = self.cellWidget(row, 1).text()
-            se_row_data['bal_alias'] = self.cellWidget(row, 2).currentText()
-            se_row_data['num_runs'] = self.cellWidget(row, 3).text()
-
-            return se_row_data
-
-        except AttributeError:
-            log.error('Incomplete data in selected row')
 
     def dragEnterEvent(self, event):
         paths = io.get_drag_enter_paths(event, pattern='*.xls*')
@@ -173,6 +157,32 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         workbook.save(path)
         log.info('Scheme saved to ' + str(path))
+
+    def get_row_info(self, row):
+        try:
+            scheme_entry = self.cellWidget(row, 0).text()
+            nominal = self.cellWidget(row, 1).text()
+            bal_alias = self.cellWidget(row, 2).currentText()
+            num_runs = self.cellWidget(row, 3).text()
+            scheme_entry_row = [scheme_entry, nominal, bal_alias, num_runs]
+
+            return scheme_entry_row
+
+        except AttributeError:
+            log.error('Incomplete data in selected row')
+
+    def get_se_row_dict(self, row):
+        se_row_data = {}
+        try:
+            se_row_data['scheme_entry'] = self.cellWidget(row, 0).text()
+            se_row_data['nominal'] = self.cellWidget(row, 1).text()
+            se_row_data['bal_alias'] = self.cellWidget(row, 2).currentText()
+            se_row_data['num_runs'] = self.cellWidget(row, 3).text()
+
+            return se_row_data
+
+        except AttributeError:
+            log.error('Incomplete data in selected row')
 
 
 def read_excel_scheme(path):
