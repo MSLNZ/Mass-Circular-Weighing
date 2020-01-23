@@ -2,7 +2,7 @@ import numpy as np
 
 from src.constants import MU_STR
 
-from msl.qt import QtWidgets, Button, excepthook, Signal, Slot
+from msl.qt import QtWidgets, Button, excepthook, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
 
 from src.log import log
@@ -54,11 +54,11 @@ class DiffsTable(QtWidgets.QTableWidget):
 
     def __init__(self, data):
         super(DiffsTable, self).__init__()
-        self.num_cols = 8
-        self.setColumnCount(self.num_cols)
-        self.headers = ['+ weight group', '- weight group', 'mass difference (g)', 'CW residual ('+MU_STR+'g)', 'CW sigma OK?',
-             'balance uncertainty ('+MU_STR+'g)', 'MLS residual', 'Include?']
-        self.setHorizontalHeaderLabels(self.headers)
+        headers = ['+ weight group', '- weight group', 'mass difference (g)',
+                   'CW sigma ('+MU_STR+'g)', 'CW residual OK?',
+                   'balance uncertainty ('+MU_STR+'g)', 'MLS residual', 'Include?']
+        self.setColumnCount(len(headers))
+        self.setHorizontalHeaderLabels(headers)
         self.resizeColumnsToContents()
 
         self.make_rows(len(data))
@@ -67,9 +67,9 @@ class DiffsTable(QtWidgets.QTableWidget):
     def make_rows(self, numrows):
         self.setRowCount(numrows)
         for i in range(self.rowCount()):
-            for j in range(self.num_cols-1):
+            for j in range(self.columnCount()-1):
                 self.setCellWidget(i, j, QtWidgets.QLabel())
-            self.setCellWidget(i, self.num_cols-1, QtWidgets.QCheckBox())
+            self.setCellWidget(i, self.columnCount()-1, QtWidgets.QCheckBox())
 
     def fill_table(self, data):
         for i in range(len(data)):
@@ -79,7 +79,8 @@ class DiffsTable(QtWidgets.QTableWidget):
             self.cellWidget(i, 3).setText(str("{:+.3f}".format(data['residual (' + MU_STR + 'g)'][i])))
             self.cellWidget(i, 4).setText(str(data['Acceptance met?'][i]))
             self.cellWidget(i, 5).setText(str(data['balance uncertainty (' + MU_STR + 'g)'][i]))
-            self.cellWidget(i, self.num_cols-1).setChecked(True)
+            if data['Acceptance met?'][i]:
+                self.cellWidget(i, self.columnCount()-1).setChecked(True)
         self.resizeColumnsToContents()
 
     def get_checked_rows(self, ):
@@ -88,7 +89,7 @@ class DiffsTable(QtWidgets.QTableWidget):
                                      ('mass difference (g)', 'float64'),
                                      ('balance uncertainty ('+MU_STR+'g)', 'float64')])
         for i in range(self.rowCount()):
-            if self.cellWidget(i, self.num_cols-1).isChecked(): # if checked
+            if self.cellWidget(i, self.columnCount()-1).isChecked(): # if checked
                 #['+ weight group', '- weight group', 'mass difference (g)', 'residual ('+MU_STR+'g)', 'balance uncertainty ('+MU_STR+'g)', 'acceptance met', 'included'
                 dlen = inputdata.shape[0]
                 inputdata.resize(dlen + 1)
@@ -103,22 +104,26 @@ class DiffsTable(QtWidgets.QTableWidget):
     def update_resids(self, fmc_result):
         resids = fmc_result['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
         num_stds = fmc_result["1: Mass Sets"]["Standard"].metadata.get("Number of masses")
-        for i in range(len(resids[:, 4])-num_stds):
-            self.cellWidget(i, 6).setText(str("{:+.3f}".format(resids[i, 4])))
-
+        i = 0
+        while i < len(resids[:, 4]) - num_stds:     # this check is redundant but ok for now
+            for row in range(self.rowCount()):
+                if self.cellWidget(row, self.columnCount() - 1).isChecked():
+                    self.cellWidget(row, 6).setText(str("{:+.3f}".format(resids[i, 4])))
+                    i += 1
 
 class MassValuesTable(QtWidgets.QTableWidget):
 
     def __init__(self):
         super(MassValuesTable, self).__init__()
-        self.setColumnCount(5)
-        self.setHorizontalHeaderLabels(
-            ["Weight ID", "Set ID", "Mass value (g)", "Uncertainty (ug)", "95% CI"]
-        )
-        self.resizeColumnsToContents()
+        header = ["Weight ID", "Set ID", "Mass value (g)", "Uncertainty (ug)", "95% CI"]
+        self.setColumnCount(len(header))
+        self.setHorizontalHeaderLabels(header)
 
         self.make_rows(1)
-        # self.fill_table(data)
+
+        self.horizontalHeader().setStretchLastSection(True)
+        self.horizontalHeader().resizeSections(QtWidgets.QHeaderView.ResizeToContents)
+        self.verticalHeader().resizeSections(QtWidgets.QHeaderView.ResizeToContents)
 
     def make_rows(self, numrows):
         self.setRowCount(numrows)
@@ -195,17 +200,30 @@ class MassCalcThread(Thread):
         self.window = QtWidgets.QWidget()
         self.window.setWindowTitle('Final Mass Calculation')
 
-        lhpanel = QtWidgets.QGroupBox()
+        lhpanel = QtWidgets.QGroupBox('Input data: table of mass differences')
         lhpanel_layout = QtWidgets.QVBoxLayout()
         lhpanel_layout.addWidget(self.inputdata_table)
         lhpanel_layout.addWidget(do_calc)
         lhpanel.setLayout(lhpanel_layout)
+
+        rhpanel = QtWidgets.QGroupBox('Output from Matrix Least Squares Analysis')
+        rhpanel_layout = QtWidgets.QVBoxLayout()
+        rhpanel_layout.addWidget(self.mass_vals_table)
+        rhpanel.setLayout(rhpanel_layout)
+
+        splitter = QtWidgets.QSplitter()
+        splitter.addWidget(lhpanel)
+        splitter.addWidget(rhpanel)
+        splitter.setStretchFactor(0, self.inputdata_table.columnCount())
+        splitter.setStretchFactor(1, self.mass_vals_table.columnCount())
+
         window_layout = QtWidgets.QHBoxLayout()
-        window_layout.addWidget(lhpanel)
-        window_layout.addWidget(self.mass_vals_table)
+        window_layout.addWidget(splitter)
+        # window_layout.addWidget(self.mass_vals_table)
         self.window.setLayout(window_layout)
-        # self.window.sizeAdjustPolicy(QtCore.QAbstractScrollArea.AdjustToContents) #QtWidgets.)
-        self.window.adjustSize()
+        geo = utils.screen_geometry()
+        self.window.resize(geo.width(), geo.height() // 2)
+
 
     def show(self, data, fmc_info):
         self.make_window(data)
