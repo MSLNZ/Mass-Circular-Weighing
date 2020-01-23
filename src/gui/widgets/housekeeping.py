@@ -1,7 +1,7 @@
 import os
 from msl.qt import QtWidgets, Button, Signal
 from src.log import log
-from src.constants import config_default, save_folder_default, client_default, client_masses_default, stds
+from src.constants import config_default, save_folder_default, client_default, client_masses_default
 from src.configuration import Configuration
 
 from src.gui.widgets.browse import Browse, label
@@ -20,11 +20,11 @@ class Housekeeping(QtWidgets.QWidget):
         self.client_io = QtWidgets.QLineEdit(client_default)
         self.client_masses_io = QtWidgets.QTextEdit(client_masses_default)
 
+        self.stds = ['None']
+        self.checks = ['None']
+
         self.cb_stds_io = QtWidgets.QComboBox()
-        self.cb_stds_io.addItems(stds)
         self.cb_checks_io = QtWidgets.QComboBox()
-        self.cb_checks_io.addItems(stds)
-        self.cb_checks_io.setCurrentText('MET19B')
 
         self.drift_io = QtWidgets.QComboBox()
         self.drift_io.addItems(['<auto select>', 'no drift', 'linear drift', 'quadratic drift', 'cubic drift'])
@@ -78,14 +78,24 @@ class Housekeeping(QtWidgets.QWidget):
     def load_from_config(self):
         if os.path.isfile(self.config):
             self.cfg = Configuration(self.config)
+
             client = self.cfg.cfg.root.find('client').text
             parent_folder = self.cfg.cfg.root.find('save_folder').text
             folder = os.path.join(parent_folder, client)
             self.folder_io.textbox.setText(folder)
             self.client_io.setText(client)
             self.client_masses_io.setText(self.cfg.cfg.root.find('client_masses').text)
+
+            for std in self.cfg.cfg.root.find('standards'):
+                self.stds.append(std.tag)
+                self.checks.append(std.tag)
+            self.cb_stds_io.clear()
+            self.cb_checks_io.clear()
+            self.cb_stds_io.addItems(self.stds)
+            self.cb_checks_io.addItems(self.checks)
             self.cb_stds_io.setCurrentText(self.cfg.cfg.root.find('std_set').text)
             self.cb_checks_io.setCurrentText(self.cfg.cfg.root.find('check_set').text)
+
             self.drift_io.setCurrentText(self.cfg.cfg.root.find('drift').text)
             self.timed_io.setCurrentText(self.cfg.cfg.root.find('use_times').text)
             self.corr_io.setText(self.cfg.cfg.root.find('correlations').text)

@@ -26,7 +26,7 @@ def collate_all_weighings(schemetable, housekeeping):
     folder = housekeeping.folder
     client = housekeeping.client
     cfg = housekeeping.cfg
-    if not cfg.SQRT_F:
+    if not cfg.equipment:
         housekeeping.initialise_cfg()
         cfg = housekeeping.cfg
 
@@ -41,9 +41,9 @@ def collate_all_weighings(schemetable, housekeeping):
             url = os.path.join(folder, filename + '.json')
             log.debug('Collated scheme entry '+schemetable.cellWidget(row, 0).text()+' from '+url)
             bal_alias = schemetable.cellWidget(row, 2).currentText()
-            mode = 'aw' #cfg.equipment[bal_alias].user_defined['weighing_mode']
+            mode = cfg.equipment[bal_alias].user_defined['weighing_mode']  # 'aw' #
             if mode == 'aw':
-                newdata = collate_a_data_from_json(url, schemetable.cellWidget(row, 0).text(), cfg.SQRT_F)
+                newdata = collate_a_data_from_json(url, schemetable.cellWidget(row, 0).text())
             else:
                 newdata = collate_m_data_from_json(url, schemetable.cellWidget(row, 0).text())
             dlen = data.shape[0]
@@ -60,8 +60,8 @@ def collate_all_weighings(schemetable, housekeeping):
     return data
 
 
-def collate_a_data_from_json(url, scheme_entry, SQRT_F):
-    """Use this function for an automatic weighing where individual weighings are not likely to meet SQRT_F criterion,
+def collate_a_data_from_json(url, scheme_entry):
+    """Use this function for an automatic weighing where individual weighings are not likely to meet max stdev criterion,
     but the ensemble average is.  NOTE that the average currently ignores the first of the weighings
 
     Parameters
@@ -69,7 +69,6 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
     url : path
         to json file containing weighing data
     scheme_entry : str
-    SQRT_F : float
 
     The json file must have analysis datasets with fields and formats as follows:
     dtype = [('+ weight group', 'O'), ('- weight group', 'O'), ('mass difference', '<f8'), ...
@@ -105,11 +104,12 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
             bal_unit = dataset.metadata.get('Mass unit')
             for i in range(dataset.shape[0]):
                 key = dataset['+ weight group'][i]              # gets name of + weight group
-                collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])  # adds mass difference in g to list for that weight group
+                collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])
+                                                            # adds mass difference in g to list for that weight group
 
     for key, value in collated.items():
         collated[key] = (np.average(value[1:]), np.std(value[1:], ddof=1))
-        # averages all but first circular weighing, std is that of sample not population
+        # averages all but first circular weighing, std is that of sample not population, in g
 
     inputdata = np.empty(num_wt_grps-1,
                          dtype=[('+ weight group', object), ('- weight group', object),
@@ -124,7 +124,7 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
     for i, grp in enumerate(wt_grps):
         massdiff[i] = collated[grp][0]
         stdevs[i] = collated[grp][1]  # note this is in g!
-        acceptable[i] = collated[grp][1] < SQRT_F*collated['Max stdev'][0]*SUFFIX['ug']
+        acceptable[i] = collated[grp][1] < collated['Max stdev'][0]*SUFFIX['ug']
         if not acceptable[i]:
             log.warning('Stdev of differences for + weight group ' + grp + ' falls outside acceptable limits')
 
@@ -145,7 +145,7 @@ def collate_a_data_from_json(url, scheme_entry, SQRT_F):
 
 
 def collate_m_data_from_json(url, scheme_entry):
-    """Use this function to collate one or two runs from an mde or mw weighing
+    """Use this function to collate individual runs from a mde or mw weighing
 
     Parameters
     ----------

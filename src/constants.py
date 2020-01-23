@@ -17,15 +17,6 @@ save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Dat
 client_default = ' '
 client_masses_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000'
 
-stds = [                    # options for standards and check masses
-    'MET19A',
-    'MET19B',
-    'MET16A',
-    'MET16B',
-    'WV',
-    'None',
-]
-
 MAX_BAD_RUNS = 3
 
 FONTSIZE = 32               # sets size of large pop-ups during circular weighing
