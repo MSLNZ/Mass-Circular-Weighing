@@ -4,7 +4,7 @@ from src.log import log
 from src.constants import config_default, save_folder_default, client_default, client_masses_default
 from src.configuration import Configuration
 
-from src.gui.widgets.browse import Browse, label
+from src.gui.widgets.browse import Browse, FileSelect, label
 
 
 class Housekeeping(QtWidgets.QWidget):
@@ -14,7 +14,7 @@ class Housekeeping(QtWidgets.QWidget):
     def __init__(self):
         super(Housekeeping, self).__init__()
 
-        self.config_io = Browse(config_default, 'shell32|4')
+        self.config_io = FileSelect(config_default, 'shell32|4')
         self.load_from_config_but = Button(text='Load details from config file', left_click=self.load_from_config)
         self.folder_io = Browse(save_folder_default, 'shell32|4')
         self.client_io = QtWidgets.QLineEdit(client_default)
