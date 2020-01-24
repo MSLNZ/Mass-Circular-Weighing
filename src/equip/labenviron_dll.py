@@ -4,7 +4,9 @@ import ctypes #import byref, c_int32, create_string_buffer, c_int16
 
 from msl.loadlib import Server32, Client64, IS_PYTHON_64BIT
 if IS_PYTHON_64BIT:
-    from msl.qt import prompt
+    from src.gui.prompt_thread import PromptThread
+    prompt_thread = PromptThread()
+
 from src.log import log
 
 diff = datetime(1970, 1, 1) - datetime(1904, 1, 1)
@@ -98,14 +100,12 @@ class LabEnviron64(Client64):
         size, status, error = self.request32('get_size', omega_alias, probe, date_start=date_start, date_end=date_end)
         if error:
             log.error(error)
-            # print('error 1')
             return None, None
 
         x_data, y_data, status, error = self.request32('get_data', omega_alias, probe,
                                                        date_start=date_start, date_end=date_end, xy_size=size)
         if error:
             log.error(error)
-            # print('error 2')
             return None, None
 
         return x_data, y_data
@@ -116,7 +116,10 @@ class LabEnviron64(Client64):
             for t in range(len(time)):
                 time[t] = datetime.fromtimestamp(time[t]) - diff
         else:
-            temp = [prompt.double('Please enter current temperature', minimum=0, maximum=100)]
+            prompt_thread.show('double', "Please enter current temperature", minimum=0, maximum=100,
+                               title='Ambient Monitoring')
+            reading = prompt_thread.wait_for_prompt_reply()
+            temp = [reading]
             time = [datetime.now()]
 
         return time, temp
@@ -127,7 +130,10 @@ class LabEnviron64(Client64):
             for t in range(len(time)):
                 time[t] = datetime.fromtimestamp(time[t])-diff
         else:
-            rh = [prompt.double('Please enter current humidity', minimum=0, maximum=100)]
+            prompt_thread.show('double', "Please enter current humidity", minimum=0, maximum=100,
+                               title='Ambient Monitoring')
+            reading = prompt_thread.wait_for_prompt_reply()
+            rh = [reading]
             time = [datetime.now()]
 
         return time, rh
@@ -150,7 +156,7 @@ class LabEnviron64(Client64):
             t1 = tempdata_end[0][:].index(start)
             return tempdata_end[1][t1:], rhdata_end[1][t1:]
         except ValueError:
-            return tempdata_end[1][-1], rhdata_end[1][-1]
+            return [tempdata_end[1][-1]], [rhdata_end[1][-1]]
 
 
 if __name__ == '__main__':

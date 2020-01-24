@@ -103,7 +103,6 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                 try:
                     root.save(url=url, mode='w', ensure_ascii=False)
                 except:
-                    log.debug('weighdata:\n' + str(weighdata[:, :, :]))
                     root.save(url=local_backup_file, mode='w', ensure_ascii=False)
                     log.warning('Data saved to local backup at '+local_backup_file)
                 bal.unload_bal(mass, pos)
@@ -131,7 +130,6 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     try:
         root.save(url=url, mode='w', ensure_ascii=False)
     except:
-        log.debug('weighdata:\n' + str(weighdata[:, :, :]))
         root.save(url=local_backup_file, mode='w', ensure_ascii=False)
         log.warning('Data saved to local backup file: ' + local_backup_file)
 
@@ -194,30 +192,43 @@ def check_ambient_post(omega, ambient_pre):
         dict of ambient conditions at end of weighing, and evaluation of overall conditions during measurement.
         dict has key-value pairs {'T_post'+IN_DEGREES_C: list of floats, 'RH_post (%)': list of floats, 'Ambient OK?': bool}
     """
-    log.info('Collecting ambient conditions from omega'+omega['Inst'])
+    log.info('Collecting ambient conditions from omega '+omega['Inst'])
 
     t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), omega['Sensor'], ambient_pre['Start time'])
-
-    ambient_post = {
-        'T'+IN_DEGREES_C: str(round(min(t_data), 3)) +' to '+str(round(max(t_data), 3)),
-        'RH (%)': str(round(min(rh_data), 3))+' to '+str(round(max(rh_data), 3)),
-    }
-    log.info('Ambient conditions:\n'+str(ambient_post))
-
-    if (max(t_data) - min(t_data)) ** 2 > omega['MAX_T_CHANGE']**2:
-        ambient_post['Ambient OK?'] = False
-        log.warning('Ambient temperature change during weighing exceeds quality criteria')
-    elif (max(rh_data) - min(rh_data)) ** 2 > omega['MAX_RH_CHANGE']**2:
-        ambient_post['Ambient OK?'] = False
-        log.warning('Ambient humidity change during weighing exceeds quality criteria')
+    print(t_data, rh_data)
+    ambient_post = {}
+    if not t_data[0]:
+        ambient_post['T_pre'+IN_DEGREES_C] = ambient_pre['T_pre'+IN_DEGREES_C]
+        log.warning('Ambient temperature change during weighing not recorded')
+        ambient_post = {'Ambient OK?': None}
     else:
-        log.info('Ambient conditions OK during weighing')
-        ambient_post['Ambient OK?'] = True
+        t_data.append(ambient_pre['T_pre'+IN_DEGREES_C])
+        ambient_post['T' + IN_DEGREES_C] = str(round(min(t_data), 3)) + ' to ' + str(round(max(t_data), 3))
+
+    if not rh_data[0]:
+        ambient_post['RH_pre (%)'] = ambient_pre['RH_pre (%)']
+        log.warning('Ambient humidity change during weighing not recorded')
+        ambient_post = {'Ambient OK?': None}
+    else:
+        rh_data.append(ambient_pre['RH_pre (%)'])
+        ambient_post['RH (%)'] = str(round(min(rh_data), 3)) + ' to ' + str(round(max(rh_data), 3))
+
+    if t_data and rh_data:
+        if (max(t_data) - min(t_data)) ** 2 > omega['MAX_T_CHANGE']**2:
+            ambient_post['Ambient OK?'] = False
+            log.warning('Ambient temperature change during weighing exceeds quality criteria')
+        elif (max(rh_data) - min(rh_data)) ** 2 > omega['MAX_RH_CHANGE']**2:
+            ambient_post['Ambient OK?'] = False
+            log.warning('Ambient humidity change during weighing exceeds quality criteria')
+        else:
+            log.info('Ambient conditions OK during weighing')
+            ambient_post['Ambient OK?'] = True
+
+    log.info('Ambient conditions:\n' + str(ambient_post))
 
     return ambient_post
 
-
-def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3):
+def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3, local_backup_folder=local_backup, **metadata):
     """Analyse a single circular weighing measurement using methods in circ_weigh_class
 
     Parameters
@@ -236,6 +247,8 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3):
         set desired drift correction, e.g. 'quadratic drift'.  If :data:`None`, routine selects optimal drift correction
     EXCL : :class:`float`, optional
         criterion for excluding a single weighing within an automatic weighing sequence, default set arbitrarily at 3
+    local_backup_folder : path
+        path to local backup folder
 
     Returns
     -------
@@ -300,12 +313,17 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3):
 
     flag = weighdata.metadata.get('Ambient OK?')
     if not flag:
-        log.warning('Change in ambient conditions during weighing may have exceeded quality criteria')
+        log.warning('Analysis not accepted due to ambient conditions during weighing')
         analysis_meta['Acceptance met?'] = False
 
     weighanalysis.add_metadata(**analysis_meta)
 
-    root.save(url=url, mode='w', encoding='utf-8', ensure_ascii=False)
+    try:
+        root.save(url=url, mode='w', encoding='utf-8', ensure_ascii=False)
+    except:
+        local_backup_file = os.path.join(local_backup_folder, url.split('\\')[-1])
+        root.save(url=local_backup_file, mode='w', ensure_ascii=False)
+        log.warning('Data saved to local backup file: ' + local_backup_file)
 
     log.info('Circular weighing analysis for '+se+', '+run_id+' complete')
 
