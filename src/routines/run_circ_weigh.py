@@ -155,6 +155,13 @@ def check_ambient_pre(omega):
 
     date_start, t_start, rh_start = dll.get_t_rh_now(str(omega['Inst']), omega['Sensor'])
 
+    if not t_start:
+        log.warning('Missing initial ambient temperature value')
+        return False
+    if not rh_start:
+        log.warning('Missing initial ambient humidity value')
+        return False
+
     ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: t_start, 'RH_pre (%)': rh_start, }
     log.info('Ambient conditions:\n'+
              'Temperature'+IN_DEGREES_C+': '+str(ambient_pre['T_pre'+IN_DEGREES_C])+
