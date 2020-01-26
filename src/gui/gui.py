@@ -1,4 +1,4 @@
-import sys
+import sys, os
 
 from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot
 
@@ -16,7 +16,7 @@ def make_table_panel():
     save_ses = Button(text='Save scheme entries', left_click=save_scheme, )
     run_row = Button(text='Do weighing(s) for selected scheme entry', left_click=collect_n_good_runs, )
     reanalyse_row = Button(text='Reanalyse weighing(s) for selected scheme entry', left_click=reanalyse_weighings, )
-    display_data = Button(text='Display selected weighing', left_click=display_se_results, )
+    update_status = Button(text='Update status', left_click=check_good_run_status, )
     collate_data = Button(text='Display collated results', left_click=display_collated)
 
     buttons = QtWidgets.QWidget()
@@ -25,7 +25,7 @@ def make_table_panel():
     button_group.addWidget(save_ses, 1, 0)
     button_group.addWidget(run_row, 0, 1)
     button_group.addWidget(reanalyse_row, 1, 1)
-    button_group.addWidget(display_data, 0, 2)
+    button_group.addWidget(update_status, 0, 2)
     button_group.addWidget(collate_data, 1, 2)
     buttons.setLayout(button_group)
 
@@ -40,6 +40,43 @@ def make_table_panel():
 @Slot(list)
 def update_balances(bal_list):
     schemetable.update_balance_list(bal_list)
+
+@Slot(int)
+def check_good_runs_in_file(row):
+    nominal = schemetable.cellWidget(row, 1).text()
+    url = os.path.join(str(housekeeping.folder), str(housekeeping.client)+'_'+nominal+'.json')
+    if not os.path.isfile(url):
+        return None
+
+    scheme_entry = schemetable.cellWidget(row, 0).text()
+    from msl.io import read
+    root = read(url, encoding='utf-8')
+
+    i = 0
+    good_runs = 0
+    while True:
+        run_id = 'run_' + str(i + 1)
+        try:
+            existing_mmt = root['Circular Weighings'][scheme_entry]['measurement_' + run_id]
+            if existing_mmt.metadata.get('Weighing complete'):
+                try:
+                    existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
+                    ok = existing_analysis.metadata.get('Acceptance met?')
+                    if ok:
+                        # print('Weighing accepted')
+                        good_runs += 1
+                    elif not existing_analysis.metadata.get['Exclude?']:
+                        # print('Weighing outside acceptance but allowed')
+                        good_runs += 1
+                except:
+                    pass
+                    # print('Weighing not accepted')
+        except KeyError:
+            break
+        i += 1
+
+    run_1_no = int(run_id.strip('run_'))
+    schemetable.update_status(row, str(good_runs)+' from '+str(run_1_no-1))
 
 def check_scheme():
     schemetable.check_scheme_entries(housekeeping)
@@ -76,17 +113,23 @@ def collect_n_good_runs():
     print(good_runs, 'in main gui')
 
 def reanalyse_weighings():
-    se_row_data = get_se_row()
-    filename = housekeeping.client+'_'+se_row_data['nominal']
-    analyse_all_weighings_in_file(housekeeping.folder, filename, se_row_data['scheme_entry'],
+    row = schemetable.currentRow()
+    se = schemetable.cellWidget(row, 0).text()
+    nom = schemetable.cellWidget(row, 1).text()
+
+    filename = housekeeping.client+'_'+nom
+    analyse_all_weighings_in_file(housekeeping.folder, filename, se,
                                   timed=housekeeping.timed, drift=housekeeping.drift)
     if housekeeping.drift:
         log.info('Weighing re-analysed using ' + housekeeping.drift + ' correction')
     else:
         log.info('Weighing re-analysed using optimal drift correction')
 
-def display_se_results():
-    pass
+    check_good_runs_in_file(row)
+
+def check_good_run_status():
+    for row in range(schemetable.rowCount()):
+        check_good_runs_in_file(row)
 
 def display_collated():
     try:
@@ -136,6 +179,7 @@ schemetable = SchemeTable()
 central_panel_group = make_table_panel()
 
 housekeeping.balance_list.connect(update_balances)
+schemetable.check_good_runs_in_file.connect(check_good_runs_in_file)
 
 layout = QtWidgets.QHBoxLayout()
 layout.addWidget(lhs_panel_group, 3)

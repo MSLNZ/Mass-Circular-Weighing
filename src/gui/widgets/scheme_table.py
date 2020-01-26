@@ -1,19 +1,21 @@
 import xlrd, xlwt
 import os
 
-from msl.qt import QtWidgets, QtCore, io, prompt
+from msl.qt import QtWidgets, QtCore, io, prompt, Signal
 from src.log import log
 
 
 class SchemeTable(QtWidgets.QTableWidget):
+    check_good_runs_in_file = Signal(int)
 
     def __init__(self):
         super(SchemeTable, self).__init__()
         self.bal_list = []
         self.setAcceptDrops(True)
-        self.setColumnCount(4)
+        headers = ['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# Runs', 'Status']
+        self.setColumnCount(len(headers))
+        self.setHorizontalHeaderLabels(headers)
         self.make_rows(10)
-        self.setHorizontalHeaderLabels(['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# Runs'])
         self.resizeColumnsToContents()
         header = self.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
@@ -36,6 +38,7 @@ class SchemeTable(QtWidgets.QTableWidget):
         self.setCellWidget(row_no, 1, QtWidgets.QLineEdit())
         self.setCellWidget(row_no, 2, balance_io)
         self.setCellWidget(row_no, 3, QtWidgets.QSpinBox())
+        self.setCellWidget(row_no, 4, QtWidgets.QLabel('0'))
 
     def update_balance_list(self, bal_list):
         """Updates list of available balances as per list in selected config.xml file, keeping current selection"""
@@ -46,6 +49,9 @@ class SchemeTable(QtWidgets.QTableWidget):
             self.cellWidget(row, 2).addItems(self.bal_list)
             if bal in self.bal_list:
                 self.cellWidget(row, 2).setCurrentIndex(self.cellWidget(row, 2).findText(bal))
+
+    def update_status(self, row, number):
+        self.cellWidget(row, 4).setText((str(number)))
 
     def vert_header_menu(self, pos):
         row = self.currentRow()
@@ -99,10 +105,15 @@ class SchemeTable(QtWidgets.QTableWidget):
                     index_map[col_name] = i
 
         for i, row in enumerate(rows):
-            self.cellWidget(i, 0).setText(row[index_map['weight']])
-            self.cellWidget(i, 1).setText(row[index_map['nominal']])
+            se = row[index_map['weight']]
+            self.cellWidget(i, 0).setText(se)
+            nom = row[index_map['nominal']]
+            self.cellWidget(i, 1).setText(nom)
             self.cellWidget(i, 2).setCurrentIndex(self.cellWidget(i, 2).findText(row[index_map['balance']]))
             self.cellWidget(i, 3).setValue(float(row[index_map['runs']]))
+
+            self.check_good_runs_in_file.emit(i)
+            # self.update_status(i)
 
         log.info('Scheme loaded from ' + str(self.scheme_path))
 
