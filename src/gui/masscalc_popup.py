@@ -110,6 +110,8 @@ class DiffsTable(QtWidgets.QTableWidget):
                 if self.cellWidget(row, self.columnCount() - 1).isChecked():
                     self.cellWidget(row, 6).setText(str("{:+.3f}".format(resids[i, 4])))
                     i += 1
+                else:
+                    self.cellWidget(row, 6).setText("")
 
 class MassValuesTable(QtWidgets.QTableWidget):
 
