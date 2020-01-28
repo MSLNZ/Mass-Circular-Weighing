@@ -23,7 +23,7 @@ def check_for_existing_weighdata(folder, url, se):
         root = JSONWriter()
         root.set_root(existing_root)
         log.debug('Working root is '+repr(root))
-        root.save(root=existing_root, url=new_file, mode='w', encoding='utf-8', ensure_ascii=False)
+        root.save(root=existing_root, file=new_file, mode='w', encoding='utf-8', ensure_ascii=False)
 
     else:
         if not os.path.exists(folder):
@@ -101,9 +101,9 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                 times.append(time)
                 weighdata[cycle, pos, :] = [time, reading]
                 try:
-                    root.save(url=url, mode='w', ensure_ascii=False)
+                    root.save(file=url, mode='w', ensure_ascii=False)
                 except:
-                    root.save(url=local_backup_file, mode='w', ensure_ascii=False)
+                    root.save(file=local_backup_file, mode='w', ensure_ascii=False)
                     log.warning('Data saved to local backup at '+local_backup_file)
                 bal.unload_bal(mass, pos)
         break
@@ -116,10 +116,10 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         metadata['Weighing complete'] = True
         weighdata.add_metadata(**metadata)
         try:
-            root.save(url=url, mode='w', ensure_ascii=False)
+            root.save(file=url, mode='w', ensure_ascii=False)
         except:
             log.debug('weighdata:\n' + str(weighdata[:, :, :]))
-            root.save(url=local_backup_file, mode='w', ensure_ascii=False)
+            root.save(file=local_backup_file, mode='w', ensure_ascii=False)
             log.warning('Data saved to local backup: ' + local_backup_file)
 
         return root
@@ -128,9 +128,9 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     metadata['Weighing complete'] = False
     weighdata.add_metadata(**metadata)
     try:
-        root.save(url=url, mode='w', ensure_ascii=False)
+        root.save(file=url, mode='w', ensure_ascii=False)
     except:
-        root.save(url=local_backup_file, mode='w', ensure_ascii=False)
+        root.save(file=local_backup_file, mode='w', ensure_ascii=False)
         log.warning('Data saved to local backup file: ' + local_backup_file)
 
     return None
@@ -326,10 +326,10 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3, loc
     weighanalysis.add_metadata(**analysis_meta)
 
     try:
-        root.save(url=url, mode='w', encoding='utf-8', ensure_ascii=False)
+        root.save(file=url, mode='w', encoding='utf-8', ensure_ascii=False)
     except:
         local_backup_file = os.path.join(local_backup_folder, url.split('\\')[-1])
-        root.save(url=local_backup_file, mode='w', ensure_ascii=False)
+        root.save(file=local_backup_file, mode='w', ensure_ascii=False)
         log.warning('Data saved to local backup file: ' + local_backup_file)
 
     log.info('Circular weighing analysis for '+se+', '+run_id+' complete')

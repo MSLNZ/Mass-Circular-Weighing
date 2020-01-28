@@ -246,7 +246,7 @@ def make_backup(folder, filesavepath, client, ):
         existing_root.is_read_only = False
         root = JSONWriter()
         root.set_root(existing_root)
-        root.save(root=existing_root, url=new_file, mode='w', encoding='utf-8', ensure_ascii=False)
+        root.save(root=existing_root, file=new_file, mode='w', encoding='utf-8', ensure_ascii=False)
         log.info('Backup of previous Final Mass Calc saved as {}'.format(new_file))
 
 
