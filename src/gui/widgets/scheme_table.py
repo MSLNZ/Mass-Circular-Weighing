@@ -12,10 +12,10 @@ class SchemeTable(QtWidgets.QTableWidget):
         super(SchemeTable, self).__init__()
         self.bal_list = []
         self.setAcceptDrops(True)
-        headers = ['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# Runs', 'Status']
+        headers = ['Weight Groups', 'Nominal mass (g)', 'Balance alias', '# Runs', '# Collected']
         self.setColumnCount(len(headers))
         self.setHorizontalHeaderLabels(headers)
-        self.make_rows(10)
+        self.make_rows(1)
         self.resizeColumnsToContents()
         header = self.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
@@ -185,6 +185,7 @@ class SchemeTable(QtWidgets.QTableWidget):
     def get_se_row_dict(self, row):
         se_row_data = {}
         try:
+            se_row_data['row'] = row
             se_row_data['scheme_entry'] = self.cellWidget(row, 0).text()
             se_row_data['nominal'] = self.cellWidget(row, 1).text()
             se_row_data['bal_alias'] = self.cellWidget(row, 2).currentText()

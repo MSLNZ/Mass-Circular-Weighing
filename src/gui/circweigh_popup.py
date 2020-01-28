@@ -1,5 +1,4 @@
-
-from msl.qt import QtGui, QtWidgets, Button, excepthook, Logger, Signal
+from msl.qt import QtGui, QtWidgets, Button, excepthook, Logger, Signal, utils
 from msl.qt.threading import Thread, Worker
 
 from src.constants import MAX_BAD_RUNS, FONTSIZE
@@ -13,13 +12,11 @@ def label(name):
 
 class WeighingWorker(Worker):
 
-    good_runs_signal = Signal(int)
-
     def __init__(self, call_run, call_cp, call_read, se_row_data, info, bal, mode):
         super(WeighingWorker, self).__init__()
-        self.callback_run = call_run
-        self.callback_cp = call_cp
-        self.callback_read = call_read
+        self.callback_run = call_run        # callback to display status of accumulated runs
+        self.callback_cp = call_cp          # callback to display current cycle and position
+        self.callback_read = call_read      # callback to display reading
         self.se_row_data = se_row_data
         self.info = info
         self.good_runs = self.se_row_data['Good runs']
@@ -52,10 +49,6 @@ class WeighingWorker(Worker):
 
         run = 0
         bad_runs = 0
-
-        # if self.se_row_data['First run no.'] > 1:
-        #     print('not first run')
-
         while run < float(self.se_row_data['num_runs'])+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS:
 
             self.callback_run(self.good_runs, bad_runs, self.se_row_data['num_runs'])
@@ -82,20 +75,16 @@ class WeighingWorker(Worker):
                 else:
                     bad_runs += 1
             else:
-                return self.good_runs
-
-            self.good_runs_signal.emit(self.good_runs)
+                return
 
             run += 1
-            # self.bal._want_abort = False
 
         if bad_runs == MAX_BAD_RUNS:
             log.error('Completed ' + str(self.good_runs) + ' acceptable weighings of ' + self.se_row_data['num_runs'])
 
-        return self.good_runs
-
 
 class WeighingThread(Thread):
+    weighing_done = Signal(int)
 
     def __init__(self):
         super(WeighingThread, self).__init__(WeighingWorker)
@@ -149,8 +138,9 @@ class WeighingThread(Thread):
         layout.addWidget(status)
         layout.addWidget(controls)
         self.window.setLayout(layout)
-        # rect = QtWidgets.QDesktopWidget()
-        # self.window.move(rect.width() * 0.05, rect.height() * 0.45)
+
+        geo = utils.screen_geometry()
+        self.window.resize(geo.width() // 2, geo.height())
 
     def show(self, se_row_data, info):
         self.se_row_data = se_row_data
@@ -183,7 +173,7 @@ class WeighingThread(Thread):
         self.bal._want_abort = False
 
     def close_weighing(self, ):
-        print(self.se_row_data['Good runs'], 'good runs in weighing widget')
+        self.weighing_done.emit(self.se_row_data['row'])
         self.bal._want_abort = True
         self.window.close()
 

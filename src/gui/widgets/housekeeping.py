@@ -86,6 +86,8 @@ class Housekeeping(QtWidgets.QWidget):
             self.client_io.setText(client)
             self.client_masses_io.setText(self.cfg.cfg.root.find('client_masses').text)
 
+            self.stds = ['None']
+            self.checks = ['None']
             for std in self.cfg.cfg.root.find('standards'):
                 self.stds.append(std.tag)
                 self.checks.append(std.tag)

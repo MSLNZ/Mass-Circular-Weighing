@@ -1,6 +1,6 @@
 import sys, os
 
-from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot
+from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot, utils
 
 from src.log import log
 from src.gui.widgets.housekeeping import Housekeeping
@@ -78,6 +78,10 @@ def check_good_runs_in_file(row):
     run_1_no = int(run_id.strip('run_'))
     schemetable.update_status(row, str(good_runs)+' from '+str(run_1_no-1))
 
+def check_good_run_status():
+    for row in range(schemetable.rowCount()):
+        check_good_runs_in_file(row)
+
 def check_scheme():
     schemetable.check_scheme_entries(housekeeping)
 
@@ -98,6 +102,11 @@ def get_se_row():
     return se_row_data
 
 def collect_n_good_runs():
+    row = schemetable.currentRow()
+    if schemetable.currentRow() < 0:
+        log.error('Please select a row')
+        return
+
     try:
         housekeeping.cfg.bal_class
     except:
@@ -109,11 +118,15 @@ def collect_n_good_runs():
 
     weigh_thread = WeighingThread()
     all_my_threads.append(weigh_thread)
-    good_runs = weigh_thread.show(se_row_data, info)
-    print(good_runs, 'in main gui')
+    weigh_thread.weighing_done.connect(check_good_runs_in_file)
+    weigh_thread.show(se_row_data, info)
 
 def reanalyse_weighings():
     row = schemetable.currentRow()
+    if row < 0:
+        log.error('Please select a row')
+        return
+
     se = schemetable.cellWidget(row, 0).text()
     nom = schemetable.cellWidget(row, 1).text()
 
@@ -126,10 +139,6 @@ def reanalyse_weighings():
         log.info('Weighing re-analysed using optimal drift correction')
 
     check_good_runs_in_file(row)
-
-def check_good_run_status():
-    for row in range(schemetable.rowCount()):
-        check_good_runs_in_file(row)
 
 def display_collated():
     try:
@@ -186,6 +195,8 @@ layout.addWidget(lhs_panel_group, 3)
 layout.addWidget(central_panel_group, 4)
 layout.addWidget(Logger(fmt='%(message)s'), 4)
 w.setLayout(layout)
+geo = utils.screen_geometry()
+w.resize(geo.width(), geo.height() // 1.25)
 
 w.show()
 gui.exec()
