@@ -99,6 +99,7 @@ class WeighingThread(Thread):
         f.setPointSize(FONTSIZE)
         self.window.setFont(f)
         self.window.setWindowTitle('Circular Weighing')
+        self.window.closeEvent = self.close_comms
         self.scheme_entry = label('scheme_entry')
         self.nominal_mass = label('nominal')
         self.run_id = label('0')
@@ -122,7 +123,7 @@ class WeighingThread(Thread):
         tare = Button(text='Tare balance', left_click=self.tare, )
         start_weighing = Button(text='Start', left_click=self.start_weighing, )
         reset_weighing = Button(text='Reset', left_click=self.reset_weighing, )
-        close_weighing = Button(text='Finish', left_click=self.close_weighing, )
+        close_weighing = Button(text='Finish', left_click=self.window.close, )
 
         controls = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QGridLayout()
@@ -172,10 +173,13 @@ class WeighingThread(Thread):
     def reset_weighing(self, ):
         self.bal._want_abort = False
 
-    def close_weighing(self, ):
-        self.weighing_done.emit(self.se_row_data['row'])
+    def close_comms(self, *args):
         self.bal._want_abort = True
-        self.window.close()
+        try:
+            self.bal.connection.disconnect()
+        except AttributeError:
+            pass
+        self.weighing_done.emit(self.se_row_data['row'])
 
     def check_for_existing(self):
         filename = self.info['Client'] + '_' + self.se_row_data['nominal']  # + '_' + run_id
