@@ -153,8 +153,6 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     inputdatares[0:len(inputdata), 0] = inputdata['+ weight group']
     inputdatares[len(inputdata):, 0] = std_masses['weight ID']
     inputdatares[0:len(inputdata), 1] = inputdata['- weight group']
-    # for i, diff in enumerate(differences):
-    #     inputdatares[i, 2] = np.round(diff, 9) #"{:.9f}".format(diff) ### want json to print all 9 decimal places!
     inputdatares[:, 2] = differences
     inputdatares[:, 3] = uncerts
     inputdatares[:, 4] = np.round(r0, 3)

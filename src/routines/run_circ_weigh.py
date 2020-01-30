@@ -55,7 +55,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
     local_backup_file = os.path.join(local_backup_folder, url.split('\\')[-1])
 
-    metadata['Mmt Timestamp'] = datetime.now().isoformat(sep=' ', timespec='minutes')
+    metadata['Mmt Timestamp'] = datetime.now().strftime('%d-%m-%Y %H:%M')
     metadata['Time unit'] = 'min'
     metadata['Ambient monitoring'] = omega
 
@@ -65,10 +65,21 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         return False
 
     weighing = CircWeigh(se)
+    # assign positions to weight groups
+    if bal.mode == 'mde':
+        positions = []
+        for i in range(weighing.num_wtgrps):
+            positions.append(weighing.num_wtgrps - i)
+    elif bal.mode == 'aw':
+        print('Please make pop-up to assign positions to weight groups')
+        return None
+    else:
+        positions = range(weighing.num_wtgrps)
+
     positionstr = ''
     for i in range(weighing.num_wtgrps):
-        positionstr = positionstr + 'Position '+ str(i + 1) + ': ' + weighing.wtgrps[i] + '\n'
-        metadata['grp' + str(i + 1)] = weighing.wtgrps[i]
+        positionstr = positionstr + 'Position '+ str(positions[i] + 1) + ': ' + weighing.wtgrps[i] + '\n'
+        metadata['grp' + str(i + 1)] = weighing.wtgrps[i] + ' in position ' + str(positions[i])
 
     log.info("\nBeginning circular weighing for scheme entry "+ se +' '+ run_id +
              '\nNumber of weight groups in weighing = '+ str(weighing.num_wtgrps) +
@@ -85,11 +96,11 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         times = []
         t0 = 0
         for cycle in range(weighing.num_cycles):
-            for pos in range(weighing.num_wtgrps):
+            for i in range(weighing.num_wtgrps):
                 if callback1 is not None:
-                    callback1(cycle+1, pos+1, weighing.num_cycles, weighing.num_wtgrps)
-                mass = weighing.wtgrps[pos]
-                bal.load_bal(mass, pos)
+                    callback1(cycle+1, i+1, weighing.num_cycles, weighing.num_wtgrps)
+                mass = weighing.wtgrps[i]
+                bal.load_bal(mass, positions[i])
                 reading = bal.get_mass_stable(mass)
                 if callback2 is not None:
                     callback2(reading, str(metadata['Unit']))
@@ -99,13 +110,13 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                 else:
                     time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
                 times.append(time)
-                weighdata[cycle, pos, :] = [time, reading]
+                weighdata[cycle, i, :] = [time, reading]
                 try:
                     root.save(file=url, mode='w', ensure_ascii=False)
-                except:
+                except OSError:
                     root.save(file=local_backup_file, mode='w', ensure_ascii=False)
                     log.warning('Data saved to local backup at '+local_backup_file)
-                bal.unload_bal(mass, pos)
+                bal.unload_bal(mass, positions[i])
         break
 
     while not bal.want_abort:
@@ -150,8 +161,7 @@ def check_ambient_pre(omega):
         dict of ambient conditions at start of weighing:
         {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
     """
-    log.info('Collecting ambient conditions from omega '+omega['Inst'])
-    print('Sensor', omega['Sensor'])
+    log.info('Collecting ambient conditions from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
 
     date_start, t_start, rh_start = dll.get_t_rh_now(str(omega['Inst']), omega['Sensor'])
 
@@ -163,7 +173,7 @@ def check_ambient_pre(omega):
         return False
 
     ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: t_start, 'RH_pre (%)': rh_start, }
-    log.info('Ambient conditions:\n'+
+    log.info('Ambient conditions:' +
              'Temperature'+IN_DEGREES_C+': '+str(ambient_pre['T_pre'+IN_DEGREES_C])+
              '; Humidity (%): '+str(ambient_pre['RH_pre (%)']))
 
@@ -199,10 +209,10 @@ def check_ambient_post(omega, ambient_pre):
         dict of ambient conditions at end of weighing, and evaluation of overall conditions during measurement.
         dict has key-value pairs {'T_post'+IN_DEGREES_C: list of floats, 'RH_post (%)': list of floats, 'Ambient OK?': bool}
     """
-    log.info('Collecting ambient conditions from omega '+omega['Inst'])
+    log.info('Collecting ambient conditions from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
 
     t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), omega['Sensor'], ambient_pre['Start time'])
-    print(t_data, rh_data)
+
     ambient_post = {}
     if not t_data[0]:
         ambient_post['T_pre'+IN_DEGREES_C] = ambient_pre['T_pre'+IN_DEGREES_C]
@@ -301,7 +311,7 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3, loc
     max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)')
 
     analysis_meta = {
-        'Analysis Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'),
+        'Analysis Timestamp': datetime.now().strftime('%d-%m-%Y %H:%M'),
         'Residual std devs': str(weighing.stdev),
         'Selected drift': drift,
         'Uses mmt times': timed,

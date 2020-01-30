@@ -39,6 +39,10 @@ class Balance(object):
         # wait time in seconds for balance reading to stabilise
 
     @property
+    def mode(self):
+        return 'mde'
+
+    @property
     def unit(self):
         return str(self._unit)
 

@@ -26,6 +26,10 @@ class MettlerToledo(Balance):
             self.reset()
         assert self.record.serial == self.get_serial(), "Serial mismatch"  # prints error if false
 
+    @property
+    def mode(self):
+        return 'mw'
+
     def _query(self, command):
         self.connection.serial.flush()
         return self.connection.query(command)
@@ -56,12 +60,14 @@ class MettlerToledo(Balance):
         """Adjusts scale using internal weights"""
         m = self._query("C3").split()
         if m[1] == 'B':
+            print('Balance self-calibration commencing')
             log.info('Balance self-calibration commencing')
             t0 = perf_counter()
             while True:
                 try:
                     c = self.connection.read().split()
                     if c[1] == 'A':
+                        print('Balance self-calibration completed successfully')
                         log.info('Balance self-calibration completed successfully')
                         return
                     elif c[1] == 'I':
@@ -70,6 +76,7 @@ class MettlerToledo(Balance):
                     if perf_counter()-t0 > self.intcaltimeout:
                         raise TimeoutError("Calibration took longer than expected")
                     else:
+                        print('Waiting for internal calibration to complete')
                         log.info('Waiting for internal calibration to complete')
 
         self._raise_error(m[0]+' '+m[1])
