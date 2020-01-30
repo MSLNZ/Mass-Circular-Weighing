@@ -2,7 +2,7 @@ from msl.equipment import Config
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
 
-from .constants import MU_STR
+from .constants import MU_STR, SUFFIX
 from .log import log
 
 import numpy as np
@@ -174,18 +174,22 @@ def load_stds_from_set_file(path, wtset):
             headerline = fp.readline().strip('\n')
             if not headerline == '" nominal (g) "," weight identifier "," value(g) "," uncert (g) ",' \
                                  '"cov factor","density","dens uncert"':
-                print('File format has changed; data sorting may be incorrect')
-                print(headerline)
+                log.warn('File format has changed; data sorting may be incorrect')
+                log.debug(headerline)
 
             line = fp.readline()
             while line:
-                line = line.strip('\n').split(', ')
-                for i, key in enumerate(['nominal (g)', 'mass values (g)', 'uncertainties ('+MU_STR+'g)']):
-                    value = line[i].strip(' ').strip(',\"\"')
-                    stds[key].append(np.float(value))
-                    if i == 0:
-                        trunc_val = ('{:g}'.format((float(value))))
-                        stds['weight ID'].append(trunc_val + stds['Set Identifier'])  #
+                line = line.strip('\n').split(',')
+                for i, key in enumerate(['nominal (g)', 'weight ID', 'mass values (g)', 'uncertainties ('+MU_STR+'g)']):
+                    value = line[i].strip()
+                    if key == 'weight ID':
+                        id = value.strip('\"')
+                        trunc_val = ('{:g}'.format((float(stds['nominal (g)'][-1]))))
+                        stds[key].append(trunc_val + id + stds['Set Identifier'])
+                    elif key == 'uncertainties ('+MU_STR+'g)':
+                        stds[key].append(np.float(value)/SUFFIX[MU_STR+'g'])
+                    else:
+                        stds[key].append(np.float(value))
 
                 line = fp.readline()
         else:
