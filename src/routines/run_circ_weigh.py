@@ -91,7 +91,8 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)
     weighdata.add_metadata(**metadata)
 
-    # do circular weighing, allowing for keyboard interrupt:
+    # do circular weighing, allowing for user to cancel weighing:
+    reading = None
     while not bal.want_abort:
         times = []
         t0 = 0
@@ -111,11 +112,12 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                     time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
                 times.append(time)
                 weighdata[cycle, i, :] = [time, reading]
-                try:
-                    root.save(file=url, mode='w', ensure_ascii=False)
-                except OSError:
-                    root.save(file=local_backup_file, mode='w', ensure_ascii=False)
-                    log.warning('Data saved to local backup at '+local_backup_file)
+                if reading:
+                    try:
+                        root.save(file=url, mode='w', ensure_ascii=False)
+                    except OSError:
+                        root.save(file=local_backup_file, mode='w', ensure_ascii=False)
+                        log.warning('Data saved to local backup at '+local_backup_file)
                 bal.unload_bal(mass, positions[i])
         break
 
@@ -136,13 +138,14 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         return root
 
     log.info('Circular weighing sequence aborted')
-    metadata['Weighing complete'] = False
-    weighdata.add_metadata(**metadata)
-    try:
-        root.save(file=url, mode='w', ensure_ascii=False)
-    except:
-        root.save(file=local_backup_file, mode='w', ensure_ascii=False)
-        log.warning('Data saved to local backup file: ' + local_backup_file)
+    if reading:
+        metadata['Weighing complete'] = False
+        weighdata.add_metadata(**metadata)
+        try:
+            root.save(file=url, mode='w', ensure_ascii=False)
+        except OSError:
+            root.save(file=local_backup_file, mode='w', ensure_ascii=False)
+            log.warning('Data saved to local backup file: ' + local_backup_file)
 
     return None
 
@@ -378,19 +381,20 @@ def check_existing_runs(root, scheme_entry):
         run_id = 'run_' + str(i+1)
         try:
             existing_mmt = root['Circular Weighings'][scheme_entry]['measurement_' + run_id]
-            print(run_id, 'complete?', existing_mmt.metadata.get('Weighing complete'))
+            # print(run_id, 'complete?', existing_mmt.metadata.get('Weighing complete'))
             if existing_mmt.metadata.get('Weighing complete'):
                 try:
                     existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
                     ok = existing_analysis.metadata.get('Acceptance met?')
                     if ok:
-                        print('Weighing accepted')
+                        # print('Weighing accepted')
                         good_runs += 1
                     elif not existing_analysis.metadata.get['Exclude?']:
-                        print('Weighing outside acceptance but allowed')
+                        # print('Weighing outside acceptance but allowed')
                         good_runs += 1
-                except:
-                    print('Weighing not accepted')
+                except KeyError:
+                    pass
+                    # print('Weighing not accepted')
         except KeyError:
             break
         i += 1

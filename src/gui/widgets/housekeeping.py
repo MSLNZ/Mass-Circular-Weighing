@@ -80,8 +80,8 @@ class Housekeeping(QtWidgets.QWidget):
             self.cfg = Configuration(self.config)
 
             client = self.cfg.cfg.root.find('client').text
-            parent_folder = self.cfg.cfg.root.find('save_folder').text
-            folder = os.path.join(parent_folder, client)
+            folder = self.cfg.cfg.root.find('save_folder').text
+            # folder = os.path.join(parent_folder, client)
             self.folder_io.textbox.setText(folder)
             self.client_io.setText(client)
             self.client_masses_io.setText(self.cfg.cfg.root.find('client_masses').text)

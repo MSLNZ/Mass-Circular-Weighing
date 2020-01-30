@@ -119,7 +119,7 @@ class SchemeTable(QtWidgets.QTableWidget):
 
     def check_scheme_entries(self, housekeeping):
         try:
-            housekeeping.cfg.all_checks['weight ID']
+            housekeeping.cfg.all_stds['weight ID']
         except:
             housekeeping.initialise_cfg()
 
