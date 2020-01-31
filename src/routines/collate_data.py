@@ -116,7 +116,6 @@ def collate_a_data_from_json(url, scheme_entry):
                 key = dataset['+ weight group'][i]          # gets name of + weight group
                 collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])
                                                             # adds mass difference in g to list for that weight group
-    num_runs_collated = len(collated['Stdev'])
     for key, value in collated.items():
         collated[key] = (np.average(value[1:]), np.std(value[1:], ddof=1), value)
         # averages all but first circular weighing, std is that of sample not population, in g
@@ -207,7 +206,7 @@ def collate_m_data_from_json(url, scheme_entry):
                 inputdata[i_len + row:]['Nominal (g)'] = nom
                 inputdata[i_len + row:]['Scheme entry'] = scheme_entry
                 inputdata[i_len + row:]['Run #'] = dname[2]
-                inputdata[i_len + row:]['balance uncertainty ('+MU_STR+'g)'] = stdev + row
+                inputdata[i_len + row:]['balance uncertainty ('+MU_STR+'g)'] = stdev
                 inputdata[i_len + row:]['Acceptance met?'] = ok
 
     return inputdata

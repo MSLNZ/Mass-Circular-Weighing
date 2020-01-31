@@ -114,10 +114,10 @@ class DiffsTable(QtWidgets.QTableWidget):
         while i < len(resids[:, 4]) - num_stds:     # this check is redundant but ok for now
             for row in range(self.rowCount()):
                 if self.cellWidget(row, self.columnCount() - 1).isChecked():
-                    self.cellWidget(row, 6).setText(str("{:+.3f}".format(resids[i, 4])))
+                    self.cellWidget(row, 9).setText(str("{:+.3f}".format(resids[i, 4])))
                     i += 1
                 else:
-                    self.cellWidget(row, 6).setText("")
+                    self.cellWidget(row, 9).setText("")
 
 class MassValuesTable(QtWidgets.QTableWidget):
 
@@ -244,11 +244,14 @@ class MassCalcThread(Thread):
         self.start(self, self.inputdata_table, self.fmc_info, self.mass_vals_table)
 
     def export_to_report(self):
+        #TODO: need some way to make sure that the data reported is indeed the data used in the calculation
+        # e.g. run the calc again?
         results_file_path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + '_finalmasscalc.json')
         print(results_file_path)
         root = read(results_file_path)
         print('\ncollated input dataset:')
         print(root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"])
+        print(self.inputdata_table.get_checked_rows())
         print('\noutput dataset:')
         print(root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"])
 
