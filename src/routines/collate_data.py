@@ -31,9 +31,13 @@ def collate_all_weighings(schemetable, housekeeping):
         cfg = housekeeping.cfg
 
     data = np.empty(0,
-                    dtype=[('+ weight group', object), ('- weight group', object),
-                           ('mass difference (g)', 'float64'), ('balance uncertainty (' + MU_STR + 'g)', 'float64'),
-                           ('Acceptance met?', bool), ('residual (' + MU_STR + 'g)', 'float64')])
+                    dtype=[
+                        ('Nominal (g)', float), ('Scheme entry', object), ('Run #', object),
+                        ('+ weight group', object), ('- weight group', object),
+                        ('mass difference (g)', 'float64'), ('balance uncertainty (' + MU_STR + 'g)', 'float64'),
+                        ('Acceptance met?', bool), ('residual (' + MU_STR + 'g)', 'float64')
+                    ]
+                    )
 
     for row in range(schemetable.rowCount()):
         if schemetable.cellWidget(row, 1).text():
@@ -50,6 +54,9 @@ def collate_all_weighings(schemetable, housekeeping):
             if newdata is not None:
                 ndlen = newdata.shape[0]
                 data.resize(dlen + ndlen)
+                data[-len(newdata):]['Nominal (g)'] = newdata[:]['Nominal (g)']
+                data[-len(newdata):]['Scheme entry'] = newdata[:]['Scheme entry']
+                data[-len(newdata):]['Run #'] = newdata[:]['Run #']
                 data[-len(newdata):]['+ weight group'] = newdata[:]['+ weight group']
                 data[-len(newdata):]['- weight group'] = newdata[:]['- weight group']
                 data[-len(newdata):]['mass difference (g)'] = newdata[:]['mass difference (g)']
@@ -87,7 +94,8 @@ def collate_a_data_from_json(url, scheme_entry):
     root = read(url)
     wt_grps = scheme_entry.split()
     num_wt_grps = len(wt_grps)
-    collated = {'Stdev': [], 'Max stdev': []}
+    runs = ""
+    collated = {'Stdev': [], 'Max stdev': [], "Nominal mass (g)": []}
     for grp in wt_grps:
         collated[grp] = []
 
@@ -98,25 +106,26 @@ def collate_a_data_from_json(url, scheme_entry):
         if dname[0][-8:] == 'analysis' and not exclude:
             run_id = 'run_' + dname[2]
             meta = root.require_dataset(root['Circular Weighings'][scheme_entry].name + '/measurement_' + run_id)
+            runs += " " + str(dname[2])
             collated['Stdev'].append(meta.metadata.get('Stdev for balance (' + MU_STR + 'g)'))
             collated['Max stdev'].append(meta.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)'))
+            collated["Nominal mass (g)"].append(meta.metadata.get("Nominal mass (g)"))
 
             bal_unit = dataset.metadata.get('Mass unit')
             for i in range(dataset.shape[0]):
                 key = dataset['+ weight group'][i]          # gets name of + weight group
                 collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])
                                                             # adds mass difference in g to list for that weight group
-
+    num_runs_collated = len(collated['Stdev'])
     for key, value in collated.items():
-        collated[key] = (np.average(value[1:]), np.std(value[1:], ddof=1))
+        collated[key] = (np.average(value[1:]), np.std(value[1:], ddof=1), value)
         # averages all but first circular weighing, std is that of sample not population, in g
 
     inputdata = np.empty(num_wt_grps-1,
-                         dtype=[('+ weight group', object), ('- weight group', object),
-                               ('mass difference (g)', 'float64'),
-                               ('residual (' + MU_STR + 'g)', 'float64'),
-                               ('balance uncertainty (' + MU_STR + 'g)', 'float64'),
-                               ('Acceptance met?', object)])
+                         dtype=[('Nominal (g)', float), ('Scheme entry', object), ('Run #', object),
+                                ('+ weight group', object), ('- weight group', object),
+                                ('mass difference (g)', 'float64'), ('residual (' + MU_STR + 'g)', 'float64'),
+                                ('balance uncertainty (' + MU_STR + 'g)', 'float64'), ('Acceptance met?', object)])
 
     massdiff = np.empty(num_wt_grps)
     stdevs = np.empty(num_wt_grps)
@@ -139,10 +148,12 @@ def collate_a_data_from_json(url, scheme_entry):
     inputdata[:]['residual (' + MU_STR + 'g)'] = stdevs[:-1] / SUFFIX['ug']
     inputdata[:]['Acceptance met?'] = acceptable[:-1]
     for row in range(num_wt_grps - 1):
+        inputdata[row:]['Nominal (g)'] = collated["Nominal mass (g)"][0]
+        inputdata[row:]['Scheme entry'] = scheme_entry
+        inputdata[row:]['Run #'] = runs.strip()
         inputdata[row:]['balance uncertainty ('+MU_STR+'g)'] = collated['Stdev'][0]
 
     return inputdata
-
 
 def collate_m_data_from_json(url, scheme_entry):
     """Use this function to collate individual runs from a mde or mw weighing
@@ -162,14 +173,15 @@ def collate_m_data_from_json(url, scheme_entry):
     structured array of all weighing data in grams for acceptable/included weighings only
 
     """
-    inputdata = np.empty(0,
-                         dtype=[('+ weight group', object), ('- weight group', object),
-                                ('mass difference (g)', 'float64'), ('residual ('+MU_STR+'g)', 'float64'),
-                                ('balance uncertainty ('+MU_STR+'g)', 'float64'), ('Acceptance met?', bool)])
-
     if not os.path.isfile(url):
         log.warning('File does not yet exist {!r}'.format(url))
         return None
+
+    inputdata = np.empty(0,
+                         dtype=[('Nominal (g)', float), ('Scheme entry', object), ('Run #', object),
+                                ('+ weight group', object), ('- weight group', object),
+                                ('mass difference (g)', 'float64'), ('residual ('+MU_STR+'g)', 'float64'),
+                                ('balance uncertainty ('+MU_STR+'g)', 'float64'), ('Acceptance met?', bool)])
 
     root = read(url)
     for dataset in root['Circular Weighings'][scheme_entry].datasets():
@@ -180,6 +192,7 @@ def collate_m_data_from_json(url, scheme_entry):
 
             meta = root.require_dataset(root['Circular Weighings'][scheme_entry].name + '/measurement_' + run_id)
             stdev = meta.metadata.get('Stdev for balance ('+MU_STR+'g)')
+            nom = meta.metadata.get("Nominal mass (g)")
             ok = dataset.metadata.get('Acceptance met?')
             bal_unit = dataset.metadata.get('Mass unit')
 
@@ -191,35 +204,39 @@ def collate_m_data_from_json(url, scheme_entry):
             inputdata[i_len:]['mass difference (g)'] = dataset['mass difference'][:-1]*SUFFIX[bal_unit]
             inputdata[i_len:]['residual ('+MU_STR+'g)'] = dataset['residual'][:-1] * SUFFIX[bal_unit] / SUFFIX['ug']
             for row in range(d_len - 1):
-                inputdata[i_len+row:]['balance uncertainty ('+MU_STR+'g)'] = stdev
+                inputdata[i_len + row:]['Nominal (g)'] = nom
+                inputdata[i_len + row:]['Scheme entry'] = scheme_entry
+                inputdata[i_len + row:]['Run #'] = dname[2]
+                inputdata[i_len + row:]['balance uncertainty ('+MU_STR+'g)'] = stdev + row
                 inputdata[i_len + row:]['Acceptance met?'] = ok
 
     return inputdata
 
 
-def collate_data_from_list(weighings):
-    """
-
-    Parameters
-    ----------
-    weighings : list of structured arrays of weighings
-    each weighing must use dtype =[('+ weight group', object), ('- weight group', object),
-                                   ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
-
-    Returns
-    -------
-    collated data : structured array
-    a single array of weighing data which can be input into final_mass_calc
-
-    """
-    collated = np.empty(0,
-        dtype =[('+ weight group', object), ('- weight group', object),
-                ('mass difference (g)', 'float64'), ('balance uncertainty ('+MU_STR+'g)', 'float64')])
-
-    for weighing in weighings:
-        c_len = collated.shape[0]
-        w_len = weighing.shape[0]
-        collated.resize(c_len + w_len)
-        collated[c_len:] = weighing
-
-    return collated
+# def collate_data_from_list(weighings):
+#     """ This function hasn't been tested with the updated program
+#
+#     Parameters
+#     ----------
+#     weighings : list of structured arrays of weighings
+#     each weighing must use dtype =[('+ weight group', object), ('- weight group', object),
+#                                    ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
+#
+#     Returns
+#     -------
+#     collated data : structured array
+#     a single array of weighing data which can be input into final_mass_calc
+#
+#     """
+#     collated = np.empty(0,
+#         dtype =[('Nominal (g)', float), ('Scheme entry', object), ('Run #', object),
+#                 ('+ weight group', object), ('- weight group', object),
+#                 ('mass difference (g)', 'float64'), ('balance uncertainty ('+MU_STR+'g)', 'float64')])
+#
+#     for weighing in weighings:
+#         c_len = collated.shape[0]
+#         w_len = weighing.shape[0]
+#         collated.resize(c_len + w_len)
+#         collated[c_len:] = weighing
+#
+#     return collated

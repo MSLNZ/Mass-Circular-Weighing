@@ -1,9 +1,11 @@
 import numpy as np
+import os
 
 from src.constants import MU_STR
 
 from msl.qt import QtWidgets, Button, excepthook, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
+from msl.io import read
 
 from src.log import log
 
@@ -54,7 +56,8 @@ class DiffsTable(QtWidgets.QTableWidget):
 
     def __init__(self, data):
         super(DiffsTable, self).__init__()
-        headers = ['+ weight group', '- weight group', 'mass difference (g)',
+        headers = ['Nominal (g)', 'Scheme entry', 'Run #',
+                   '+ weight group', '- weight group', 'mass difference (g)',
                    'CW sigma ('+MU_STR+'g)', 'CW residual OK?',
                    'balance uncertainty ('+MU_STR+'g)', 'MLS residual', 'Include?']
         self.setColumnCount(len(headers))
@@ -73,12 +76,15 @@ class DiffsTable(QtWidgets.QTableWidget):
 
     def fill_table(self, data):
         for i in range(len(data)):
-            self.cellWidget(i, 0).setText(str(data['+ weight group'][i]))
-            self.cellWidget(i, 1).setText(str(data['- weight group'][i]))
-            self.cellWidget(i, 2).setText(str("{:+.9f}".format(data['mass difference (g)'][i])))
-            self.cellWidget(i, 3).setText(str("{:+.3f}".format(data['residual (' + MU_STR + 'g)'][i])))
-            self.cellWidget(i, 4).setText(str(data['Acceptance met?'][i]))
-            self.cellWidget(i, 5).setText(str(data['balance uncertainty (' + MU_STR + 'g)'][i]))
+            self.cellWidget(i, 0).setText(str(data['Nominal (g)'][i]))
+            self.cellWidget(i, 1).setText(data['Scheme entry'][i])
+            self.cellWidget(i, 2).setText(str(data['Run #'][i]))
+            self.cellWidget(i, 3).setText(str(data['+ weight group'][i]))
+            self.cellWidget(i, 4).setText(str(data['- weight group'][i]))
+            self.cellWidget(i, 5).setText(str("{:+.9f}".format(data['mass difference (g)'][i])))
+            self.cellWidget(i, 6).setText(str("{:+.3f}".format(data['residual (' + MU_STR + 'g)'][i])))
+            self.cellWidget(i, 7).setText(str(data['Acceptance met?'][i]))
+            self.cellWidget(i, 8).setText(str(data['balance uncertainty (' + MU_STR + 'g)'][i]))
             if data['Acceptance met?'][i]:
                 self.cellWidget(i, self.columnCount()-1).setChecked(True)
         self.resizeColumnsToContents()
@@ -93,10 +99,10 @@ class DiffsTable(QtWidgets.QTableWidget):
                 #['+ weight group', '- weight group', 'mass difference (g)', 'residual ('+MU_STR+'g)', 'balance uncertainty ('+MU_STR+'g)', 'acceptance met', 'included'
                 dlen = inputdata.shape[0]
                 inputdata.resize(dlen + 1)
-                inputdata[-1:]['+ weight group'] = self.cellWidget(i, 0).text()
-                inputdata[-1:]['- weight group'] = self.cellWidget(i, 1).text()
-                inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 2).text()
-                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 5).text()
+                inputdata[-1:]['+ weight group'] = self.cellWidget(i, 3).text()
+                inputdata[-1:]['- weight group'] = self.cellWidget(i, 4).text()
+                inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 5).text()
+                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 6).text()
 
         return inputdata
 
@@ -198,6 +204,7 @@ class MassCalcThread(Thread):
         self.inputdata_table = DiffsTable(data)
         do_calc = Button(text='Do calculation', left_click=self.start_finalmasscalc)
         self.mass_vals_table = MassValuesTable()
+        report_values = Button(text="Export all values to summary file", left_click=self.export_to_report)
 
         self.window = QtWidgets.QWidget()
         self.window.setWindowTitle('Final Mass Calculation')
@@ -211,6 +218,7 @@ class MassCalcThread(Thread):
         rhpanel = QtWidgets.QGroupBox('Output from Matrix Least Squares Analysis')
         rhpanel_layout = QtWidgets.QVBoxLayout()
         rhpanel_layout.addWidget(self.mass_vals_table)
+        rhpanel_layout.addWidget(report_values)
         rhpanel.setLayout(rhpanel_layout)
 
         splitter = QtWidgets.QSplitter()
@@ -226,7 +234,6 @@ class MassCalcThread(Thread):
         geo = utils.screen_geometry()
         self.window.resize(geo.width(), geo.height() // 2)
 
-
     def show(self, data, fmc_info):
         self.make_window(data)
         self.fmc_info = fmc_info
@@ -235,6 +242,15 @@ class MassCalcThread(Thread):
 
     def start_finalmasscalc(self):
         self.start(self, self.inputdata_table, self.fmc_info, self.mass_vals_table)
+
+    def export_to_report(self):
+        results_file_path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + '_finalmasscalc.json')
+        print(results_file_path)
+        root = read(results_file_path)
+        print('\ncollated input dataset:')
+        print(root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"])
+        print('\noutput dataset:')
+        print(root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"])
 
 
 
