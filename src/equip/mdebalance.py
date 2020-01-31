@@ -120,7 +120,7 @@ class Balance(object):
     def unload_bal(self, mass, pos):
         """Prompts user to remove specified mass from balance"""
         if not self.want_abort:
-            winsound.Beep(1000, 300)
+            winsound.Beep(880, 300)
             print('Unload '+mass+' (position '+str(pos+1)+')')
 
     def get_mass_instant(self):

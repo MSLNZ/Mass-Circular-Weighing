@@ -5,6 +5,7 @@ from src.constants import MAX_BAD_RUNS, FONTSIZE
 from src.log import log
 from src.routines.run_circ_weigh import *
 
+import winsound
 
 def label(name):
     return QtWidgets.QLabel(name)
@@ -54,7 +55,12 @@ class WeighingWorker(Worker):
             self.callback_run(self.good_runs, bad_runs, self.se_row_data['num_runs'])
             if self.good_runs > float(self.se_row_data['num_runs']) - 1:
                 log.info('Finished weighings for ' + se)
-                break
+                winsound.Beep(880, 200)
+                winsound.Beep(784, 200)
+                winsound.Beep(740, 200)
+                winsound.Beep(659, 200)
+                winsound.Beep(587, 300)
+                return
 
             run_id = 'run_' + str(round(self.se_row_data['First run no.']+run, 0))
 
@@ -142,6 +148,8 @@ class WeighingThread(Thread):
 
         geo = utils.screen_geometry()
         self.window.resize(geo.width() // 2, geo.height())
+
+        self.finished.connect(self.window.close)
 
     def show(self, se_row_data, info):
         self.se_row_data = se_row_data

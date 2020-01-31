@@ -103,7 +103,7 @@ def collate_a_data_from_json(url, scheme_entry):
 
             bal_unit = dataset.metadata.get('Mass unit')
             for i in range(dataset.shape[0]):
-                key = dataset['+ weight group'][i]              # gets name of + weight group
+                key = dataset['+ weight group'][i]          # gets name of + weight group
                 collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])
                                                             # adds mass difference in g to list for that weight group
 
