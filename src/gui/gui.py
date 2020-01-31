@@ -95,7 +95,7 @@ def get_se_row():
     if row == -1:
         log.warn('No row selected')
         return
-    log.info('Row ' + str(row + 1) + ' selected for weighing')
+    log.info('\nRow ' + str(row + 1) + ' selected for weighing')
 
     se_row_data = schemetable.get_se_row_dict(row)
 
@@ -131,13 +131,14 @@ def reanalyse_weighings():
     nom = schemetable.cellWidget(row, 1).text()
 
     filename = housekeeping.client+'_'+nom
+
+    if housekeeping.drift:
+        log.info('\nBeginning weighing analysis using ' + housekeeping.drift + ' correction\n')
+    else:
+        log.info('\nBeginning weighing analysis using optimal drift correction\n')
+
     analyse_all_weighings_in_file(housekeeping.folder, filename, se,
                                   timed=housekeeping.timed, drift=housekeeping.drift)
-    if housekeeping.drift:
-        log.info('Weighing re-analysed using ' + housekeeping.drift + ' correction')
-    else:
-        log.info('Weighing re-analysed using optimal drift correction')
-
     check_good_runs_in_file(row)
 
 def display_collated():

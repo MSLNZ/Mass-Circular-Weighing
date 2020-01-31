@@ -203,12 +203,12 @@ class CircWeigh(object):
         vardiffab = np.linalg.multi_dot([w_T, self.varcovar[drift], w])
         stdev_diffab = np.sqrt(np.diag(vardiffab))
 
-        for pos in range(self.num_wtgrps - 1):
-            key = 'Position ' + str(pos + 1) + ' - Position ' + str(pos + 2)
-            value = "{0:.5g}".format(diffab[pos]) + ' (' + "{0:.3g}".format(stdev_diffab[pos]) + ')'
+        for grp in range(1, self.num_wtgrps):
+            key = 'grp' + str(grp) + ' - grp' + str(grp)
+            value = "{0:.5g}".format(diffab[grp]) + ' (' + "{0:.3g}".format(stdev_diffab[grp]) + ')'
             self.grpdiffs[key] = value
 
-        self.grpdiffs['Position '+str(self.num_wtgrps)+' - Position 1'] = \
+        self.grpdiffs['grp'+str(self.num_wtgrps)+' - grp1'] = \
             "{0:.5g}".format(diffab[self.num_wtgrps-1])+' ('+"{0:.3g}".format(stdev_diffab[self.num_wtgrps-1])+')'
 
         analysis = np.empty((self.num_wtgrps,),

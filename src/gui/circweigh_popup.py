@@ -208,4 +208,9 @@ class WeighingThread(Thread):
         self.position.setText('{} of {}'.format(p, num_pos))
 
     def update_reading(self, reading, unit):
-        self.reading.setText('{} {}'.format(reading, unit))
+        if reading is None:
+            self.reading.setText('None')
+        else:
+            self.reading.setText('{} {}'.format(np.round(reading, 9), unit))
+
+

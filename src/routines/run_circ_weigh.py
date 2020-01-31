@@ -10,6 +10,8 @@ from src.log import log
 
 dll = LabEnviron64()
 
+tab = '  '
+
 def check_for_existing_weighdata(folder, url, se):
 
     if os.path.isfile(url):
@@ -66,7 +68,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
     weighing = CircWeigh(se)
     # assign positions to weight groups
-    if bal.mode == 'mde':
+    if bal.mode == 'mw':
         positions = []
         for i in range(weighing.num_wtgrps):
             positions.append(weighing.num_wtgrps - i)
@@ -74,14 +76,16 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         print('Please make pop-up to assign positions to weight groups')
         return None
     else:
-        positions = range(weighing.num_wtgrps)
+        positions = range(1, weighing.num_wtgrps + 1, 1)
 
     positionstr = ''
+    positiondict = {}
     for i in range(weighing.num_wtgrps):
-        positionstr = positionstr + 'Position '+ str(positions[i] + 1) + ': ' + weighing.wtgrps[i] + '\n'
-        metadata['grp' + str(i + 1)] = weighing.wtgrps[i] + ' in position ' + str(positions[i])
+        positionstr = positionstr + tab + 'Position '+ str(positions[i]) + ': ' + weighing.wtgrps[i] + '\n'
+        positiondict['Position ' + str(positions[i])] = weighing.wtgrps[i]
+    metadata["Weight group loading order"] = positiondict
 
-    log.info("\nBeginning circular weighing for scheme entry "+ se +' '+ run_id +
+    log.info("BEGINNING CIRCULAR WEIGHING for scheme entry "+ se + ' ' + run_id +
              '\nNumber of weight groups in weighing = '+ str(weighing.num_wtgrps) +
              '\nNumber of cycles = '+ str(weighing.num_cycles) +
              '\nWeight groups are positioned as follows:' +
@@ -112,7 +116,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                     time = np.round((perf_counter() - t0) / 60, 6)  # elapsed time in minutes
                 times.append(time)
                 weighdata[cycle, i, :] = [time, reading]
-                if reading:
+                if reading is not None:
                     try:
                         root.save(file=url, mode='w', ensure_ascii=False)
                     except OSError:
@@ -164,7 +168,7 @@ def check_ambient_pre(omega):
         dict of ambient conditions at start of weighing:
         {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
     """
-    log.info('Collecting ambient conditions from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
+    log.info('COLLECTING AMBIENT CONDITIONS from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
 
     date_start, t_start, rh_start = dll.get_t_rh_now(str(omega['Inst']), omega['Sensor'])
 
@@ -175,7 +179,7 @@ def check_ambient_pre(omega):
         log.warning('Missing initial ambient humidity value')
         return False
 
-    ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: t_start, 'RH_pre (%)': rh_start, }
+    ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: np.round(t_start, 4), 'RH_pre (%)': np.round(rh_start, 4), }
     log.info('Ambient conditions:' +
              'Temperature'+IN_DEGREES_C+': '+str(ambient_pre['T_pre'+IN_DEGREES_C])+
              '; Humidity (%): '+str(ambient_pre['RH_pre (%)']))
@@ -212,7 +216,7 @@ def check_ambient_post(omega, ambient_pre):
         dict of ambient conditions at end of weighing, and evaluation of overall conditions during measurement.
         dict has key-value pairs {'T_post'+IN_DEGREES_C: list of floats, 'RH_post (%)': list of floats, 'Ambient OK?': bool}
     """
-    log.info('Collecting ambient conditions from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
+    log.info('COLLECTING AMBIENT CONDITIONS from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
 
     t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), omega['Sensor'], ambient_pre['Start time'])
 
@@ -281,30 +285,34 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3, loc
     if not weighdata.metadata.get('Weighing complete'):
         return None
 
+    log.info('CIRCULAR WEIGHING ANALYSIS for scheme entry '+ se + ' ' + run_id)
+
     weighing = CircWeigh(se)
     if timed:
         times = np.reshape(weighdata[:, :, 0], weighing.num_readings)
     else:
-        times=[]
+        times = []
     weighing.generate_design_matrices(times)
 
     if not drift:
         drift = weighing.determine_drift(weighdata[:, :, 1])  # allows program to select optimum drift correctiond
-        log.info('Residual std dev. for each drift order:\n'
-                 + str(weighing.stdev))
+        log.info('Residual std dev. for each drift order:')
+        for key, value in weighing.stdev.items():
+            log.info(tab + key + ':\t' + str(value))
     else:
         weighing.expected_vals_drift(weighdata[:, :, 1], drift)
-        log.info('Residual std dev. for '+drift+' correction:\n'
+        log.info('Residual std dev. for '+drift+' correction:\n' + tab
                  + str(weighing.stdev))
 
     massunit = weighdata.metadata.get('Unit')
-    log.info('Selected ' + drift + ' correction (in ' + massunit + ' per reading):\n'
+    log.info('Selected ' + drift + ' correction (in ' + massunit + ' per ' + weighing.trend + '):\n' + tab
              + str(weighing.drift_coeffs(drift)))
 
     analysis = weighing.item_diff(drift)
 
-    log.info('Differences (in ' + massunit + '):\n'
-             + str(weighing.grpdiffs))
+    log.info('Differences (in ' + massunit + '):')
+    for key, value in weighing.grpdiffs.items():
+        log.info(tab + key + ':\t' + value)
 
     a = root.remove(schemefolder.name+'/analysis_'+run_id)
 
@@ -345,12 +353,27 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3, loc
         root.save(file=local_backup_file, mode='w', ensure_ascii=False)
         log.warning('Data saved to local backup file: ' + local_backup_file)
 
-    log.info('Circular weighing analysis for '+se+', '+run_id+' complete')
+    log.info('Circular weighing analysis for '+se+', '+run_id+' complete\n')
 
     return weighanalysis
 
 
 def analyse_old_weighing(folder, filename, se, run_id, timed, drift):
+    """Analyses a specific weighing run on file, with specified timed and drift parameters
+
+    Parameters
+    ----------
+    folder
+    filename
+    se
+    run_id
+    timed
+    drift
+
+    Returns
+    -------
+
+    """
 
     url = folder+"\\"+filename+'.json'
     root = check_for_existing_weighdata(folder, url, se)
@@ -360,6 +383,20 @@ def analyse_old_weighing(folder, filename, se, run_id, timed, drift):
 
 
 def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
+    """Analyses all weighings on file for a given scheme entry, with specified timed and drift parameters
+
+    Parameters
+    ----------
+    folder : path
+    filename : str
+    se : str
+    timed : bool
+    drift : str or :None:
+
+    Returns
+    -------
+
+    """
 
     url = folder + "\\" + filename + '.json'
     root = check_for_existing_weighdata(folder, url, se)
@@ -375,6 +412,20 @@ def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
 
 
 def check_existing_runs(root, scheme_entry):
+    """Counts the number of runs on file that are acceptable for use in the final mass calculation
+
+    Parameters
+    ----------
+    root : :class:`root`
+        containing the root as read from the relevant json file
+    scheme_entry : str
+
+    Returns
+    -------
+    tuple of integers
+        good_runs is the number of acceptable weighings in the file
+        run_1_no is the next unique run_id for subsequent circular weighings
+    """
     i = 0
     good_runs = 0
     while True:
