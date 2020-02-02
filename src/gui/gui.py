@@ -129,7 +129,7 @@ def reanalyse_weighings():
 
     se = schemetable.cellWidget(row, 0).text()
     nom = schemetable.cellWidget(row, 1).text()
-
+    bal, bal_mode = housekeeping.cfg.get_bal_instance('CCE605')
     filename = housekeeping.client+'_'+nom
 
     if housekeeping.drift:
@@ -137,7 +137,7 @@ def reanalyse_weighings():
     else:
         log.info('\nBeginning weighing analysis using optimal drift correction\n')
 
-    analyse_all_weighings_in_file(housekeeping.folder, filename, se,
+    analyse_all_weighings_in_file(housekeeping.folder, filename, se, bal_mode,
                                   timed=housekeeping.timed, drift=housekeeping.drift)
     check_good_runs_in_file(row)
 

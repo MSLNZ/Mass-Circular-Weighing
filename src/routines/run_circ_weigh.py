@@ -252,7 +252,7 @@ def check_ambient_post(omega, ambient_pre):
 
     return ambient_post
 
-def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3, local_backup_folder=local_backup, **metadata):
+def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, EXCL=3, local_backup_folder=local_backup, **metadata):
     """Analyse a single circular weighing measurement using methods in circ_weigh_class
 
     Parameters
@@ -329,8 +329,13 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3, loc
         'Mass unit': massunit,
         'Drift unit': massunit + ' per ' + weighing.trend,
         'Acceptance met?': weighing.stdev[drift]*SUFFIX[massunit] < max_stdev_circweigh*SUFFIX['ug'],
-        'Exclude?': weighing.stdev[drift]*SUFFIX[massunit] > EXCL*max_stdev_circweigh*SUFFIX['ug']
     }
+
+    if bal_mode == 'aw':
+        excl = weighing.stdev[drift]*SUFFIX[massunit] > EXCL*max_stdev_circweigh*SUFFIX['ug']
+    else:
+        excl = not analysis_meta.get('Acceptance met?')
+    analysis_meta['Exclude'] = excl
 
     for key, value in weighing.driftcoeffs.items():
         analysis_meta[key] = value
@@ -358,7 +363,7 @@ def analyse_weighing(root, url, se, run_id, timed=False, drift=None, EXCL=3, loc
     return weighanalysis
 
 
-def analyse_old_weighing(folder, filename, se, run_id, timed, drift):
+def analyse_old_weighing(folder, filename, se, run_id, bal_mode, timed, drift):
     """Analyses a specific weighing run on file, with specified timed and drift parameters
 
     Parameters
@@ -367,6 +372,7 @@ def analyse_old_weighing(folder, filename, se, run_id, timed, drift):
     filename
     se
     run_id
+    bal_mode : str
     timed
     drift
 
@@ -377,12 +383,12 @@ def analyse_old_weighing(folder, filename, se, run_id, timed, drift):
 
     url = folder+"\\"+filename+'.json'
     root = check_for_existing_weighdata(folder, url, se)
-    weighanalysis = analyse_weighing(root, url, se, run_id, timed, drift)
+    weighanalysis = analyse_weighing(root, url, se, run_id, bal_mode, timed, drift)
 
     return weighanalysis
 
 
-def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
+def analyse_all_weighings_in_file(folder, filename, se, bal_mode, timed, drift):
     """Analyses all weighings on file for a given scheme entry, with specified timed and drift parameters
 
     Parameters
@@ -390,6 +396,7 @@ def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
     folder : path
     filename : str
     se : str
+    bal_mode : str
     timed : bool
     drift : str or :None:
 
@@ -404,7 +411,7 @@ def analyse_all_weighings_in_file(folder, filename, se, timed, drift):
     while True:
         try:
             run_id = 'run_' + str(i)
-            analyse_weighing(root, url, se, run_id, timed, drift)
+            analyse_weighing(root, url, se, run_id, bal_mode, timed, drift)
             i += 1
         except KeyError:
             log.info('No more runs to analyse')
@@ -437,10 +444,11 @@ def check_existing_runs(root, scheme_entry):
                 try:
                     existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
                     ok = existing_analysis.metadata.get('Acceptance met?')
+                    aw_ok = existing_analysis.metadata.get('Exclude?')
                     if ok:
                         # print('Weighing accepted')
                         good_runs += 1
-                    elif not existing_analysis.metadata.get['Exclude?']:
+                    elif not aw_ok:
                         # print('Weighing outside acceptance but allowed')
                         good_runs += 1
                 except KeyError:

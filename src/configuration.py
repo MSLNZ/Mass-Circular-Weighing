@@ -19,7 +19,6 @@ class Configuration(object):
         self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': Balance}
         # TODO: add aw class for automatic loading balance
 
-        # self.SQRT_F = float(self.cfg.root.find('acceptance_criteria/SQRT_F').text)
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
 
         self.all_stds = None
