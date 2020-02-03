@@ -189,19 +189,26 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     #det_varcovar_nbc = np.linalg.det(psi_nbc_hadamard)
     #det_varcovar_b = np.linalg.det(psi_b)
 
-    summarytable = np.empty((num_unknowns, 5), object)
+    summarytable = np.empty((num_unknowns, 7), object)
+    cov = 2
     for i in range(num_unknowns):
-        summarytable[i, 0] = allmassIDs[i]
-        if i < num_client_masses:
-            summarytable[i, 1] = 'Client'
-        elif i >= num_client_masses + num_check_masses:
-            summarytable[i, 1] = 'Standard'
-        else:
-            summarytable[i, 1] = 'Check'
+        summarytable[i, 1] = allmassIDs[i]
 
-        summarytable[i, 2] = np.round(b[i], 9)
-        summarytable[i, 3] = np.round(std_uncert_b[i], 3)
-        summarytable[i, 4] = np.round(2*std_uncert_b[i],3)
+        if i < num_client_masses:
+            summarytable[i, 2] = 'Client'
+        elif i >= num_client_masses + num_check_masses:
+            summarytable[i, 2] = 'Standard'
+        else:
+            summarytable[i, 2] = 'Check'
+
+        summarytable[i, 3] = np.round(b[i], 9)
+        nom = "{0:.1g}".format(b[i])
+        if 'e-' in nom:
+            nom = 0
+        summarytable[i, 0] = nom
+        summarytable[i, 4] = np.round(std_uncert_b[i], 3)
+        summarytable[i, 5] = np.round(cov*std_uncert_b[i],3)
+        summarytable[i, 6] = cov
 
     log.info('Found least squares solution')
     log.debug('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (ug), 95% CI\n'+str(summarytable))
@@ -221,11 +228,11 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     leastsq_data = finalmasscalc.create_group('2: Matrix Least Squares Analysis', metadata=leastsq_meta)
     leastsq_data.create_dataset('Input data with least squares residuals', data=inputdatares,
                                 metadata={'headers':
-                                              ['+ weight group', '- weight group', 'mass difference (g)',
+                                ['+ weight group', '- weight group', 'mass difference (g)',
                                                'balance uncertainty (ug)', 'residual (ug)']})
     leastsq_data.create_dataset('Mass values from least squares solution', data=summarytable,
                                 metadata={'headers':
-                                              ['Weight ID', 'Set ID', 'Mass value (g)', 'Uncertainty (ug)', '95% CI']})
+                                ['Nominal (g)', 'Weight ID', 'Set ID', 'Mass value (g)', 'Uncertainty (ug)', '95% CI', 'Cov']})
 
     finalmasscalc.save(mode='w')
 

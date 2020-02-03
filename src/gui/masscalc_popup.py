@@ -123,9 +123,9 @@ class MassValuesTable(QtWidgets.QTableWidget):
 
     def __init__(self):
         super(MassValuesTable, self).__init__()
-        header = ["Weight ID", "Set ID", "Mass value (g)", "Uncertainty (ug)", "95% CI"]
-        self.setColumnCount(len(header))
-        self.setHorizontalHeaderLabels(header)
+        self.header = ["Nominal (g)", "Weight ID", "Set ID", "Mass value (g)", "Uncertainty (ug)", "95% CI", "Cov"]
+        self.setColumnCount(len(self.header))
+        self.setHorizontalHeaderLabels(self.header)
 
         self.make_rows(1)
 
@@ -136,7 +136,7 @@ class MassValuesTable(QtWidgets.QTableWidget):
     def make_rows(self, numrows):
         self.setRowCount(numrows)
         for i in range(self.rowCount()):
-            for j in range(5):
+            for j in range(len(self.header)):
                 self.setCellWidget(i, j, QtWidgets.QLabel())
 
     @Slot(object, object)
