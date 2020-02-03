@@ -183,7 +183,9 @@ def load_stds_from_set_file(path, wtset):
                     value = line[i].strip()
                     if key == 'weight ID':
                         id = value.strip('\"')
-                        trunc_val = ('{:g}'.format((float(stds['nominal (g)'][-1]))))
+                        trunc_val = '{:g}'.format((float(stds['nominal (g)'][-1])))
+                        if float(trunc_val) > 999:
+                            trunc_val = '{:g}'.format(float(trunc_val)/1000) + 'k'
                         stds[key].append(trunc_val + id + stds['Set Identifier'])
                     elif key == 'uncertainties ('+MU_STR+'g)':
                         stds[key].append(np.float(value)/SUFFIX[MU_STR+'g'])
