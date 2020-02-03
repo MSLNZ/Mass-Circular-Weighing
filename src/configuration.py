@@ -154,7 +154,7 @@ def load_stds_from_set_file(path, wtset):
         keys: 'Set Identifier', 'Calibrated', 'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (ug)'
     """
 
-    stds = {}
+    stds = {'Set file': path}
     for key in {'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties ('+MU_STR+'g)'}:
         stds[key] = []
 
