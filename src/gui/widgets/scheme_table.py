@@ -113,7 +113,7 @@ class SchemeTable(QtWidgets.QTableWidget):
             self.cellWidget(i, 3).setValue(float(row[index_map['runs']]))
 
             self.check_good_runs_in_file.emit(i)
-            # self.update_status(i)
+            # updates status of number of collected runs
 
         log.info('Scheme loaded from ' + str(self.scheme_path))
 

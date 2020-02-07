@@ -8,6 +8,7 @@ from src.gui.widgets.scheme_table import SchemeTable
 from src.gui.circweigh_popup import WeighingThread
 from src.routines.run_circ_weigh import analyse_all_weighings_in_file
 from src.routines.collate_data import collate_all_weighings
+from src.routines.report_results import checkable_summary
 from src.gui.masscalc_popup import MassCalcThread
 
 
@@ -167,6 +168,10 @@ def display_collated():
     }
     mass_thread.show(data, fmc_info)
 
+@Slot(object)
+def reporting(incl_datasets):
+    print(incl_datasets)
+    checkable_summary(housekeeping, schemetable)
 
 all_my_threads = []
 
@@ -175,8 +180,6 @@ sys.excepthook = excepthook
 # could ask user to load config file here?
 
 gui = application()
-
-mass_thread = MassCalcThread()
 
 w = QtWidgets.QWidget()
 rect = QtWidgets.QDesktopWidget()
@@ -190,6 +193,9 @@ central_panel_group = make_table_panel()
 
 housekeeping.balance_list.connect(update_balances)
 schemetable.check_good_runs_in_file.connect(check_good_runs_in_file)
+
+mass_thread = MassCalcThread()
+mass_thread.report_summary.connect(reporting)
 
 layout = QtWidgets.QHBoxLayout()
 layout.addWidget(lhs_panel_group, 3)
