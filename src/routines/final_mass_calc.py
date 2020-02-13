@@ -116,6 +116,9 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     # Calculate least squares solution, following the mathcad example in Tech proc MSLT.M.001.008
     x = designmatrix
     xT = designmatrix.T
+    log.info(designmatrix)
+    log.info(differences)
+    log.info(uncerts)
 
     # Hadamard product: element-wise multiplication
     uumeas = np.vstack(uncerts) * np.hstack(uncerts)    # becomes square matrix dim num_obs

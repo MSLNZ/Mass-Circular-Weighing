@@ -109,7 +109,7 @@ class DiffsTable(QtWidgets.QTableWidget):
                 inputdata[-1:]['+ weight group'] = self.cellWidget(i, 3).text()
                 inputdata[-1:]['- weight group'] = self.cellWidget(i, 4).text()
                 inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 5).text()
-                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 6).text()
+                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 8).text()
 
         return inputdata
 

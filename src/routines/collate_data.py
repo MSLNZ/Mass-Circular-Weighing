@@ -212,30 +212,29 @@ def collate_m_data_from_json(url, scheme_entry):
     return inputdata
 
 
-# def collate_data_from_list(weighings):
-#     """ This function hasn't been tested with the updated program
-#
-#     Parameters
-#     ----------
-#     weighings : list of structured arrays of weighings
-#     each weighing must use dtype =[('+ weight group', object), ('- weight group', object),
-#                                    ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
-#
-#     Returns
-#     -------
-#     collated data : structured array
-#     a single array of weighing data which can be input into final_mass_calc
-#
-#     """
-#     collated = np.empty(0,
-#         dtype =[('Nominal (g)', float), ('Scheme entry', object), ('Run #', object),
-#                 ('+ weight group', object), ('- weight group', object),
-#                 ('mass difference (g)', 'float64'), ('balance uncertainty ('+MU_STR+'g)', 'float64')])
-#
-#     for weighing in weighings:
-#         c_len = collated.shape[0]
-#         w_len = weighing.shape[0]
-#         collated.resize(c_len + w_len)
-#         collated[c_len:] = weighing
-#
-#     return collated
+def collate_data_from_list(weighings):
+    """ This function hasn't been tested with the updated program
+
+    Parameters
+    ----------
+    weighings : list of structured arrays of weighings
+    each weighing must use dtype =[('+ weight group', object), ('- weight group', object),
+                                   ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
+
+    Returns
+    -------
+    collated data : structured array
+    a single array of weighing data which can be input into final_mass_calc
+
+    """
+    collated = np.empty(0,
+        dtype =[('+ weight group', object), ('- weight group', object),
+                ('mass difference (g)', 'float64'), ('balance uncertainty ('+MU_STR+'g)', 'float64')])
+
+    for weighing in weighings:
+        c_len = collated.shape[0]
+        w_len = weighing.shape[0]
+        collated.resize(c_len + w_len)
+        collated[c_len:] = weighing
+
+    return collated

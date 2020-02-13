@@ -8,7 +8,7 @@ from src.gui.widgets.scheme_table import SchemeTable
 from src.gui.circweigh_popup import WeighingThread
 from src.routines.run_circ_weigh import analyse_all_weighings_in_file
 from src.routines.collate_data import collate_all_weighings
-from src.routines.report_results import checkable_summary
+from src.routines.report_results import checkable_summary, export_results_summary
 from src.gui.masscalc_popup import MassCalcThread
 
 
@@ -171,7 +171,14 @@ def display_collated():
 @Slot(object)
 def reporting(incl_datasets):
     print(incl_datasets)
-    checkable_summary(housekeeping, schemetable)
+    export_results_summary(
+        'job',
+        housekeeping.client,
+        housekeeping.folder,
+        housekeeping.client_masses,
+        housekeeping.checks,
+        housekeeping.stds,
+    )
 
 all_my_threads = []
 
