@@ -75,6 +75,7 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
         'Number of masses': num_stds,
         'Set Identifier': std_masses['Set Identifier'],
         'Calibrated': std_masses['Calibrated'],
+        'std weight ID': std_masses['weight ID'],
     })
     scheme_std.create_dataset('std mass values', data=std_masses_dataarray)
     log.info('Standards: '+str(std_masses['weight ID']))

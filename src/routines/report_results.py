@@ -4,26 +4,24 @@ from msl.io import read, read_table_excel
 
 
 
-def export_results_summary(job, client, folder, client_wt_IDs, checks, stds):
+def export_results_summary(job, client, folder, check_file, std_file, incl_datasets):
+
     wd = WordDoc()
     wd.init_report(job, client, folder)
 
     scheme_file = os.path.join(folder, client + '_Scheme.xls')
     scheme = read_table_excel(scheme_file)
-    print(stds, stds['weight IDs'], stds['path'])
-    print(checks, checks['weight IDs'], checks['path'])
-    wd.add_weighing_scheme(scheme, client_wt_IDs, check_wt_IDs, check_set_file_path, std_wt_IDs, std_set_file_path)
 
     finalmasscalc_file = os.path.join(folder, client+'_finalmasscalc.json')
     fmc_root = read(finalmasscalc_file)
+
+    wd.add_weighing_scheme(scheme, fmc_root, check_file, std_file)
     wd.add_mls(fmc_root)
 
-    wd.add_weighing_datasets()
+    wd.add_weighing_datasets(client, folder, scheme, incl_datasets)
 
-    wd.make_normal_text("This is a sentence of normal text.")
-    wd.make_normal_text("This is another sentence of normal text")
-
-    wd.save_doc(r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\testWordFile.docx')
+    save_file =  os.path.join(folder, client + '_Summary.docx')
+    wd.save_doc(save_file)
 
     wd.close_doc()
 

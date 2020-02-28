@@ -170,14 +170,17 @@ def display_collated():
 
 @Slot(object)
 def reporting(incl_datasets):
-    print(incl_datasets)
+    if housekeeping.cfg.all_checks:
+        check_set = housekeeping.cfg.all_checks['Set file']
+    else:
+        check_set = None
     export_results_summary(
         'job',
         housekeeping.client,
         housekeeping.folder,
-        housekeeping.client_masses,
-        housekeeping.checks,
-        housekeeping.stds,
+        check_set,
+        housekeeping.cfg.all_stds['Set file'],
+        incl_datasets,
     )
 
 all_my_threads = []

@@ -254,17 +254,17 @@ class MassCalcThread(Thread):
     def export_to_report(self):
         results_file_path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + '_finalmasscalc.json')
         root = read(results_file_path)
-        print('\ncollated input dataset:')
-        print(root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"])
+        # print('\ncollated input dataset:')
+        # print(root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"])
 
         inc_datasets = self.inputdata_table.included_datasets
         for tuple in inc_datasets:
             path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + tuple[0])
-            print(path)
+            # print(path)
 
 
-        print('\noutput dataset:')
-        print(root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"])
+        # print('\noutput dataset:')
+        # print(root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"])
 
         self.report_summary.emit(inc_datasets)
 
