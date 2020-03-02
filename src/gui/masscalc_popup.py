@@ -49,7 +49,7 @@ def filter_stds(std_masses, inputdata):
 
 
 class DiffsTable(QtWidgets.QTableWidget):
-    """Displays structured data of amss differences obtained from collate_data, provided headings are as in following list:
+    """Displays structured data of mass differences obtained from collate_data, provided headings are as in following list:
     ['+ weight group', '- weight group', 'mass difference (g)',
     'balance uncertainty (' + MU_STR + 'g)', 'Acceptance met?', 'residual (' + MU_STR + 'g)']
     """
@@ -66,6 +66,8 @@ class DiffsTable(QtWidgets.QTableWidget):
 
         self.make_rows(len(data))
         self.fill_table(data)
+
+        self.included_datasets = set()
 
     def make_rows(self, numrows):
         self.setRowCount(numrows)
@@ -90,19 +92,24 @@ class DiffsTable(QtWidgets.QTableWidget):
         self.resizeColumnsToContents()
 
     def get_checked_rows(self, ):
+        self.included_datasets = set()
         inputdata = np.empty(0,
                              dtype =[('+ weight group', object), ('- weight group', object),
                                      ('mass difference (g)', 'float64'),
                                      ('balance uncertainty ('+MU_STR+'g)', 'float64')])
         for i in range(self.rowCount()):
-            if self.cellWidget(i, self.columnCount()-1).isChecked(): # if checked
+            if self.cellWidget(i, self.columnCount()-1).isChecked():
+                # if checked, collate data
+                self.included_datasets.add(
+                    (self.cellWidget(i, 0).text(), self.cellWidget(i, 1).text(), self.cellWidget(i, 2).text())
+                )
                 #['+ weight group', '- weight group', 'mass difference (g)', 'residual ('+MU_STR+'g)', 'balance uncertainty ('+MU_STR+'g)', 'acceptance met', 'included'
                 dlen = inputdata.shape[0]
                 inputdata.resize(dlen + 1)
                 inputdata[-1:]['+ weight group'] = self.cellWidget(i, 3).text()
                 inputdata[-1:]['- weight group'] = self.cellWidget(i, 4).text()
                 inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 5).text()
-                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 6).text()
+                inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 8).text()
 
         return inputdata
 
@@ -123,9 +130,9 @@ class MassValuesTable(QtWidgets.QTableWidget):
 
     def __init__(self):
         super(MassValuesTable, self).__init__()
-        header = ["Weight ID", "Set ID", "Mass value (g)", "Uncertainty (ug)", "95% CI"]
-        self.setColumnCount(len(header))
-        self.setHorizontalHeaderLabels(header)
+        self.header = ["Nominal (g)", "Weight ID", "Set ID", "Mass value (g)", "Uncertainty (ug)", "95% CI", "Cov"]
+        self.setColumnCount(len(self.header))
+        self.setHorizontalHeaderLabels(self.header)
 
         self.make_rows(1)
 
@@ -136,7 +143,7 @@ class MassValuesTable(QtWidgets.QTableWidget):
     def make_rows(self, numrows):
         self.setRowCount(numrows)
         for i in range(self.rowCount()):
-            for j in range(5):
+            for j in range(len(self.header)):
                 self.setCellWidget(i, j, QtWidgets.QLabel())
 
     @Slot(object, object)
@@ -190,6 +197,7 @@ class MassCalcThread(Thread):
 
     fmc_result = Signal(object, object)
     fmc_resids = Signal(object, object)
+    report_summary = Signal(object)
 
     def __init__(self, ):
         super(MassCalcThread, self).__init__(CalcWorker)
@@ -244,16 +252,21 @@ class MassCalcThread(Thread):
         self.start(self, self.inputdata_table, self.fmc_info, self.mass_vals_table)
 
     def export_to_report(self):
-        #TODO: need some way to make sure that the data reported is indeed the data used in the calculation
-        # e.g. run the calc again?
         results_file_path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + '_finalmasscalc.json')
-        print(results_file_path)
         root = read(results_file_path)
-        print('\ncollated input dataset:')
-        print(root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"])
-        print(self.inputdata_table.get_checked_rows())
-        print('\noutput dataset:')
-        print(root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"])
+        # print('\ncollated input dataset:')
+        # print(root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"])
+
+        inc_datasets = self.inputdata_table.included_datasets
+        for tuple in inc_datasets:
+            path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + tuple[0])
+            # print(path)
+
+
+        # print('\noutput dataset:')
+        # print(root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"])
+
+        self.report_summary.emit(inc_datasets)
 
 
 

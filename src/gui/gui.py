@@ -8,6 +8,7 @@ from src.gui.widgets.scheme_table import SchemeTable
 from src.gui.circweigh_popup import WeighingThread
 from src.routines.run_circ_weigh import analyse_all_weighings_in_file
 from src.routines.collate_data import collate_all_weighings
+from src.routines.report_results import checkable_summary, export_results_summary
 from src.gui.masscalc_popup import MassCalcThread
 
 
@@ -129,7 +130,7 @@ def reanalyse_weighings():
 
     se = schemetable.cellWidget(row, 0).text()
     nom = schemetable.cellWidget(row, 1).text()
-
+    bal, bal_mode = housekeeping.cfg.get_bal_instance('CCE605')
     filename = housekeeping.client+'_'+nom
 
     if housekeeping.drift:
@@ -137,7 +138,7 @@ def reanalyse_weighings():
     else:
         log.info('\nBeginning weighing analysis using optimal drift correction\n')
 
-    analyse_all_weighings_in_file(housekeeping.folder, filename, se,
+    analyse_all_weighings_in_file(housekeeping.folder, filename, se, bal_mode,
                                   timed=housekeeping.timed, drift=housekeeping.drift)
     check_good_runs_in_file(row)
 
@@ -167,6 +168,20 @@ def display_collated():
     }
     mass_thread.show(data, fmc_info)
 
+@Slot(object)
+def reporting(incl_datasets):
+    if housekeeping.cfg.all_checks:
+        check_set = housekeeping.cfg.all_checks['Set file']
+    else:
+        check_set = None
+    export_results_summary(
+        'job',
+        housekeeping.client,
+        housekeeping.folder,
+        check_set,
+        housekeeping.cfg.all_stds['Set file'],
+        incl_datasets,
+    )
 
 all_my_threads = []
 
@@ -175,8 +190,6 @@ sys.excepthook = excepthook
 # could ask user to load config file here?
 
 gui = application()
-
-mass_thread = MassCalcThread()
 
 w = QtWidgets.QWidget()
 rect = QtWidgets.QDesktopWidget()
@@ -190,6 +203,9 @@ central_panel_group = make_table_panel()
 
 housekeeping.balance_list.connect(update_balances)
 schemetable.check_good_runs_in_file.connect(check_good_runs_in_file)
+
+mass_thread = MassCalcThread()
+mass_thread.report_summary.connect(reporting)
 
 layout = QtWidgets.QHBoxLayout()
 layout.addWidget(lhs_panel_group, 3)

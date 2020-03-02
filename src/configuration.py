@@ -19,7 +19,6 @@ class Configuration(object):
         self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': Balance}
         # TODO: add aw class for automatic loading balance
 
-        # self.SQRT_F = float(self.cfg.root.find('acceptance_criteria/SQRT_F').text)
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
 
         self.all_stds = None
@@ -155,7 +154,7 @@ def load_stds_from_set_file(path, wtset):
         keys: 'Set Identifier', 'Calibrated', 'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (ug)'
     """
 
-    stds = {}
+    stds = {'Set file': path}
     for key in {'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties ('+MU_STR+'g)'}:
         stds[key] = []
 
@@ -184,7 +183,9 @@ def load_stds_from_set_file(path, wtset):
                     value = line[i].strip()
                     if key == 'weight ID':
                         id = value.strip('\"')
-                        trunc_val = ('{:g}'.format((float(stds['nominal (g)'][-1]))))
+                        trunc_val = '{:g}'.format((float(stds['nominal (g)'][-1])))
+                        if float(trunc_val) > 999:
+                            trunc_val = '{:g}'.format(float(trunc_val)/1000) + 'k'
                         stds[key].append(trunc_val + id + stds['Set Identifier'])
                     elif key == 'uncertainties ('+MU_STR+'g)':
                         stds[key].append(np.float(value)/SUFFIX[MU_STR+'g'])

@@ -5,7 +5,7 @@ from src.constants import SUFFIX
 from time import perf_counter
 from .mdebalance import Balance
 from msl.equipment import MSLTimeoutError
-from msl.qt import prompt
+from msl.qt import prompt, application
 
 class MettlerToledo(Balance):
     def __init__(self, record, reset=False):
@@ -60,10 +60,12 @@ class MettlerToledo(Balance):
         """Adjusts scale using internal weights"""
         m = self._query("C3").split()
         if m[1] == 'B':
+            app = application()
             print('Balance self-calibration commencing')
             log.info('Balance self-calibration commencing')
             t0 = perf_counter()
             while True:
+                app.processEvents()
                 try:
                     c = self.connection.read().split()
                     if c[1] == 'A':
