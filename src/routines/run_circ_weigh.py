@@ -68,11 +68,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
     weighing = CircWeigh(se)
     # assign positions to weight groups
-    if bal.mode == 'mw':
-        positions = []
-        for i in range(weighing.num_wtgrps):
-            positions.append(weighing.num_wtgrps - i)
-    elif bal.mode == 'aw':
+    if bal.mode == 'aw':
         print('Please make pop-up to assign positions to weight groups')
         return None
     else:
@@ -103,7 +99,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         for cycle in range(weighing.num_cycles):
             for i in range(weighing.num_wtgrps):
                 if callback1 is not None:
-                    callback1(cycle+1, i+1, weighing.num_cycles, weighing.num_wtgrps)
+                    callback1(cycle+1, positions[i], weighing.num_cycles, weighing.num_wtgrps)
                 mass = weighing.wtgrps[i]
                 bal.load_bal(mass, positions[i])
                 reading = bal.get_mass_stable(mass)

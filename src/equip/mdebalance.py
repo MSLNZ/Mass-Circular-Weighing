@@ -111,7 +111,7 @@ class Balance(object):
     def load_bal(self, mass, pos):
         """Prompts user to load balance with specified mass"""
         if not self.want_abort:
-            prompt_thread.show('ok_cancel', 'Load mass <b>'+mass+'</b><br><i>(position '+str(pos+1)+')</i>',
+            prompt_thread.show('ok_cancel', 'Load mass <b>'+mass+'</b><br><i>(position '+str(pos)+')</i>',
                                font=FONTSIZE, title='Circular Weighing')
             loaded = prompt_thread.wait_for_prompt_reply()
             if not loaded:

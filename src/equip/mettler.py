@@ -153,17 +153,20 @@ class MettlerToledo(Balance):
             self._raise_error('U')
 
     def check_reading(self, m):
-        if not m[3] == self.unit:
-            if self._suffix[m[3]]:
-                log.warning('Balance unit set to ' + self.unit + ' but received ' + m[3] +
-                            '. Unit and resolution are now in ' + m[3]+'.')
-                self._resolution = SUFFIX[self.unit]/SUFFIX[m[3]]*self.resolution
-                self._unit = m[3]
-                return True
-            else:
-                log.warning('Serial error when reading balance OR incorrect unit set')
-                return False
-        return True
+        try:
+            if not m[3] == self.unit:
+                if self._suffix[m[3]]:
+                    log.warning('Balance unit set to ' + self.unit + ' but received ' + m[3] +
+                                '. Unit and resolution are now in ' + m[3]+'.')
+                    self._resolution = SUFFIX[self.unit]/SUFFIX[m[3]]*self.resolution
+                    self._unit = m[3]
+                    return True
+                else:
+                    log.warning('Serial error when reading balance OR incorrect unit set')
+                    return False
+            return True
+        except IndexError:
+            print(m)
 
     def _raise_error(self, errorkey):
         raise ValueError(ERRORCODES.get(errorkey,'Unknown serial communication error'))
