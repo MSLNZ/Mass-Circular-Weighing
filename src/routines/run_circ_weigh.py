@@ -235,7 +235,7 @@ def check_ambient_post(omega, ambient_pre):
         ambient_post = {'Ambient OK?': None}
     else:
         rh_data.append(ambient_pre['RH_pre (%)'])
-        ambient_post['RH (%)'] = str(round(min(rh_data), 3)) + ' to ' + str(round(max(rh_data), 3))
+        ambient_post['RH (%)'] = str(round(min(rh_data), 1)) + ' to ' + str(round(max(rh_data), 1))
 
     if t_data and rh_data:
         if (max(t_data) - min(t_data)) ** 2 > omega['MAX_T_CHANGE']**2:

@@ -91,8 +91,8 @@ class WordDoc(object):
         self.oWord.Quit()
 
     def init_report(self, job, client, folder):
-        self.make_title("Summary of Calibration " + job + " for " + client)
-        self.make_normal_text("Data files may be found in " + folder)
+        self.make_title(job + " for " + client)
+        self.make_normal_text("Data files saved in " + folder)
 
     def make_table_norm(self, data):
         # 'Insert a table, fill it with data, and make the first row
@@ -156,7 +156,7 @@ class WordDoc(object):
         wtsTable.Cell(4, 2).Range.Text = std_set_file_path
         wtsTable.Columns.Autofit()
 
-    def make_table_massdata(self, data, masscol):
+    def make_table_massdata(self, data, masscol=None):
         headers = data.metadata.get('metadata')['headers']
         if len(data.shape) == 1:
             rows = 2
@@ -298,6 +298,29 @@ class WordDoc(object):
             myCells.Cells.Merge()
             # https://docs.microsoft.com/en-us/office/vba/api/word.cells.merge
 
+        oTable.Rows.Item(1).Range.ParagraphFormat.Alignment = 1
+        oTable.Borders.Enable = True
+
+    def make_table_cw_diffs(self, data):
+        headers = ["+ weight group", "- weight group", "mass difference", "residual"]
+        rows = len(data) + 1
+        cols = len(headers)
+        oTable = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, rows, cols)
+        oTable.Range.ParagraphFormat.SpaceAfter = 0
+        for c in range(1, cols + 1):
+            oTable.Cell(1, c).Range.Text = str(headers[c - 1])
+            for r in range(2, rows + 1):
+                if c > 2:
+                    oTable.Cell(r, c).Range.Text = '{:.7f}'.format(data[r - 2][c - 1])
+                    oTable.Cell(r, c).Range.ParagraphFormat.Alignment = 2
+                else:
+                    oTable.Cell(r, c).Range.Text = str(data[r - 2][c - 1])
+        oTable.Rows.Item(1).Range.Font.Bold = True
+        oTable.Rows.Item(1).Range.Font.Italic = True
+
+        oTable.Range.Font.Size = self.smallfont
+        oTable.Columns.Autofit()
+
     def add_weighing_dataset(self, cw_file, se, nom, incl_datasets):
             if not os.path.isfile(cw_file):
                 print('No data yet collected for '+se)
@@ -321,16 +344,16 @@ class WordDoc(object):
 
                         weighdata = root.require_dataset(
                             root['Circular Weighings'][se].name + '/measurement_' + run_id)
-                        self.make_heading4('Metadata')
+                        # self.make_heading4('Metadata')
                         self.make_table_run_meta(weighdata.metadata)
 
                         if ambient:
                             temps = weighdata.metadata.get("T"+IN_DEGREES_C).split(" to ")
                             for t in temps:
-                                self.collate_ambient['T' + IN_DEGREES_C].append(t)
+                                self.collate_ambient['T' + IN_DEGREES_C].append(float(t))
                             rhs = weighdata.metadata.get("RH (%)").split(" to ")
                             for rh in rhs:
-                                self.collate_ambient['RH (%)'].append(rh)
+                                self.collate_ambient['RH (%)'].append(float(rh))
 
                         self.make_heading4('Balance readings')
                         self.make_normal_text('Note times are in minutes; weighing positions are in brackets.')
@@ -349,6 +372,8 @@ class WordDoc(object):
                         self.make_heading4('Column average differences')
                         analysisdata = root.require_dataset(
                             root['Circular Weighings'][se].name + '/analysis_' + run_id)
+                        self.make_table_cw_diffs(analysisdata.data)
+                        self.make_normal_text(" ", self.smallfont)
                         self.make_table_diffs_meta(analysisdata.metadata)
 
     def add_weighing_datasets(self, client, folder, scheme, incl_datasets):
@@ -373,7 +398,7 @@ class WordDoc(object):
             "T"+IN_DEGREES_C+":\t" + str(min(self.collate_ambient["T"+IN_DEGREES_C])) + " to " + str(max(self.collate_ambient["T"+IN_DEGREES_C]))
         )
         self.make_normal_text(
-            "RH (%):\t" + str(min(self.collate_ambient["RH (%)"])) + " to " + str(max(self.collate_ambient["RH (%)"]))
+            "RH (%):\t" + str(round(min(self.collate_ambient["RH (%)"]), 1)) + " to " + str(round(max(self.collate_ambient["RH (%)"]), 1))
         )
 
 
