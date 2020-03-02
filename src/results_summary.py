@@ -1,7 +1,10 @@
 from msl.loadlib import LoadLibrary #, utils
 import os
 from msl.io import read
+import xlwt
 from src.constants import IN_DEGREES_C, MU_STR
+import src.cv as cv
+from src.log import log
 # info = utils.get_com_info()
 # for key, value in info.items():
 #     if 'Microsoft' in value['ProgID']:
@@ -20,6 +23,24 @@ def list_to_csstr(idlst):
     for id in idlst:
         idstr += id + ", "
     return idstr.strip(" ").strip(",")
+
+
+def save_mls_excel(data):
+    header = data.metadata.get('metadata')['headers']
+
+    path = os.path.join(cv.folder.get(), cv.client.get()+'_AllDiffs.xls')
+    workbook = xlwt.Workbook()
+    sheet = workbook.add_sheet('Differences')
+
+    for j, text in enumerate(header):
+        sheet.write(0, j, text)
+
+    for row in range(len(data)):
+        for col in range(len(data[row])):
+            sheet.write(row + 1, col, data[row][col])
+
+    workbook.save(path)
+    log.info('Collated differences saved to ' + str(path))
 
 
 class WordDoc(object):
@@ -157,6 +178,7 @@ class WordDoc(object):
         wtsTable.Columns.Autofit()
 
     def make_table_massdata(self, data, masscol=None):
+        """Makes table of structured data containing one column of mass data to be formatted in 'Greg' formatting"""
         headers = data.metadata.get('metadata')['headers']
         if len(data.shape) == 1:
             rows = 2
@@ -209,16 +231,15 @@ class WordDoc(object):
             self.make_table_wts_nochecks(client_wt_IDs, std_wts, std_file)
 
     def add_mls(self, fmc_root):
+        """Adds matrix least squares section to summary file"""
         self.make_heading1('Matrix Least Squares Analysis')
         timestamp = fmc_root['metadata'].metadata['Timestamp'].split()
         self.make_normal_text('Date: ' + timestamp[0] + '\tTime: ' + timestamp[1])
 
         self.make_heading2('Input data')
         input_data = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
-        # inputdata[r][2] = "{:.9f}".format(input_data[r][2])
-
-        # self.make_normal_text('Overall ambient conditions: [temp_range, humidity_range]')
         self.make_table_massdata(input_data, 3)
+        save_mls_excel(input_data)
 
         self.make_heading2('Mass values from Least Squares solution')
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
@@ -235,6 +256,7 @@ class WordDoc(object):
         self.page_break()
 
     def make_table_run_meta(self, cw_run_meta):
+        """Makes table of ambient and other metadata from circular weighing run"""
         runTable = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, 2, 8) # 1 = autofit, 0 not
         runTable.Range.ParagraphFormat.SpaceAfter = 0
         runTable.Cell(1, 1).Range.Text = 'Time:'
@@ -255,6 +277,7 @@ class WordDoc(object):
         runTable.Columns.Autofit()
 
     def make_table_diffs_meta(self, cw_anal_meta):
+        '''Makes table of metadata from circular weighing analysis'''
         table = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, 4, 2) # 1 = autofit, 0 not
         table.Range.ParagraphFormat.SpaceAfter = 0
         table.Cell(1, 1).Range.Text = 'Analysis uses times?'
@@ -277,6 +300,14 @@ class WordDoc(object):
         table.Columns.Autofit()
 
     def make_table_cwdata(self, wtpos, weighdata):
+        '''Makes table of raw circular weighing data with headings '(position) weight group',
+        and data as twin columns of times and balance readings
+
+        Parameters
+        ----------
+        wtpos : list of weight groups and positions as tuples
+        weighdata : structured array
+        '''
         rows = len(weighdata) + 1
         cols = len(wtpos) * 2
         oTable = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, rows, cols)
@@ -302,6 +333,8 @@ class WordDoc(object):
         oTable.Borders.Enable = True
 
     def make_table_cw_diffs(self, data):
+        """Makes table of differences e.g. position 0 - position 1, mass difference, residual.
+        Uses original units from weighing."""
         headers = ["+ weight group", "- weight group", "mass difference", "residual"]
         rows = len(data) + 1
         cols = len(headers)
@@ -322,59 +355,60 @@ class WordDoc(object):
         oTable.Columns.Autofit()
 
     def add_weighing_dataset(self, cw_file, se, nom, incl_datasets):
-            if not os.path.isfile(cw_file):
-                print('No data yet collected for '+se)
-            else:
-                self.make_heading2(se)
-                print('Reading '+cw_file)
-                root = read(cw_file)
-                wt_grps = se.split()
+        """How to add a dataset from a single circular weighing"""
+        if not os.path.isfile(cw_file):
+            print('No data yet collected for '+se)
+        else:
+            self.make_heading2(se)
+            print('Reading '+cw_file)
+            root = read(cw_file)
+            wt_grps = se.split()
 
-                for dataset in root['Circular Weighings'][se].datasets():
-                    dname = dataset.name.split('_')
-                    ambient = False
+            for dataset in root['Circular Weighings'][se].datasets():
+                dname = dataset.name.split('_')
+                ambient = False
 
-                    if dname[0][-8:] == 'analysis':
-                        run_id = 'run_' + dname[2]
-                        if (str(float(nom)), se, dname[2]) in incl_datasets:
-                            self.make_heading3(run_id)
-                            ambient = True
-                        else:
-                            self.make_heading3(run_id + "(EXCLUDED)")
+                if dname[0][-8:] == 'analysis':
+                    run_id = 'run_' + dname[2]
+                    if (str(float(nom)), se, dname[2]) in incl_datasets:
+                        self.make_heading3(run_id)
+                        ambient = True
+                    else:
+                        self.make_heading3(run_id + "(EXCLUDED)")
 
-                        weighdata = root.require_dataset(
-                            root['Circular Weighings'][se].name + '/measurement_' + run_id)
-                        # self.make_heading4('Metadata')
-                        self.make_table_run_meta(weighdata.metadata)
+                    weighdata = root.require_dataset(
+                        root['Circular Weighings'][se].name + '/measurement_' + run_id)
+                    # self.make_heading4('Metadata')
+                    self.make_table_run_meta(weighdata.metadata)
 
-                        if ambient:
-                            temps = weighdata.metadata.get("T"+IN_DEGREES_C).split(" to ")
-                            for t in temps:
-                                self.collate_ambient['T' + IN_DEGREES_C].append(float(t))
-                            rhs = weighdata.metadata.get("RH (%)").split(" to ")
-                            for rh in rhs:
-                                self.collate_ambient['RH (%)'].append(float(rh))
+                    if ambient:
+                        temps = weighdata.metadata.get("T"+IN_DEGREES_C).split(" to ")
+                        for t in temps:
+                            self.collate_ambient['T' + IN_DEGREES_C].append(float(t))
+                        rhs = weighdata.metadata.get("RH (%)").split(" to ")
+                        for rh in rhs:
+                            self.collate_ambient['RH (%)'].append(float(rh))
 
-                        self.make_heading4('Balance readings')
-                        self.make_normal_text('Note times are in minutes; weighing positions are in brackets.')
+                    self.make_heading4('Balance readings')
+                    self.make_normal_text('Note times are in minutes; weighing positions are in brackets.')
 
-                        wtpos = []
-                        try:
-                            for i in range(1, len(wt_grps) + 1):
-                                a = weighdata.metadata.get("grp"+str(i)).split()
-                                wtpos.append([a[0], a[-1]])
-                        except AttributeError:
-                            d = weighdata.metadata.get("Weight group loading order")
-                            for key, value in d.items():
-                                wtpos.append([value, key.strip("Position ")])
-                        self.make_table_cwdata(wtpos, weighdata)
+                    wtpos = []
+                    try:
+                        for i in range(1, len(wt_grps) + 1):
+                            a = weighdata.metadata.get("grp"+str(i)).split() # old way of recording groups
+                            wtpos.append([a[0], a[-1]])
+                    except AttributeError:
+                        d = weighdata.metadata.get("Weight group loading order") # new way of recording groups
+                        for key, value in d.items():
+                            wtpos.append([value, key.strip("Position ")])
+                    self.make_table_cwdata(wtpos, weighdata)
 
-                        self.make_heading4('Column average differences')
-                        analysisdata = root.require_dataset(
-                            root['Circular Weighings'][se].name + '/analysis_' + run_id)
-                        self.make_table_cw_diffs(analysisdata.data)
-                        self.make_normal_text(" ", self.smallfont)
-                        self.make_table_diffs_meta(analysisdata.metadata)
+                    self.make_heading4('Column average differences')
+                    analysisdata = root.require_dataset(
+                        root['Circular Weighings'][se].name + '/analysis_' + run_id)
+                    self.make_table_cw_diffs(analysisdata.data)
+                    self.make_normal_text(" ", self.smallfont)
+                    self.make_table_diffs_meta(analysisdata.metadata)
 
     def add_weighing_datasets(self, client, folder, scheme, incl_datasets):
         self.make_heading1("Circular Weighing Data")
