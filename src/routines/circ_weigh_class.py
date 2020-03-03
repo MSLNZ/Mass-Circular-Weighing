@@ -186,6 +186,8 @@ class CircWeigh(object):
 
         Returns
         -------
+        analysis : dataset
+            dataset with headings '+ weight group', '- weight group',  'mass difference', 'residual'
         self.grpdiffs : dict
             keys are weight groups by position e.g. grp1 - grp2; grp2 - grp3 etc
             values are mass differences in set unit, with standard deviation in brackets
