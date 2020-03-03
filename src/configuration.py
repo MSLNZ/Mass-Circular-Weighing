@@ -26,8 +26,10 @@ class Configuration(object):
 
     def init_ref_mass_sets(self, stdset, checkset):
         self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/'+stdset).text, 'std')
+        self.all_stds['Set name'] = stdset
         if checkset is not None:
             self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+checkset).text, 'check')
+            self.all_stds['Set name'] = checkset
         else:
             self.all_checks = None
 

@@ -2,25 +2,26 @@ from src.results_summary import WordDoc
 import os
 from msl.io import read, read_table_excel
 
+import src.cv as cv
 
 
-def export_results_summary(job, client, folder, check_file, std_file, incl_datasets):
+def export_results_summary(check_file, std_file, incl_datasets):
 
     wd = WordDoc()
-    wd.init_report(job, client, folder)
+    wd.init_report()
 
-    scheme_file = os.path.join(folder, client + '_Scheme.xls')
+    scheme_file = os.path.join(cv.folder.get(), cv.client.get() + '_Scheme.xls')
     scheme = read_table_excel(scheme_file)
 
-    finalmasscalc_file = os.path.join(folder, client+'_finalmasscalc.json')
+    finalmasscalc_file = os.path.join(cv.folder.get(), cv.client.get() +'_finalmasscalc.json')
     fmc_root = read(finalmasscalc_file)
 
     wd.add_weighing_scheme(scheme, fmc_root, check_file, std_file)
     wd.add_mls(fmc_root)
 
-    wd.add_weighing_datasets(client, folder, scheme, incl_datasets)
+    wd.add_weighing_datasets(scheme, incl_datasets)
 
-    save_file =  os.path.join(folder, client + '_Summary.docx')
+    save_file = os.path.join(cv.folder.get(), cv.client.get() + '_Summary.docx')
     wd.save_doc(save_file)
 
     wd.close_doc()

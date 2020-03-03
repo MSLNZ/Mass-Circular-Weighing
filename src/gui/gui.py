@@ -2,6 +2,7 @@ import sys, os
 
 from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot, utils
 
+import src.cv as cv
 from src.log import log
 from src.gui.widgets.housekeeping import Housekeeping
 from src.gui.widgets.scheme_table import SchemeTable
@@ -14,7 +15,7 @@ from src.gui.masscalc_popup import MassCalcThread
 
 def make_table_panel():
     check_ses = Button(text='Check scheme entries', left_click=check_scheme, )
-    save_ses = Button(text='Save scheme entries', left_click=save_scheme, )
+    save_ses = Button(text='Save scheme entries', left_click=schemetable.save_scheme, )
     run_row = Button(text='Do weighing(s) for selected scheme entry', left_click=collect_n_good_runs, )
     reanalyse_row = Button(text='Reanalyse weighing(s) for selected scheme entry', left_click=reanalyse_weighings, )
     update_status = Button(text='Update status', left_click=check_good_run_status, )
@@ -45,7 +46,7 @@ def update_balances(bal_list):
 @Slot(int)
 def check_good_runs_in_file(row):
     nominal = schemetable.cellWidget(row, 1).text()
-    url = os.path.join(str(housekeeping.folder), str(housekeeping.client)+'_'+nominal+'.json')
+    url = os.path.join(cv.folder.get(), cv.client.get()+'_'+nominal+'.json')
     if not os.path.isfile(url):
         return None
 
@@ -85,11 +86,7 @@ def check_good_run_status():
 
 def check_scheme():
     schemetable.check_scheme_entries(housekeeping)
-
-def save_scheme():
-    folder = housekeeping.folder
-    filename = housekeeping.client + '_Scheme.xls'
-    schemetable.save_scheme(folder, filename)
+# TODO: make not need to refer to housekeeping?
 
 def get_se_row():
     row = schemetable.currentRow()
@@ -109,18 +106,16 @@ def collect_n_good_runs():
         return
 
     try:
-        housekeeping.cfg.bal_class
+        cv.cfg.get().bal_class
     except:
-        housekeeping.initialise_cfg()
-
-    info = housekeeping.info
+        cv.cfg.get().initialise_cfg()
 
     se_row_data = get_se_row()
 
     weigh_thread = WeighingThread()
     all_my_threads.append(weigh_thread)
     weigh_thread.weighing_done.connect(check_good_runs_in_file)
-    weigh_thread.show(se_row_data, info)
+    weigh_thread.show(se_row_data)
 
 def reanalyse_weighings():
     row = schemetable.currentRow()
@@ -175,9 +170,6 @@ def reporting(incl_datasets):
     else:
         check_set = None
     export_results_summary(
-        'job',
-        housekeeping.client,
-        housekeeping.folder,
         check_set,
         housekeeping.cfg.all_stds['Set file'],
         incl_datasets,

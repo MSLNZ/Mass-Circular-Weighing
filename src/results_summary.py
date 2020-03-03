@@ -111,9 +111,9 @@ class WordDoc(object):
     def close_doc(self):
         self.oWord.Quit()
 
-    def init_report(self, job, client, folder):
-        self.make_title(job + " for " + client)
-        self.make_normal_text("Data files saved in " + folder)
+    def init_report(self):
+        self.make_title(cv.job.get() + " for " + cv.client.get())
+        self.make_normal_text("Data files saved in " + cv.folder.get())
 
     def make_table_norm(self, data):
         # 'Insert a table, fill it with data, and make the first row
@@ -212,6 +212,7 @@ class WordDoc(object):
         self.make_normal_text("", size=self.smallfont)
 
     def add_weighing_scheme(self, scheme, fmc_root, check_file, std_file):
+        # TODO: use context variables?
         client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("client weight ID"))
         if check_file:
             checks = {
@@ -410,18 +411,18 @@ class WordDoc(object):
                     self.make_normal_text(" ", self.smallfont)
                     self.make_table_diffs_meta(analysisdata.metadata)
 
-    def add_weighing_datasets(self, client, folder, scheme, incl_datasets):
+    def add_weighing_datasets(self, scheme, incl_datasets):
         self.make_heading1("Circular Weighing Data")
         if len(scheme.shape) == 1:
             se = scheme[0]
             nom = scheme[1]
-            cw_file = os.path.join(folder, client + '_' + nom + '.json')
+            cw_file = os.path.join(cv.folder.get(), cv.client.get() + '_' + nom + '.json')
             self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
         else:
             for row in range(len(scheme.shape)):
                 se = scheme[row][0]
                 nom = scheme[row][1]
-                cw_file = os.path.join(folder, client + '_' + nom + '.json')
+                cw_file = os.path.join(cv.folder.get(), cv.client.get() + '_' + nom + '.json')
                 if not os.path.isfile(cw_file):
                     print('No data yet collected for ' + se)
                 else:

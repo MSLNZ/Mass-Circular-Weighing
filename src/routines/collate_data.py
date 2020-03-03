@@ -3,6 +3,7 @@
 import os
 from msl.io import read
 from ..constants import MU_STR, SUFFIX
+import src.cv as cv
 from ..log import log
 import numpy as np
 
@@ -23,8 +24,8 @@ def collate_all_weighings(schemetable, housekeeping):
         must use headings as follows: '+ weight group', '- weight group', 'mass difference (g)', 'balance uncertainty ('+MU_STR+'g)',
              'residual ('+MU_STR+'g)', 'Acceptance met?', 'included'
     """
-    folder = housekeeping.folder
-    client = housekeeping.client
+    folder = cv.folder.get()
+    client = cv.client.get()
     cfg = housekeeping.cfg
     if not cfg.equipment:
         housekeeping.initialise_cfg()

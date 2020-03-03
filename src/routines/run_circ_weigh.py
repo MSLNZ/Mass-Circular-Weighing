@@ -1,6 +1,7 @@
 import os
 from msl.io import JSONWriter, read
 from src.routines.circ_weigh_class import CircWeigh
+import src.cv as cv
 from src.constants import IN_DEGREES_C, SUFFIX, MU_STR, local_backup
 from src.equip.labenviron_dll import LabEnviron64
 from time import perf_counter
@@ -12,14 +13,14 @@ dll = LabEnviron64()
 
 tab = '  '
 
-def check_for_existing_weighdata(folder, url, se):
+def check_for_existing_weighdata(url, se):
 
     if os.path.isfile(url):
         existing_root = read(url, encoding='utf-8')
-        if not os.path.exists(folder+"\\backups\\"):
-            os.makedirs(folder+"\\backups\\")
-        new_index = len(os.listdir(folder + "\\backups\\"))
-        new_file = str(folder + "\\backups\\" + se + '_backup{}.json'.format(new_index))
+        if not os.path.exists(cv.folder.get()+"\\backups\\"):
+            os.makedirs(cv.folder.get()+"\\backups\\")
+        new_index = len(os.listdir(cv.folder.get()+ "\\backups\\"))
+        new_file = str(cv.folder.get()+ "\\backups\\" + se + '_backup{}.json'.format(new_index))
         existing_root.is_read_only = False
         log.debug('Existing root is '+repr(existing_root))
         root = JSONWriter()
@@ -28,8 +29,8 @@ def check_for_existing_weighdata(folder, url, se):
         root.save(root=existing_root, file=new_file, mode='w', encoding='utf-8', ensure_ascii=False)
 
     else:
-        if not os.path.exists(folder):
-            os.makedirs(folder)
+        if not os.path.exists(cv.folder.get()):
+            os.makedirs(cv.folder.get())
         print('Creating new file for weighing')
         root = JSONWriter()
 
@@ -359,12 +360,11 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
     return weighanalysis
 
 
-def analyse_old_weighing(folder, filename, se, run_id, bal_mode, timed, drift):
+def analyse_old_weighing(filename, se, run_id, bal_mode, timed, drift):
     """Analyses a specific weighing run on file, with specified timed and drift parameters
 
     Parameters
     ----------
-    folder
     filename
     se
     run_id
@@ -377,19 +377,18 @@ def analyse_old_weighing(folder, filename, se, run_id, bal_mode, timed, drift):
 
     """
 
-    url = folder+"\\"+filename+'.json'
-    root = check_for_existing_weighdata(folder, url, se)
+    url = cv.folder.get()+"\\"+filename+'.json'
+    root = check_for_existing_weighdata(url, se)
     weighanalysis = analyse_weighing(root, url, se, run_id, bal_mode, timed, drift)
 
     return weighanalysis
 
 
-def analyse_all_weighings_in_file(folder, filename, se, bal_mode, timed, drift):
+def analyse_all_weighings_in_file(filename, se, bal_mode, timed, drift):
     """Analyses all weighings on file for a given scheme entry, with specified timed and drift parameters
 
     Parameters
     ----------
-    folder : path
     filename : str
     se : str
     bal_mode : str
@@ -401,8 +400,8 @@ def analyse_all_weighings_in_file(folder, filename, se, bal_mode, timed, drift):
 
     """
 
-    url = folder + "\\" + filename + '.json'
-    root = check_for_existing_weighdata(folder, url, se)
+    url = cv.folder.get()+ "\\" + filename + '.json'
+    root = check_for_existing_weighdata(url, se)
     i = 1
     while True:
         try:

@@ -1,7 +1,7 @@
 import os
 from msl.qt import QtWidgets, Button, Signal
 from src.log import log
-from src.constants import config_default, save_folder_default, client_default, client_masses_default
+import src.cv as cv
 from src.configuration import Configuration
 
 from src.gui.widgets.browse import Browse, FileSelect, label
@@ -14,11 +14,12 @@ class Housekeeping(QtWidgets.QWidget):
     def __init__(self):
         super(Housekeeping, self).__init__()
 
-        self.config_io = FileSelect(config_default, 'shell32|4')
+        self.config_io = FileSelect(cv.config.get(), 'shell32|4')
         self.load_from_config_but = Button(text='Load details from config file', left_click=self.load_from_config)
-        self.folder_io = Browse(save_folder_default, 'shell32|4')
-        self.client_io = QtWidgets.QLineEdit(client_default)
-        self.client_masses_io = QtWidgets.QTextEdit(client_masses_default)
+        self.folder_io = Browse(cv.folder.get(), 'shell32|4')
+        self.job_io = QtWidgets.QLineEdit(cv.job.get())
+        self.client_io = QtWidgets.QLineEdit(cv.client.get())
+        self.client_masses_io = QtWidgets.QTextEdit(cv.client_wt_IDs.get())
 
         self.stds = ['None']
         self.checks = ['None']
@@ -34,7 +35,6 @@ class Housekeeping(QtWidgets.QWidget):
 
         self.corr_io = QtWidgets.QLineEdit('None')
 
-        self.cfg = None
         self.go = Button(text='Confirm set up', left_click=self.initialise_cfg)
 
     def arrange_housekeeping_box(self):
@@ -44,6 +44,7 @@ class Housekeeping(QtWidgets.QWidget):
         formlayout.addRow(label('Configuration file'), self.config_io)
         formlayout.addRow(label(' '), self.load_from_config_but)
         formlayout.addRow(label('Folder for saving data'), self.folder_io)
+        formlayout.addRow(label('Job'), self.job_io)
         formlayout.addRow(label('Client'), self.client_io)
         formlayout.addRow(label('List of client masses'), self.client_masses_io)
         formlayout.addRow(label('Standard mass set'), self.cb_stds_io)
@@ -76,54 +77,31 @@ class Housekeeping(QtWidgets.QWidget):
         return lhs_panel_group
 
     def load_from_config(self):
-        if os.path.isfile(self.config):
-            self.cfg = Configuration(self.config)
-
-            client = self.cfg.cfg.root.find('client').text
-            folder = self.cfg.cfg.root.find('save_folder').text
-            # folder = os.path.join(parent_folder, client)
-            self.folder_io.textbox.setText(folder)
-            self.client_io.setText(client)
-            self.client_masses_io.setText(self.cfg.cfg.root.find('client_masses').text)
+        if os.path.isfile(self.config_io.textbox.text()):
+            cfg = Configuration(self.config_io.textbox.text())
+            self.folder_io.textbox.setText(cfg.cfg.root.find('save_folder').text)
+            self.job_io.setText(cfg.cfg.root.find('job').text)
+            self.client_io.setText(cfg.cfg.root.find('client').text)
+            self.client_masses_io.setText(cfg.cfg.root.find('client_masses').text)
 
             self.stds = ['None']
             self.checks = ['None']
-            for std in self.cfg.cfg.root.find('standards'):
+            for std in cfg.cfg.root.find('standards'):
                 self.stds.append(std.tag)
                 self.checks.append(std.tag)
             self.cb_stds_io.clear()
             self.cb_checks_io.clear()
             self.cb_stds_io.addItems(self.stds)
             self.cb_checks_io.addItems(self.checks)
-            self.cb_stds_io.setCurrentText(self.cfg.cfg.root.find('std_set').text)
-            self.cb_checks_io.setCurrentText(self.cfg.cfg.root.find('check_set').text)
+            self.cb_stds_io.setCurrentText(cfg.cfg.root.find('std_set').text)
+            self.cb_checks_io.setCurrentText(cfg.cfg.root.find('check_set').text)
 
-            self.drift_io.setCurrentText(self.cfg.cfg.root.find('drift').text)
-            self.timed_io.setCurrentText(self.cfg.cfg.root.find('use_times').text)
-            self.corr_io.setText(self.cfg.cfg.root.find('correlations').text)
+            self.drift_io.setCurrentText(cfg.cfg.root.find('drift').text)
+            self.timed_io.setCurrentText(cfg.cfg.root.find('use_times').text)
+            self.corr_io.setText(cfg.cfg.root.find('correlations').text)
 
         else:
-            log.error('Config file does not exist at {!r}'.format(self.config))
-
-    @property
-    def config(self):
-        return self.config_io.textbox.text()
-
-    @property
-    def folder(self):
-        return self.folder_io.textbox.text()
-
-    @property
-    def client(self):
-        return self.client_io.text()
-
-    @property
-    def client_masses(self):
-        return self.client_masses_io.toPlainText()
-
-    @property
-    def std_set(self):
-        return self.cb_stds_io.currentText()
+            log.error('Config file does not exist at {!r}'.format(self.config_io.textbox.text()))
 
     @property
     def check_set(self):
@@ -143,45 +121,42 @@ class Housekeeping(QtWidgets.QWidget):
             return False
         return True
 
-    @property
-    def correlations(self):
-        return self.corr_io.text()
-
     def initialise_cfg(self):
-        log.info('Config file: '+ self.config)
-        log.info('Save folder: ' + self.folder)
-        log.info('Client: ' + self.client)
-        log.info('Client masses: ' + self.client_masses)
-        log.info('Standard mass set: ' + self.std_set)
-        log.info('Check mass set: ' + str(self.check_set))
-        log.debug('Drift correction: ' + self.drift_io.currentText())
-        log.debug('Use measurement times? ' + str(self.timed))
-        log.debug('Correlations between standards? ' + self.correlations)
+        """Set and log values for context variables"""
+        cfg = Configuration(self.config_io.textbox.text())
+        cfg.init_ref_mass_sets(self.cb_stds_io.currentText(), self.check_set)
+        cv.config.set(self.config_io.textbox.text())
+        cv.cfg.set(cfg)
 
-        self.cfg = Configuration(self.config)
-        self.cfg.init_ref_mass_sets(self.std_set, self.check_set)
+        cv.folder.set(self.folder_io.textbox.text())
+        cv.job.set(self.job_io.text())
+        cv.client.set(self.client_io.text())
+        cv.client_wt_IDs.set(self.client_masses_io.toPlainText())
+
+        cv.stds.set(cfg.all_stds)
+        cv.checks.set(cfg.all_checks)
+
+        cv.drift.set(self.drift_io.currentText())
+        cv.timed.set(self.timed)
+        cv.correlations.set(self.corr_io.text())
+
+        log.info('Config file: '+ cv.config.get())
+        log.info('Save folder: ' + cv.folder.get())
+        log.info('Job: ' + cv.job.get())
+        log.info('Client: ' + cv.client.get())
+        log.info('Client masses: ' + cv.client_wt_IDs.get())
+        log.info('Standard mass set: ' + cv.stds.get().get('Set name'))
+        log.info('Check mass set: ' + str(self.check_set))
+        log.debug('Drift correction: ' + cv.drift.get())
+        log.debug('Use measurement times? ' + str(cv.timed.get()))
+        log.debug('Correlations between standards? ' + cv.correlations.get())
 
         bal_list = []
-        for item in self.cfg.equipment:
+        for item in cfg.equipment:
             bal_list.append(item)
         self.balance_list.emit(bal_list)
 
         return True
-
-    @property
-    def info(self):
-        info = {
-            'CFG': self.cfg,
-            'Config file': self.config,
-            'Folder': self.folder,
-            'Client': self.client,
-            'Client masses': self.client_masses,
-            'Standard mass set': self.std_set,
-            'Check mass set':self.check_set,
-            'Drift correction': self.drift,
-            'Use measurement times?':  str(self.timed),
-            'Correlations between standards?': self.correlations,}
-        return info
 
 
 if __name__ == "__main__":

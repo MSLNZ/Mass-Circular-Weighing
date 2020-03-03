@@ -1,6 +1,7 @@
 import xlrd, xlwt
 import os
 
+import src.cv as cv
 from msl.qt import QtWidgets, QtCore, io, prompt, Signal
 from src.log import log
 
@@ -117,7 +118,7 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         log.info('Scheme loaded from ' + str(self.scheme_path))
 
-    def check_scheme_entries(self, housekeeping):
+    def check_scheme_entries(self, housekeeping):  # TODO: avoid need for passing housekeeping around?
         try:
             housekeeping.cfg.all_stds['weight ID']
         except:
@@ -143,7 +144,10 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         log.info('Checked all scheme entries')
 
-    def save_scheme(self, folder, filename):
+    def save_scheme(self):
+        folder = cv.folder.get()
+        filename = cv.client.get() + '_Scheme.xls'
+
         if not os.path.exists(folder):
             os.makedirs(folder)
 
