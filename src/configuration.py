@@ -1,4 +1,5 @@
 from msl.equipment import Config
+from msl import io
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
 
@@ -11,25 +12,61 @@ import numpy as np
 class Configuration(object):
 
     def __init__(self, config, ):
+        """Initialise the calibration configuration from a config file following msl.equipment rules.
+        Assumes specific tags exist in the config file - TODO: make asserts here that the tags exist?
+
+        Parameters
+        ----------
+        config : path to config.xml file containing relevant parameters
+        """
 
         self.cfg = Config(config)               # loads cfg file
         self.db = self.cfg.database()           # loads database
         self.equipment = self.db.equipment      # loads subset of database with equipment being used
 
         self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': Balance}
-        # TODO: add aw class for automatic loading balance
+        # TODO: change when aw class for automatic loading balance is ready to use
 
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
 
+        self.folder = self.cfg.root.find('save_folder').text
+        self.job = self.cfg.root.find('job').text
+        self.client = self.cfg.root.find('client').text
+        self.client_wt_IDs = self.cfg.root.find('client_masses').text
+
+        self.drift_text = self.cfg.root.find('drift').text
+        self.timed_text = self.cfg.root.find('use_times').text
+        self.correlations = self.cfg.root.find('correlations').text
+
         self.all_stds = None
         self.all_checks = None
+        self.std_set = self.cfg.root.find('std_set').text
+        self.check_set_text = self.cfg.root.find('check_set').text
 
-    def init_ref_mass_sets(self, stdset, checkset):
-        self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/'+stdset).text, 'std')
-        self.all_stds['Set name'] = stdset
-        if checkset is not None:
-            self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+checkset).text, 'check')
-            self.all_stds['Set name'] = checkset
+    @property
+    def check_set(self):
+        if self.check_set_text == 'None':
+            return None
+        return self.check_set_text
+
+    @property
+    def drift(self):
+        if self.drift_text == 'auto select':
+            return None
+        return self.drift_text
+
+    @property
+    def timed(self):
+        if self.timed_text == 'NO':
+            return False
+        return True
+
+    def init_ref_mass_sets(self):
+        self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/'+self.std_set).text, 'std')
+        self.all_stds['Set name'] = self.std_set
+        if self.check_set is not None:
+            self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+self.check_set).text, 'check')
+            self.all_stds['Set name'] = self.check_set
         else:
             self.all_checks = None
 
@@ -110,8 +147,9 @@ class Configuration(object):
         path = self.cfg.root.find('acceptance_criteria/path').text
         sheet = self.cfg.root.find('acceptance_criteria/sheet').text
 
-        # note that this reader works for 2D table with one header line
-        header, data = self.db._read_excel(path, sheet, None)
+        dataset = io.read_table(path, sheet=sheet)
+        header = dataset.metadata.get('header')
+        data = dataset.data
 
         index_map = {}
         for col_name in {'model', 'manufacturer', 'serial',
@@ -124,7 +162,7 @@ class Configuration(object):
         for row in data:
             if model == row[index_map['model']] \
                 and man == row[index_map['manufacturer']] \
-                    and serial == row[index_map['serial']]:
+                    and float(serial) == row[index_map['serial']]:
                 store.append(row)
 
         if not store:

@@ -3,7 +3,7 @@ import os
 from msl.io import read
 import xlwt
 from src.constants import IN_DEGREES_C, MU_STR
-import src.cv as cv
+
 from src.log import log
 # info = utils.get_com_info()
 # for key, value in info.items():
@@ -25,10 +25,10 @@ def list_to_csstr(idlst):
     return idstr.strip(" ").strip(",")
 
 
-def save_mls_excel(data):
+def save_mls_excel(data, folder, client):
     header = data.metadata.get('metadata')['headers']
 
-    path = os.path.join(cv.folder.get(), cv.client.get()+'_AllDiffs.xls')
+    path = os.path.join(folder, client + '_AllDiffs.xls')
     workbook = xlwt.Workbook()
     sheet = workbook.add_sheet('Differences')
 
@@ -111,9 +111,9 @@ class WordDoc(object):
     def close_doc(self):
         self.oWord.Quit()
 
-    def init_report(self):
-        self.make_title(cv.job.get() + " for " + cv.client.get())
-        self.make_normal_text("Data files saved in " + cv.folder.get())
+    def init_report(self, job, client, folder):
+        self.make_title(job + " for " + client)
+        self.make_normal_text("Data files saved in " + folder)
 
     def make_table_norm(self, data):
         # 'Insert a table, fill it with data, and make the first row
@@ -212,7 +212,6 @@ class WordDoc(object):
         self.make_normal_text("", size=self.smallfont)
 
     def add_weighing_scheme(self, scheme, fmc_root, check_file, std_file):
-        # TODO: use context variables?
         client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("client weight ID"))
         if check_file:
             checks = {
@@ -231,7 +230,7 @@ class WordDoc(object):
         else:
             self.make_table_wts_nochecks(client_wt_IDs, std_wts, std_file)
 
-    def add_mls(self, fmc_root):
+    def add_mls(self, fmc_root, folder, client):
         """Adds matrix least squares section to summary file"""
         self.make_heading1('Matrix Least Squares Analysis')
         timestamp = fmc_root['metadata'].metadata['Timestamp'].split()
@@ -240,7 +239,7 @@ class WordDoc(object):
         self.make_heading2('Input data')
         input_data = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
         self.make_table_massdata(input_data, 3)
-        save_mls_excel(input_data)
+        save_mls_excel(input_data, folder, client)
 
         self.make_heading2('Mass values from Least Squares solution')
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
@@ -411,18 +410,18 @@ class WordDoc(object):
                     self.make_normal_text(" ", self.smallfont)
                     self.make_table_diffs_meta(analysisdata.metadata)
 
-    def add_weighing_datasets(self, scheme, incl_datasets):
+    def add_weighing_datasets(self, client, folder, scheme, incl_datasets):
         self.make_heading1("Circular Weighing Data")
         if len(scheme.shape) == 1:
             se = scheme[0]
             nom = scheme[1]
-            cw_file = os.path.join(cv.folder.get(), cv.client.get() + '_' + nom + '.json')
+            cw_file = os.path.join(folder, client + '_' + nom + '.json')
             self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
         else:
             for row in range(len(scheme.shape)):
                 se = scheme[row][0]
                 nom = scheme[row][1]
-                cw_file = os.path.join(cv.folder.get(), cv.client.get() + '_' + nom + '.json')
+                cw_file = os.path.join(folder, client + '_' + nom + '.json')
                 if not os.path.isfile(cw_file):
                     print('No data yet collected for ' + se)
                 else:

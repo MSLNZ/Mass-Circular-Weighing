@@ -162,7 +162,7 @@ class CircWeigh(object):
         """
         h = self._driftorder[drift]
         if h == 0:
-            print('Optimal correction is for no drift')
+            log.info('Optimal correction is for no drift')
         else:
             driftcoeff = np.zeros((h, 2))
             driftcoeff[:, 0] = self.b[drift][self.num_wtgrps:self.num_wtgrps + self._driftorder[drift]]

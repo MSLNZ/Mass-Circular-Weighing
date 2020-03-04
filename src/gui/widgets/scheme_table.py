@@ -1,7 +1,6 @@
 import xlrd, xlwt
 import os
 
-import src.cv as cv
 from msl.qt import QtWidgets, QtCore, io, prompt, Signal
 from src.log import log
 
@@ -118,23 +117,18 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         log.info('Scheme loaded from ' + str(self.scheme_path))
 
-    def check_scheme_entries(self, housekeeping):  # TODO: avoid need for passing housekeeping around?
-        try:
-            housekeeping.cfg.all_stds['weight ID']
-        except:
-            housekeeping.initialise_cfg()
-
+    def check_scheme_entries(self, cfg):
         for i in range(self.rowCount()):
             try:
                 scheme_entry = self.cellWidget(i, 0).text()
                 for wtgrp in scheme_entry.split():
                     for mass in wtgrp.split('+'):
-                        if mass in housekeeping.client_masses:
+                        if mass in cfg.client_wt_IDs:
                             log.debug(mass + ' in client set')
-                        elif mass in housekeeping.cfg.all_stds['weight ID']:
+                        elif mass in cfg.all_stds['weight ID']:
                             log.debug(mass + ' in std set')
-                        elif housekeeping.cfg.all_checks is not None \
-                                and mass in housekeeping.cfg.all_checks['weight ID']:
+                        elif cfg.all_checks is not None \
+                                and mass in cfg.all_checks['weight ID']:
                             log.debug(mass + ' in check set')
                         else:
                             log.error(mass + ' is not in any of the specified mass sets.')
@@ -144,10 +138,7 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         log.info('Checked all scheme entries')
 
-    def save_scheme(self):
-        folder = cv.folder.get()
-        filename = cv.client.get() + '_Scheme.xls'
-
+    def save_scheme(self, folder, filename):
         if not os.path.exists(folder):
             os.makedirs(folder)
 
@@ -173,20 +164,8 @@ class SchemeTable(QtWidgets.QTableWidget):
         workbook.save(path)
         log.info('Scheme saved to ' + str(path))
 
-    def get_row_info(self, row):
-        try:
-            scheme_entry = self.cellWidget(row, 0).text()
-            nominal = self.cellWidget(row, 1).text()
-            bal_alias = self.cellWidget(row, 2).currentText()
-            num_runs = self.cellWidget(row, 3).text()
-            scheme_entry_row = [scheme_entry, nominal, bal_alias, num_runs]
-
-            return scheme_entry_row
-
-        except AttributeError:
-            log.error('Incomplete data in selected row')
-
     def get_se_row_dict(self, row):
+        """Collate dictionary of information from selected row for weighing"""
         se_row_data = {}
         try:
             se_row_data['row'] = row

@@ -1,7 +1,7 @@
 import os
 from msl.qt import QtWidgets, Button, Signal
 from src.log import log
-import src.cv as cv
+from src.constants import config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
 from src.configuration import Configuration
 
 from src.gui.widgets.browse import Browse, FileSelect, label
@@ -14,13 +14,12 @@ class Housekeeping(QtWidgets.QWidget):
     def __init__(self):
         super(Housekeeping, self).__init__()
 
-        self.config_io = FileSelect(cv.config.get(), 'shell32|4')
+        self.config_io = FileSelect(config_default, 'shell32|4')
         self.load_from_config_but = Button(text='Load details from config file', left_click=self.load_from_config)
-        self.folder_io = Browse(cv.folder.get(), 'shell32|4')
-        self.job_io = QtWidgets.QLineEdit(cv.job.get())
-        self.client_io = QtWidgets.QLineEdit(cv.client.get())
-        self.client_masses_io = QtWidgets.QTextEdit(cv.client_wt_IDs.get())
-
+        self.folder_io = Browse(save_folder_default, 'shell32|4')
+        self.job_io = QtWidgets.QLineEdit(job_default)
+        self.client_io = QtWidgets.QLineEdit(client_default)
+        self.client_masses_io = QtWidgets.QTextEdit(client_wt_IDs_default)
         self.stds = ['None']
         self.checks = ['None']
 
@@ -28,13 +27,14 @@ class Housekeeping(QtWidgets.QWidget):
         self.cb_checks_io = QtWidgets.QComboBox()
 
         self.drift_io = QtWidgets.QComboBox()
-        self.drift_io.addItems(['<auto select>', 'no drift', 'linear drift', 'quadratic drift', 'cubic drift'])
+        self.drift_io.addItems(['auto select', 'no drift', 'linear drift', 'quadratic drift', 'cubic drift'])
 
         self.timed_io = QtWidgets.QComboBox()
         self.timed_io.addItems(['NO', 'YES'])
 
         self.corr_io = QtWidgets.QLineEdit('None')
 
+        self.cfg = None
         self.go = Button(text='Confirm set up', left_click=self.initialise_cfg)
 
     def arrange_housekeeping_box(self):
@@ -78,81 +78,65 @@ class Housekeeping(QtWidgets.QWidget):
 
     def load_from_config(self):
         if os.path.isfile(self.config_io.textbox.text()):
-            cfg = Configuration(self.config_io.textbox.text())
-            self.folder_io.textbox.setText(cfg.cfg.root.find('save_folder').text)
-            self.job_io.setText(cfg.cfg.root.find('job').text)
-            self.client_io.setText(cfg.cfg.root.find('client').text)
-            self.client_masses_io.setText(cfg.cfg.root.find('client_masses').text)
+            self.cfg = Configuration(self.config_io.textbox.text())
+            self.folder_io.textbox.setText(self.cfg.folder)
+            self.job_io.setText(self.cfg.job)
+            self.client_io.setText(self.cfg.client)
+            self.client_masses_io.setText(self.cfg.client_wt_IDs)
 
             self.stds = ['None']
             self.checks = ['None']
-            for std in cfg.cfg.root.find('standards'):
+            for std in self.cfg.cfg.root.find('standards'):
                 self.stds.append(std.tag)
                 self.checks.append(std.tag)
             self.cb_stds_io.clear()
             self.cb_checks_io.clear()
             self.cb_stds_io.addItems(self.stds)
             self.cb_checks_io.addItems(self.checks)
-            self.cb_stds_io.setCurrentText(cfg.cfg.root.find('std_set').text)
-            self.cb_checks_io.setCurrentText(cfg.cfg.root.find('check_set').text)
+            self.cb_stds_io.setCurrentText(self.cfg.std_set)
+            self.cb_checks_io.setCurrentText(self.cfg.check_set_text)
 
-            self.drift_io.setCurrentText(cfg.cfg.root.find('drift').text)
-            self.timed_io.setCurrentText(cfg.cfg.root.find('use_times').text)
-            self.corr_io.setText(cfg.cfg.root.find('correlations').text)
+            self.drift_io.setCurrentText(self.cfg.drift_text)
+            self.timed_io.setCurrentText(self.cfg.timed_text)
+            self.corr_io.setText(self.cfg.correlations)
 
         else:
             log.error('Config file does not exist at {!r}'.format(self.config_io.textbox.text()))
 
-    @property
-    def check_set(self):
-        if self.cb_checks_io.currentText() == 'None':
-            return None
-        return self.cb_checks_io.currentText()
-
-    @property
-    def drift(self):
-        if self.drift_io.currentText() == '<auto select>':
-            return None
-        return self.drift_io.currentText()
-
-    @property
-    def timed(self):
-        if self.timed_io.currentText() == 'NO':
-            return False
-        return True
-
     def initialise_cfg(self):
-        """Set and log values for context variables"""
-        cfg = Configuration(self.config_io.textbox.text())
-        cfg.init_ref_mass_sets(self.cb_stds_io.currentText(), self.check_set)
-        cv.config.set(self.config_io.textbox.text())
-        cv.cfg.set(cfg)
+        """Set and log values for configuration variables"""
+        if os.path.isfile(self.config_io.textbox.text()):
+            self.cfg = Configuration(self.config_io.textbox.text())
+        else:
+            log.error('Config file does not exist at {!r}'.format(self.config_io.textbox.text()))
+        self.cfg.std_set = self.cb_stds_io.currentText()
+        self.cfg.check_set_text = self.cb_checks_io.currentText()
+        self.cfg.init_ref_mass_sets()
 
-        cv.folder.set(self.folder_io.textbox.text())
-        cv.job.set(self.job_io.text())
-        cv.client.set(self.client_io.text())
-        cv.client_wt_IDs.set(self.client_masses_io.toPlainText())
+        self.cfg.folder = self.folder_io.textbox.text()
+        self.cfg.job = self.job_io.text()
+        self.cfg.client = self.client_io.text()
+        self.cfg.client_wt_IDs = self.client_masses_io.toPlainText()
 
-        cv.stds.set(cfg.all_stds)
-        cv.checks.set(cfg.all_checks)
+        self.cfg.drift_text = self.drift_io.currentText()
+        self.cfg.timed_text = self.timed_io.currentText()
+        self.cfg.correlations = self.corr_io.text()
 
-        cv.drift.set(self.drift_io.currentText())
-        cv.timed.set(self.timed)
-        cv.correlations.set(self.corr_io.text())
+        # TODO: amend values and save config file to reflect changes?
 
-        log.info('Config file: '+ cv.config.get())
-        log.info('Save folder: ' + cv.folder.get())
-        log.info('Job: ' + cv.job.get())
-        log.info('Client: ' + cv.client.get())
-        log.info('Client masses: ' + cv.client_wt_IDs.get())
-        log.info('Standard mass set: ' + cv.stds.get().get('Set name'))
-        log.info('Check mass set: ' + str(self.check_set))
-        log.debug('Drift correction: ' + cv.drift.get())
-        log.debug('Use measurement times? ' + str(cv.timed.get()))
-        log.debug('Correlations between standards? ' + cv.correlations.get())
+        log.info('Config file: '+ self.config_io.textbox.text())
+        log.info('Save folder: ' + self.cfg.folder)
+        log.info('Job: ' + self.cfg.job)
+        log.info('Client: ' + self.cfg.client)
+        log.info('Client masses: ' + self.cfg.client_wt_IDs)
+        log.info('Standard mass set: ' + self.cfg.std_set)
+        log.info('Check mass set: ' + str(self.cfg.check_set))
+        log.debug('Drift correction: ' + self.cfg.drift_text)
+        log.debug('Use measurement times? ' + str(self.cfg.timed))
+        log.debug('Correlations between standards? ' + self.cfg.correlations)
 
         bal_list = []
-        for item in cfg.equipment:
+        for item in self.cfg.equipment:  # TODO: check that this only adds balances!
             bal_list.append(item)
         self.balance_list.emit(bal_list)
 

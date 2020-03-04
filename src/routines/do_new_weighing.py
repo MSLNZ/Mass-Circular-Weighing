@@ -30,7 +30,7 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
     root = check_for_existing_weighdata(folder, url, scheme_entry)
     run_id = get_next_run_id(root, scheme_entry)
 
-    weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, omega=omega_instance, **metadata)
+    # weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, omega=omega_instance, **metadata)
     #if not weighing_root:
         #return False
 
@@ -41,32 +41,31 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
 
 if __name__ == "__main__":
 
-    config = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\config.xml'
+    config = r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing\config.xml'
     ### initialise configuration
     cfg = Configuration(config)
 
-    client = 'Demo'
-    folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\AsureQ_Mar'  # use full path
-
     ### specify balance to use for weighing, and weights in comparison
-    scheme_entry = "500 500MA 500MB" #"3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" #"1a 1b 1c 1d" # "5000 5000MA 5000MB"
-
+    scheme_entry = "01cMA 1r 1b 1l 1f" #"500 500MA 500MB" #"3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" #"1a 1b 1c 1d" # "5000 5000MA 5000MB"
     #"2000 2000MA 2000MB"  "1000 1000MA 1000MB"
     # "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example
     # "1 1s 0.5+0.5s" #
-    nominal_mass = 500  # nominal mass in g3
+    nominal_mass = 2  # nominal mass in g
     bal_alias = 'MDE-demo' # codename for balance
     omega_alias = 'Omega'
 
-    filename = client + '_' + str(nominal_mass) # + '_' + run_id
+    filename = cfg.client + '_' + str(nominal_mass) # + '_' + run_id
 
-    for i in range(1):
-        do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
-                        timed=False, drift='linear drift')
+    # for i in range(1):
+    #     do_new_weighing(cfg, cfg.client, bal_alias, cfg.folder, filename, scheme_entry, nominal_mass,
+    #                     timed=cfg.timed, drift=cfg.drift)
 
-    # analyse_all_weighings_in_file(folder, filename, scheme_entry, timed=False, drift='quadratic drift')#None)
+    analyse_old_weighing(cfg, filename, scheme_entry, 'run_1')
 
-    #inputdata = collate_a_data_from_json(folder, filename, scheme_entry)  # gets data in g
+    # balance, mode = cfg.get_bal_instance(bal_alias)
+    # analyse_all_weighings_in_file(cfg.folder, filename, scheme_entry, bal_mode=balance.mode, timed=cfg.timed, drift=cfg.drift)
+
+    #inputdata = collate_a_data_from_json(cfg.folder, filename, scheme_entry)  # gets data in g
 
     #print(inputdata)
 

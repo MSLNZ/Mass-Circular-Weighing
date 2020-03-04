@@ -1,12 +1,8 @@
 import os
 from datetime import datetime
 import numpy as np
-import src.cv as cv
 from msl.io import JSONWriter, read
 from src.log import log
-
-# folder=cv.folder.get(), client=cv.client.get(), client_wt_IDs=cv.client_wt_IDs.get(),
-# check_wt_IDs, std_masses, inputdata, nbc=True, corr=None
 
 
 def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None):

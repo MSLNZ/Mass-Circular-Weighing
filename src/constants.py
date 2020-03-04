@@ -12,10 +12,11 @@ DEGREE_SIGN = '°'           # \xb0
 IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 
 local_backup = r'C:\CircularWeighingData'
-# config_default = os.path.abspath(os.path.join(r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing', 'config.xml'))
-# save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
-# client_default = ' '
-# client_masses_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000'
+config_default = os.path.abspath(os.path.join(r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing', 'config.xml'))
+save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
+job_default = ""
+client_default = ""
+client_wt_IDs_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000'
 
 MAX_BAD_RUNS = 3
 
