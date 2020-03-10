@@ -205,8 +205,8 @@ class CircWeigh(object):
         vardiffab = np.linalg.multi_dot([w_T, self.varcovar[drift], w])
         stdev_diffab = np.sqrt(np.diag(vardiffab))
 
-        for grp in range(1, self.num_wtgrps):
-            key = 'grp' + str(grp) + ' - grp' + str(grp)
+        for grp in range(self.num_wtgrps - 1):
+            key = 'grp' + str(grp + 1) + ' - grp' + str(grp + 2)
             value = "{0:.5g}".format(diffab[grp]) + ' (' + "{0:.3g}".format(stdev_diffab[grp]) + ')'
             self.grpdiffs[key] = value
 
