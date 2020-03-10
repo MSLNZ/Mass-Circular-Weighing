@@ -211,7 +211,7 @@ def load_stds_from_set_file(path, wtset):
             fp.readline()
 
             headerline = fp.readline().strip('\n')
-            if not headerline == '" nominal (g) "," weight identifier "," value(g) "," uncert (g) ",' \
+            if not headerline == '" nominal (g) "," weight identifier "," value(g) "," uncert (ug) ",' \
                                  '"cov factor","density","dens uncert"':
                 log.warn('File format has changed; data sorting may be incorrect')
                 log.debug(headerline)
@@ -225,10 +225,13 @@ def load_stds_from_set_file(path, wtset):
                         id = value.strip('\"')
                         trunc_val = '{:g}'.format((float(stds['nominal (g)'][-1])))
                         if float(trunc_val) > 999:
-                            trunc_val = '{:g}'.format(float(trunc_val)/1000) + 'k'
-                        stds[key].append(trunc_val + id + stds['Set Identifier'])
+                            trunc_val = '{:g}'.format(float(trunc_val)/1000) + 'K'
+                        if stds['Set Identifier'] == 'CUSTOM':
+                            stds[key].append(trunc_val + id)
+                        else:
+                            stds[key].append(trunc_val + id + stds['Set Identifier'])
                     elif key == 'uncertainties ('+MU_STR+'g)':
-                        stds[key].append(np.float(value)/SUFFIX[MU_STR+'g'])
+                        stds[key].append(np.float(value)) # /SUFFIX[MU_STR+'g']
                     else:
                         stds[key].append(np.float(value))
 
