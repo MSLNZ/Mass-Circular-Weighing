@@ -10,6 +10,7 @@ from src.gui.widgets.browse import Browse, FileSelect, label
 class Housekeeping(QtWidgets.QWidget):
 
     balance_list = Signal(list)
+    scheme_file = Signal(str)
 
     def __init__(self):
         super(Housekeeping, self).__init__()
@@ -139,6 +140,13 @@ class Housekeeping(QtWidgets.QWidget):
         for item in self.cfg.equipment:  # TODO: check that this only adds balances!
             bal_list.append(item)
         self.balance_list.emit(bal_list)
+
+        if os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')):
+            scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')
+            self.scheme_file.emit(scheme_path)
+        elif os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')):
+            scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')
+            self.scheme_file.emit(scheme_path)
 
         return True
 
