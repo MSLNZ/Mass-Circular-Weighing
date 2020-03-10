@@ -129,9 +129,9 @@ def reanalyse_weighings():
     filename = housekeeping.cfg.client+'_'+nom
 
     if housekeeping.cfg.drift:
-        log.info('\nBeginning weighing analysis using ' + housekeeping.cfg.drift + ' correction\n')
+        log.info('Beginning weighing analysis using ' + housekeeping.cfg.drift + ' correction\n')
     else:
-        log.info('\nBeginning weighing analysis using optimal drift correction\n')
+        log.info('Beginning weighing analysis using optimal drift correction\n')
 
     analyse_all_weighings_in_file(housekeeping.cfg, filename, se)
     check_good_runs_in_file(row)
@@ -190,17 +190,18 @@ central_panel_group = make_table_panel()
 
 housekeeping.balance_list.connect(update_balances)
 schemetable.check_good_runs_in_file.connect(check_good_runs_in_file)
+housekeeping.scheme_file.connect(schemetable.auto_load_scheme)
 
 mass_thread = MassCalcThread()
 mass_thread.report_summary.connect(reporting)
 
 layout = QtWidgets.QHBoxLayout()
-layout.addWidget(lhs_panel_group, 3)
-layout.addWidget(central_panel_group, 4)
-layout.addWidget(Logger(fmt='%(message)s'), 4)
+layout.addWidget(lhs_panel_group, 2)
+layout.addWidget(central_panel_group, 5)
+layout.addWidget(Logger(fmt='%(message)s'), 3)
 w.setLayout(layout)
-geo = utils.screen_geometry()
-w.resize(geo.width(), geo.height() // 1.25)
+# geo = utils.screen_geometry()
+# w.resize(geo.width(), geo.height() // 1.25)
 
 w.show()
 gui.exec()
