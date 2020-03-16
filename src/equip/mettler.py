@@ -24,7 +24,9 @@ class MettlerToledo(Balance):
         self.connection = self.record.connect()
         if reset:
             self.reset()
-        assert self.record.serial == self.get_serial(), "Serial mismatch"  # prints error if false
+        assert self.record.serial == self.get_serial(), \
+            "Serial mismatch: expected "+str(self.record.serial)+" but received "+str(self.get_serial())
+            # prints error if false
 
     @property
     def mode(self):

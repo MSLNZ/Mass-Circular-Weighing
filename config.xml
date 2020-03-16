@@ -2,9 +2,9 @@
   <msl>
 
     <!-- Specify client-specific information. -->
-    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\UMX5</save_folder> <!-- parent folder -->
-    <job>UMX5</job>
-    <client>ppe_check</client>      <!-- Files will be created with this name inside the parent folder -->
+    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\Job</save_folder> <!-- parent folder -->
+    <job>job</job>
+    <client>client</client>      <!-- Files will be created with this name inside the parent folder -->
     <client_masses>1r 1b 1l 1f</client_masses>
     <std_set>CUSTOM</std_set>       <!-- Use only names of sets as in <standards> below. -->
     <check_set>None</check_set>     <!-- Use only names of sets as in <standards> below, or None. -->
@@ -14,6 +14,8 @@
 
     <!-- Specify all balances available for weighings. -->
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
+    <equipment alias="AW-demo" manufacturer="Mettler Toledo" model="Test_AW"/>
+    <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPR604"/>
     <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
     <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
@@ -51,7 +53,9 @@
 
     <!-- Specify the Equipment-Register Databases to load equipment records from. -->
     <registers>
-      <register team="M&amp;P" user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution">
+      <register
+              team="M&amp;P"
+              user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, address">
           <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>
