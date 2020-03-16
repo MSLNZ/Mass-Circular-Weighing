@@ -1,7 +1,7 @@
 import xlrd, xlwt
 import os
 
-from msl.qt import QtWidgets, QtCore, io, prompt, Signal
+from msl.qt import QtWidgets, QtCore, io, prompt, Signal, Slot
 from src.log import log
 
 
@@ -95,11 +95,19 @@ class SchemeTable(QtWidgets.QTableWidget):
         event.accept()
 
     def dropEvent(self, event):
+        self.load_scheme()
+
+    @Slot(str)
+    def auto_load_scheme(self, scheme_path):
+        self.scheme_path = scheme_path
+        self.load_scheme()
+
+    def load_scheme(self):
         header, rows = read_excel_scheme(self.scheme_path)
         self.make_rows(len(rows))
 
         index_map = {}
-        for col_name in {'weight', 'nominal', 'balance', 'runs',}:
+        for col_name in {'weight', 'nominal', 'balance', 'runs', }:
             for i, name in enumerate(header):
                 if col_name in name.lower():
                     index_map[col_name] = i
