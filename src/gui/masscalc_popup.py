@@ -38,12 +38,13 @@ def filter_stds(std_masses, inputdata):
             relevant_uncs.append(std_masses['uncertainties (ug)'][i])
 
     std_masses_new = {
+        'Set file': std_masses['Set file'],
+        'Set Identifier': std_masses['Set Identifier'],
+        'Calibrated': std_masses['Calibrated'],
         'nominal (g)': relevant_nominal,
         'mass values (g)': relevant_massvals,
         'uncertainties (ug)': relevant_uncs,
         'weight ID': relevant_IDs,
-        'Set Identifier': std_masses['Set Identifier'],
-        'Calibrated': std_masses['Calibrated'],
     }
     return std_masses_new
 

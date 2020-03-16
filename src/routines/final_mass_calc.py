@@ -3,6 +3,7 @@ from datetime import datetime
 import numpy as np
 from msl.io import JSONWriter, read
 from src.log import log
+from src.constants import REL_UNC
 
 
 def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None):
@@ -95,14 +96,14 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     log.debug('Input data: \n+ weight group, - weight group, mass difference (g), balance uncertainty (ug)'
              '\n'+str(inputdata))
     for entry in inputdata:
-        #log.debug(str(entry[0])+str(entry[1])+str(entry[2])+str(entry[3]))
+        # log.debug(str(entry[0])+str(entry[1])+str(entry[2])+str(entry[3]))
         grp1 = entry[0].split('+')
         for m in range(len(grp1)):
-            #log.debug('mass '+grp1[m]+' is in position '+str(np.where(allmassIDs == grp1[m])[0][0]))
+            log.debug('mass '+grp1[m]+' is in position '+str(np.where(allmassIDs == grp1[m])[0][0]))
             designmatrix[rowcounter, np.where(allmassIDs == grp1[m])] = 1
         grp2 = entry[1].split('+')
         for m in range(len(grp2)):
-            #log.debug('mass '+grp2[m]+' is in position '+str(np.where(allmassIDs == grp2[m])[0][0]))
+            log.debug('mass '+grp2[m]+' is in position '+str(np.where(allmassIDs == grp2[m])[0][0]))
             designmatrix[rowcounter, np.where(allmassIDs == grp2[m])] = -1
         differences[rowcounter] = entry[2]
         uncerts[rowcounter] = entry[3]
@@ -117,9 +118,18 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     # Calculate least squares solution, following the mathcad example in Tech proc MSLT.M.001.008
     x = designmatrix
     xT = designmatrix.T
-    log.info(designmatrix)
-    log.info(differences)
-    log.info(uncerts)
+    error_tally = 0
+    for i in range(num_unknowns):
+        sum = 0
+        for r in range(num_obs):
+            sum += designmatrix[r, i]**2
+        if not sum:
+            log.error("No comparisons in design matrix for "+allmassIDs[i])
+            error_tally += 1
+    if error_tally > 0:
+        return None
+    log.debug('differences:\n' + str(differences))
+    log.debug('uncerts:\n' + str(uncerts))
 
     # Hadamard product: element-wise multiplication
     uumeas = np.vstack(uncerts) * np.hstack(uncerts)    # becomes square matrix dim num_obs
@@ -163,15 +173,16 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
 
     flag = []
     for entry in inputdatares:
-        if entry[4] > 2*entry[3]:
+        if np.absolute(entry[4]) > 2*entry[3]:
             flag.append(str(entry[0]) + ' - ' + str(entry[1]))
+            log.warn("A residual for " + str(entry[0]) + ' - ' + str(entry[1]) + " is too large")
 
     # uncertainty due to no buoyancy correction
     if nbc:
         cmx1 = np.ones(num_client_masses+num_check_masses)  # from above, stds are added last
         cmx1 = np.append(cmx1, np.zeros(num_stds))          # 1's for unknowns, 0's for reference stds
 
-        reluncert = 0.03                                    # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1
+        reluncert = REL_UNC                                 # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1
         unbc = reluncert * b * cmx1                         # vector of length num_unknowns. TP wrongly has * 1e-6
         uunbc = np.vstack(unbc) * np.hstack(unbc)           # square matrix of dim num_obs
         rnbc = np.identity(num_unknowns)                    # add off-diagonals for any correlations
@@ -227,7 +238,7 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
         'Sum of residues squared (ug^2)': np.round(sum_residues_squared, 6),
     }
     if flag:
-        leastsq_meta['Residuals greater than 2u'] = flag
+        leastsq_meta['Residuals greater than 2 balance uncerts'] = flag
 
     leastsq_data = finalmasscalc.create_group('2: Matrix Least Squares Analysis', metadata=leastsq_meta)
     leastsq_data.create_dataset('Input data with least squares residuals', data=inputdatares,

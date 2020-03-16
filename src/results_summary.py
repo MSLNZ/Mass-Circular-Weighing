@@ -3,7 +3,7 @@ import os
 from msl.io import read
 import xlwt
 from src.constants import IN_DEGREES_C, MU_STR
-import src.cv as cv
+
 from src.log import log
 # info = utils.get_com_info()
 # for key, value in info.items():
@@ -25,10 +25,10 @@ def list_to_csstr(idlst):
     return idstr.strip(" ").strip(",")
 
 
-def save_mls_excel(data):
+def save_mls_excel(data, folder, client):
     header = data.metadata.get('metadata')['headers']
 
-    path = os.path.join(cv.folder.get(), cv.client.get()+'_AllDiffs.xls')
+    path = os.path.join(folder, client + '_AllDiffs.xls')
     workbook = xlwt.Workbook()
     sheet = workbook.add_sheet('Differences')
 
@@ -230,7 +230,7 @@ class WordDoc(object):
         else:
             self.make_table_wts_nochecks(client_wt_IDs, std_wts, std_file)
 
-    def add_mls(self, fmc_root):
+    def add_mls(self, fmc_root, folder, client):
         """Adds matrix least squares section to summary file"""
         self.make_heading1('Matrix Least Squares Analysis')
         timestamp = fmc_root['metadata'].metadata['Timestamp'].split()
@@ -239,7 +239,7 @@ class WordDoc(object):
         self.make_heading2('Input data')
         input_data = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
         self.make_table_massdata(input_data, 3)
-        save_mls_excel(input_data)
+        save_mls_excel(input_data, folder, client)
 
         self.make_heading2('Mass values from Least Squares solution')
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]

@@ -7,15 +7,15 @@ from ..log import log
 import numpy as np
 
 
-def collate_all_weighings(schemetable, housekeeping):
+def collate_all_weighings(schemetable, cfg):
     """Collects all data from acceptable weighings in existing json files created by all entries in schemetable
 
     Parameters
     ----------
     schemetable : QWidget
         taken from centre panel of main gui
-    housekeeping : QWidget
-        taken from LHS panel of main gui
+    cfg : :class:`Configuration`
+        from src.configuration, as initialised during set-up
 
     Returns
     -------
@@ -23,12 +23,8 @@ def collate_all_weighings(schemetable, housekeeping):
         must use headings as follows: '+ weight group', '- weight group', 'mass difference (g)', 'balance uncertainty ('+MU_STR+'g)',
              'residual ('+MU_STR+'g)', 'Acceptance met?', 'included'
     """
-    folder = housekeeping.folder
-    client = housekeeping.client
-    cfg = housekeeping.cfg
-    if not cfg.equipment:
-        housekeeping.initialise_cfg()
-        cfg = housekeeping.cfg
+    folder = cfg.folder
+    client = cfg.client
 
     data = np.empty(0,
                     dtype=[
@@ -45,7 +41,7 @@ def collate_all_weighings(schemetable, housekeeping):
             url = os.path.join(folder, filename + '.json')
             log.debug('Collated scheme entry '+schemetable.cellWidget(row, 0).text()+' from '+url)
             bal_alias = schemetable.cellWidget(row, 2).currentText()
-            mode = cfg.equipment[bal_alias].user_defined['weighing_mode']  # 'aw' #
+            mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
             if mode == 'aw':
                 newdata = collate_a_data_from_json(url, schemetable.cellWidget(row, 0).text())
             else:

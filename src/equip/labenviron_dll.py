@@ -1,6 +1,6 @@
 import os
 from datetime import date, datetime
-import ctypes #import byref, c_int32, create_string_buffer, c_int16
+import ctypes # this script uses byref, c_int32, create_string_buffer, c_int16
 
 from msl.loadlib import Server32, Client64, IS_PYTHON_64BIT
 if IS_PYTHON_64BIT:
@@ -12,6 +12,7 @@ from src.log import log
 diff = datetime(1970, 1, 1) - datetime(1904, 1, 1)
 
 class Labview32(Server32):
+    """Create a 32-bit server to interface with Emile's LabVIEW dll"""
     def __init__(self, host, port, quiet, **kwargs):
         super(Labview32, self).__init__(
             os.path.join(os.path.dirname(__file__).strip('/equip'), r'resources\LabEnviron_V1.3.dll'),
@@ -91,11 +92,12 @@ class Labview32(Server32):
 
 
 class LabEnviron64(Client64):
-
+    """Create a 64-bit client to interface with the python environment"""
     def __init__(self):
         super(LabEnviron64, self).__init__(module32='labenviron_dll', append_sys_path=os.path.dirname(__file__))
 
     def get_data(self, omega_alias, probe, date_start=None, date_end=None,):
+        """gets data from one probe of a given omega logger over a specified time range"""
         size, status, error = self.request32('get_size', omega_alias, probe, date_start=date_start, date_end=date_end)
         if error:
             log.error(error)
@@ -110,11 +112,12 @@ class LabEnviron64(Client64):
         return x_data, y_data
 
     def get_temp(self, omega_alias, probe, date_start=None, date_end=None,):
+        """Gets temperature data with error handling for if the server is unavailable"""
         time, temp = self.get_data(omega_alias, probe, date_start=date_start, date_end=date_end,)
         if time:
             for t in range(len(time)):
                 time[t] = datetime.fromtimestamp(time[t]) - diff
-        else:
+        else:  # e.g. server had no data to return, or was otherwise unavailable
             prompt_thread.show('double', datetime.now().strftime('%Y-%m-%d %H:%M:%S')+"\nPlease enter temperature",
                                font=FONTSIZE, minimum=0, maximum=100, title='Ambient Monitoring')
             reading = prompt_thread.wait_for_prompt_reply()
@@ -124,11 +127,12 @@ class LabEnviron64(Client64):
         return time, temp
 
     def get_rh(self, omega_alias, probe, date_start=None, date_end=None,):
+        """Gets humidity data with error handling for if the server is unavailable"""
         time, rh = self.get_data(omega_alias, probe, date_start=date_start, date_end=date_end,)
         if time:
             for t in range(len(time)):
                 time[t] = datetime.fromtimestamp(time[t])-diff
-        else:
+        else:  # e.g. server had no data to return, or was otherwise unavailable
             prompt_thread.show('double', datetime.now().strftime('%Y-%m-%d %H:%M:%S')+"\nPlease enter humidity",
                                font=FONTSIZE, minimum=0, maximum=100, title='Ambient Monitoring')
             reading = prompt_thread.wait_for_prompt_reply()
@@ -138,6 +142,7 @@ class LabEnviron64(Client64):
         return time, rh
 
     def get_t_rh_now(self, omega_alias, sensor):
+        """Gets both temperature and humidity data for the current time (specifically the last recorded values)"""
         t_probe = (sensor - 1)*3
         rh_probe = 1 + (sensor - 1)*3
         tempdata_start = self.get_temp(omega_alias, t_probe)
@@ -146,6 +151,7 @@ class LabEnviron64(Client64):
         return tempdata_start[0][-1], tempdata_start[1][-1], rhdata_start[1][-1]
 
     def get_t_rh_during(self, omega_alias, sensor, start):
+        """Gets a list of temperature and humidity values since the specified start time"""
         t_probe = (sensor - 1)*3
         rh_probe = 1 + (sensor - 1)*3
         tempdata_end = self.get_temp(omega_alias, t_probe, date_start=start)
@@ -160,50 +166,27 @@ class LabEnviron64(Client64):
 
 if __name__ == '__main__':
     dll = LabEnviron64()
-    diff = datetime(1970, 1, 1) - datetime(1904, 1, 1)
-    # size, status, error = dll.get_size('mass 2', 0, date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
-    # print(size, status, error)
-    # data = dll.get_data('mass 2', 0,  date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
-    # print(data[0][0])
-    #
-    # print(datetime.fromtimestamp(data[0][0])-diff, data[1][0])
-    #
-    # #print(size, status, error)
-    # tempdata = dll.get_average_temp('mass 2',  date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
-    # print(tempdata[0][3], tempdata[1][3])
-    # rhdata = dll.get_average_rh('mass 2',  date_start=date(2019, 9, 5), date_end=date(2019, 9, 5))
-    # print(rhdata[0][3], rhdata[1][3])
 
-    logger = 'mass 1'
+    logger = 'mass 2'
     sensor = 1
 
     print('Initial ambient conditions')
-    date_start, t_start, rh_start = dll.get_t_rh_now(logger, 1)
+    date_start, t_start, rh_start = dll.get_t_rh_now(logger, sensor)
 
     print(date_start, t_start, rh_start)
 
-    # tempdata_start = dll.get_average_temp('mass 2', date_start)
-    # # rhdata_start = dll.get_average_rh('mass 2', date_start)
-    # #
-    # print(tempdata_start[0][-3:], tempdata_start[1][-3:])
-    #
-    # print(len(tempdata_start[0]))
-    # print()
-
-    from time import sleep
+    # from time import sleep
     # sleep(66)
-
-    print(dll.get_t_rh_during(logger, 1, date_start,))
-
+    #
+    # print(dll.get_t_rh_during(logger, 1, date_start,))
+    #
     # date_end = date.today()
     # tempdata_end = dll.get_temp(logger, 0, date_start, date_end)
     # rhdata_end = dll.get_rh(logger, 1, date_start, date_end)
     #
     # print(len(tempdata_end[0]))
-    # # print(tempdata_end[0][:], tempdata_end[1][:])
+    # print(tempdata_end[0][:], tempdata_end[1][:])
     #
     # t1 = tempdata_end[0][:].index(date_start)
     # print(tempdata_end[1][t1:])
-
-    # print(rhdata_end[0][len(tempdata_start[0])-1:], rhdata_end[1][len(tempdata_start[0])-1:])
 

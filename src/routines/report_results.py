@@ -1,63 +1,33 @@
 from src.results_summary import WordDoc
 import os
 from msl.io import read, read_table_excel
+from src.log import log
 
 
-
-def export_results_summary(job, client, folder, check_file, std_file, incl_datasets):
+def export_results_summary(cfg, check_file, std_file, incl_datasets):
 
     wd = WordDoc()
-    wd.init_report(job, client, folder)
+    wd.init_report(cfg.job, cfg.client, cfg.folder,)
 
-    scheme_file = os.path.join(folder, client + '_Scheme.xls')
-    scheme = read_table_excel(scheme_file)
+    if os.path.isfile(os.path.join(cfg.folder, cfg.client + '_Scheme.xls')):
+        scheme_path = os.path.join(cfg.folder, cfg.client + '_Scheme.xls')
+        scheme = read_table_excel(scheme_path)
+    elif os.path.isfile(os.path.join(cfg.folder, cfg.client + '_Scheme.xlsx')):
+        scheme_path = os.path.join(cfg.folder, cfg.client + '_Scheme.xlsx')
+        scheme = read_table_excel(scheme_path)
+    else:
+        log.error('Please save scheme and then continue')
+        return None
 
-    finalmasscalc_file = os.path.join(folder, client+'_finalmasscalc.json')
+    finalmasscalc_file = os.path.join(cfg.folder, cfg.client +'_finalmasscalc.json')
     fmc_root = read(finalmasscalc_file)
 
     wd.add_weighing_scheme(scheme, fmc_root, check_file, std_file)
-    wd.add_mls(fmc_root)
+    wd.add_mls(fmc_root, cfg.folder, cfg.client)
 
-    wd.add_weighing_datasets(client, folder, scheme, incl_datasets)
+    wd.add_weighing_datasets(cfg.client, cfg.folder, scheme, incl_datasets)
 
-    save_file =  os.path.join(folder, client + '_Summary.docx')
+    save_file = os.path.join(cfg.folder, cfg.client + '_Summary.docx')
     wd.save_doc(save_file)
 
     wd.close_doc()
-
-def checkable_summary(housekeeping, schemetable):
-
-    print("Summary of Calibration " + housekeeping.client)
-    print("Data saved in " + housekeeping.folder)
-    print()
-    print("Weighing Scheme")
-    print("Weight Groups \tNominal (g) \tBalance \t#runs collected")
-    for row in range(schemetable.rowCount()):
-        try:
-            print(schemetable.cellWidget(row, 0).text() + "\t" +
-                  schemetable.cellWidget(row, 1).text() + "\t" +
-                  schemetable.cellWidget(row, 2).currentText() + "\t" +
-                  schemetable.cellWidget(row, 3).text())
-        except AttributeError:
-            pass
-    print()
-    print("Client weights: " + housekeeping.client_masses)
-    print("Check weights: " + str(housekeeping.cfg.all_checks))
-    if housekeeping.cfg.all_checks is not None:
-        print("Check set file: " + housekeeping.cfg.all_checks['Set file'])
-    print("Standard weights: " + str(housekeeping.cfg.all_stds))
-    print("Standard set file: " + housekeeping.cfg.all_stds['Set file'])
-
-
-
-if __name__ == '__main__':
-    folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\UMX5'
-    job = 'UMX5'
-    client = 'ppe_check'
-    client_wt_IDs = "boo"
-    check_wt_IDs = "boo hoo"
-    check_set_file_path = "boo hoo hoo"
-    std_wt_IDs = "boo hoo hoo hoo hoo"
-    std_set_file_path = "boo hoo ha"
-
-    export_results_summary(job, client, folder, client_wt_IDs, check_wt_IDs, check_set_file_path, std_wt_IDs, std_set_file_path)

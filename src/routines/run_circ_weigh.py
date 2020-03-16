@@ -12,13 +12,27 @@ dll = LabEnviron64()
 
 tab = '  '
 
-def check_for_existing_weighdata(folder, url, se):
 
+def check_for_existing_weighdata(folder, url, se):
+    """Reads json file, if it exists, and loads as root object.  Saves backup of existing file.
+    Creates new file and corresponding empty root object if file doesn't yet exist.
+    
+    Parameters
+    ----------
+    folder : str
+    url : path (full) to json file
+    se : str
+
+    Returns
+    -------
+    root : :class:`root`
+        msl.io root object with a group for the given scheme entry in the main group 'Circular Weighings'
+    """
     if os.path.isfile(url):
         existing_root = read(url, encoding='utf-8')
-        if not os.path.exists(folder+"\\backups\\"):
+        if not os.path.exists(folder +"\\backups\\"):
             os.makedirs(folder+"\\backups\\")
-        new_index = len(os.listdir(folder + "\\backups\\"))
+        new_index = len(os.listdir(folder + "\\backups\\"))  # counts number of files in backup folder
         new_file = str(folder + "\\backups\\" + se + '_backup{}.json'.format(new_index))
         existing_root.is_read_only = False
         log.debug('Existing root is '+repr(existing_root))
@@ -40,6 +54,7 @@ def check_for_existing_weighdata(folder, url, se):
 
 
 def get_next_run_id(root, scheme_entry):
+    """Cycles through a root object to get the next unique run_id string for a new measurement"""
     i = 1
     while True:
         run_id = 'run_' + str(i)
@@ -54,21 +69,49 @@ def get_next_run_id(root, scheme_entry):
 
 def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, omega=None,
                      local_backup_folder=local_backup, **metadata):
+    """Routine to run a circular weighing by collecting data from a balance.
+    Note that this routine currently requires an OMEGA logger to be specified for monitoring of the ambient conditions.
 
+    Parameters
+    ----------
+    bal : :class:`Balance`
+        balance instance, initialised using src.configuration using a balance alias
+    se : str
+        scheme entry
+    root : :class:`root`
+        msl.io root object into which the weighing data is collected
+    url : path
+        where the msl.io root object is saved (here as a json file)
+    run_id : str
+    callback1
+        used by gui
+    callback2
+        used by gui
+    omega : :class:`dict`
+        dict of OMEGA alias and limits on ambient conditions
+    local_backup_folder : path
+    metadata : :class:`dict`
+
+    Returns
+    -------
+    msl.io root object if weighing was completed, False if weighing was not started, or None if weighing was aborted.
+    """
     local_backup_file = os.path.join(local_backup_folder, url.split('\\')[-1])
 
     metadata['Mmt Timestamp'] = datetime.now().strftime('%d-%m-%Y %H:%M')
     metadata['Time unit'] = 'min'
     metadata['Ambient monitoring'] = omega
 
-    ambient_pre = check_ambient_pre(omega)
+    ambient_pre = None
+    if omega: #TODO: allow other forms of ambient monitoring
+        ambient_pre = check_ambient_pre(omega)
     if not ambient_pre:
         log.info('Measurement not started due to unsuitable ambient conditions')
         return False
 
     weighing = CircWeigh(se)
     # assign positions to weight groups
-    if bal.mode == 'aw':
+    if bal.mode == 'aw': # TODO: integrate this part with aw class
         print('Please make pop-up to assign positions to weight groups')
         return None
     else:
@@ -248,15 +291,16 @@ def check_ambient_post(omega, ambient_pre):
 
     return ambient_post
 
+
 def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, EXCL=3, local_backup_folder=local_backup, **metadata):
-    """Analyse a single circular weighing measurement using methods in circ_weigh_class
+    """Analyse a single complete circular weighing measurement using methods in circ_weigh_class
 
     Parameters
     ----------
     root : :class:`root`
         see msl.io for details
     url : path
-        path to json file containing raw data
+        path to json file where analysis will be saved (along with measurement run data)
     se : :class:`str`
         scheme entry
     run_id : :class:`str`
@@ -274,6 +318,7 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
     -------
     :class:`root`
         the original root object with new analysis data
+    (or None if weighing was not completed)
     """
     schemefolder = root['Circular Weighings'][se]
     weighdata = schemefolder['measurement_' + run_id]
@@ -349,7 +394,7 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
 
     try:
         root.save(file=url, mode='w', encoding='utf-8', ensure_ascii=False)
-    except:
+    except OSError:
         local_backup_file = os.path.join(local_backup_folder, url.split('\\')[-1])
         root.save(file=local_backup_file, mode='w', ensure_ascii=False)
         log.warning('Data saved to local backup file: ' + local_backup_file)
@@ -359,55 +404,40 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
     return weighanalysis
 
 
-def analyse_old_weighing(folder, filename, se, run_id, bal_mode, timed, drift):
-    """Analyses a specific weighing run on file, with specified timed and drift parameters
-
-    Parameters
-    ----------
-    folder
-    filename
-    se
-    run_id
-    bal_mode : str
-    timed
-    drift
-
-    Returns
-    -------
-
-    """
-
-    url = folder+"\\"+filename+'.json'
-    root = check_for_existing_weighdata(folder, url, se)
-    weighanalysis = analyse_weighing(root, url, se, run_id, bal_mode, timed, drift)
+def analyse_old_weighing(cfg, filename, se, run_id):
+    """Analyses a specific weighing run on file, with timed and drift parameters as specified in the configuration"""
+    url = cfg.folder+"\\"+filename+'.json'
+    root = check_for_existing_weighdata(cfg.folder, url, se)
+    weighdata = root['Circular Weighings'][se]['measurement_' + run_id]
+    bal_alias = weighdata.metadata.get('Balance')
+    bal_mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
+    weighanalysis = analyse_weighing(root, url, se, run_id, bal_mode, cfg.timed, cfg.drift)
 
     return weighanalysis
 
 
-def analyse_all_weighings_in_file(folder, filename, se, bal_mode, timed, drift):
+def analyse_all_weighings_in_file(cfg, filename, se):
     """Analyses all weighings on file for a given scheme entry, with specified timed and drift parameters
 
     Parameters
     ----------
-    folder : path
-    filename : str
-    se : str
-    bal_mode : str
-    timed : bool
-    drift : str or :None:
-
-    Returns
-    -------
-
+    cfg : :class:`Configuration`
+        configuration instance (see src.Configuration)
+    filename : :class:`str`
+        e.g. client_nominal
+    se : :class:`str`
+        scheme entry, as per standard format e.g. "1 1s 0.5+0.5s"
     """
-
-    url = folder + "\\" + filename + '.json'
-    root = check_for_existing_weighdata(folder, url, se)
+    url = cfg.folder + "\\" + filename + '.json'
+    root = check_for_existing_weighdata(cfg.folder, url, se)
     i = 1
     while True:
         try:
             run_id = 'run_' + str(i)
-            analyse_weighing(root, url, se, run_id, bal_mode, timed, drift)
+            weighdata = root['Circular Weighings'][se]['measurement_' + run_id]
+            bal_alias = weighdata.metadata.get('Balance')
+            bal_mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
+            analyse_weighing(root, url, se, run_id, bal_mode, cfg.timed, cfg.drift)
             i += 1
         except KeyError:
             log.info('No more runs to analyse')
@@ -440,11 +470,11 @@ def check_existing_runs(root, scheme_entry):
                 try:
                     existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
                     ok = existing_analysis.metadata.get('Acceptance met?')
-                    aw_ok = existing_analysis.metadata.get('Exclude?')
+                    aw_bad = existing_analysis.metadata.get('Exclude?')
                     if ok:
                         # print('Weighing accepted')
                         good_runs += 1
-                    elif not aw_ok:
+                    elif not aw_bad:
                         # print('Weighing outside acceptance but allowed')
                         good_runs += 1
                 except KeyError:

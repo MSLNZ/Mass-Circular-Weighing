@@ -25,7 +25,7 @@ class Balance(object):
         self._want_abort = False
 
         self._unit = record.user_defined['unit']
-        if self.unit == "":
+        if not self._unit:
             self.set_unit()
 
         try:

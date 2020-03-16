@@ -162,7 +162,7 @@ class CircWeigh(object):
         """
         h = self._driftorder[drift]
         if h == 0:
-            print('Optimal correction is for no drift')
+            log.info('Optimal correction is for no drift')
         else:
             driftcoeff = np.zeros((h, 2))
             driftcoeff[:, 0] = self.b[drift][self.num_wtgrps:self.num_wtgrps + self._driftorder[drift]]
@@ -186,6 +186,8 @@ class CircWeigh(object):
 
         Returns
         -------
+        analysis : dataset
+            dataset with headings '+ weight group', '- weight group',  'mass difference', 'residual'
         self.grpdiffs : dict
             keys are weight groups by position e.g. grp1 - grp2; grp2 - grp3 etc
             values are mass differences in set unit, with standard deviation in brackets
@@ -203,8 +205,8 @@ class CircWeigh(object):
         vardiffab = np.linalg.multi_dot([w_T, self.varcovar[drift], w])
         stdev_diffab = np.sqrt(np.diag(vardiffab))
 
-        for grp in range(1, self.num_wtgrps):
-            key = 'grp' + str(grp) + ' - grp' + str(grp)
+        for grp in range(self.num_wtgrps - 1):
+            key = 'grp' + str(grp + 1) + ' - grp' + str(grp + 2)
             value = "{0:.5g}".format(diffab[grp]) + ' (' + "{0:.3g}".format(stdev_diffab[grp]) + ')'
             self.grpdiffs[key] = value
 

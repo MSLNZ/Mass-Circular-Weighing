@@ -1,6 +1,7 @@
 import sys, os
 
 from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot, utils
+from msl.io import read
 
 from src.log import log
 from src.gui.widgets.housekeeping import Housekeeping
@@ -8,7 +9,7 @@ from src.gui.widgets.scheme_table import SchemeTable
 from src.gui.circweigh_popup import WeighingThread
 from src.routines.run_circ_weigh import analyse_all_weighings_in_file
 from src.routines.collate_data import collate_all_weighings
-from src.routines.report_results import checkable_summary, export_results_summary
+from src.routines.report_results import export_results_summary
 from src.gui.masscalc_popup import MassCalcThread
 
 
@@ -45,12 +46,11 @@ def update_balances(bal_list):
 @Slot(int)
 def check_good_runs_in_file(row):
     nominal = schemetable.cellWidget(row, 1).text()
-    url = os.path.join(str(housekeeping.folder), str(housekeeping.client)+'_'+nominal+'.json')
+    url = os.path.join(housekeeping.cfg.folder, housekeeping.cfg.client+'_'+nominal+'.json')
     if not os.path.isfile(url):
         return None
 
     scheme_entry = schemetable.cellWidget(row, 0).text()
-    from msl.io import read
     root = read(url, encoding='utf-8')
 
     i = 0
@@ -84,18 +84,20 @@ def check_good_run_status():
         check_good_runs_in_file(row)
 
 def check_scheme():
-    schemetable.check_scheme_entries(housekeeping)
+    if not housekeeping.cfg.all_stds:
+        housekeeping.initialise_cfg()
+    schemetable.check_scheme_entries(housekeeping.cfg)
 
 def save_scheme():
-    folder = housekeeping.folder
-    filename = housekeeping.client + '_Scheme.xls'
+    folder = housekeeping.cfg.folder
+    filename = housekeeping.cfg.client + '_Scheme.xls'
     schemetable.save_scheme(folder, filename)
 
 def get_se_row():
     row = schemetable.currentRow()
-    if row == -1:
-        log.warn('No row selected')
-        return
+    if row < 0:
+        log.warning('No row selected')
+        return None
     log.info('\nRow ' + str(row + 1) + ' selected for weighing')
 
     se_row_data = schemetable.get_se_row_dict(row)
@@ -103,24 +105,18 @@ def get_se_row():
     return se_row_data
 
 def collect_n_good_runs():
-    row = schemetable.currentRow()
-    if schemetable.currentRow() < 0:
-        log.error('Please select a row')
-        return
-
-    try:
-        housekeeping.cfg.bal_class
-    except:
+    if not housekeeping.cfg.all_stds:
         housekeeping.initialise_cfg()
 
-    info = housekeeping.info
-
     se_row_data = get_se_row()
+
+    if not se_row_data:
+        return
 
     weigh_thread = WeighingThread()
     all_my_threads.append(weigh_thread)
     weigh_thread.weighing_done.connect(check_good_runs_in_file)
-    weigh_thread.show(se_row_data, info)
+    weigh_thread.show(se_row_data, housekeeping.cfg)
 
 def reanalyse_weighings():
     row = schemetable.currentRow()
@@ -130,25 +126,18 @@ def reanalyse_weighings():
 
     se = schemetable.cellWidget(row, 0).text()
     nom = schemetable.cellWidget(row, 1).text()
-    bal, bal_mode = housekeeping.cfg.get_bal_instance('CCE605')
-    filename = housekeeping.client+'_'+nom
+    filename = housekeeping.cfg.client+'_'+nom
 
-    if housekeeping.drift:
-        log.info('\nBeginning weighing analysis using ' + housekeeping.drift + ' correction\n')
+    if housekeeping.cfg.drift:
+        log.info('Beginning weighing analysis using ' + housekeeping.cfg.drift + ' correction\n')
     else:
-        log.info('\nBeginning weighing analysis using optimal drift correction\n')
+        log.info('Beginning weighing analysis using optimal drift correction\n')
 
-    analyse_all_weighings_in_file(housekeeping.folder, filename, se, bal_mode,
-                                  timed=housekeeping.timed, drift=housekeeping.drift)
+    analyse_all_weighings_in_file(housekeeping.cfg, filename, se)
     check_good_runs_in_file(row)
 
 def display_collated():
-    try:
-        folder = housekeeping.folder
-        client = housekeeping.client
-        client_wt_IDs = housekeeping.client_masses
-        std_masses = housekeeping.cfg.all_stds
-    except:
+    if not housekeeping.cfg.all_stds:
         housekeeping.initialise_cfg()
 
     if housekeeping.cfg.all_checks is not None:
@@ -156,15 +145,15 @@ def display_collated():
     else:
         check_wt_IDs = None
 
-    data = collate_all_weighings(schemetable, housekeeping)
+    data = collate_all_weighings(schemetable, housekeeping.cfg)
 
-    fmc_info = {'Folder': housekeeping.folder,
-                'Client': housekeeping.client,
-                'client_wt_IDs': housekeeping.client_masses,
+    fmc_info = {'Folder': housekeeping.cfg.folder,
+                'Client': housekeeping.cfg.client,
+                'client_wt_IDs': housekeeping.cfg.client_wt_IDs,
                 'check_wt_IDs': check_wt_IDs,
                 'std_masses': housekeeping.cfg.all_stds,
                 'nbc': True,
-                'corr': housekeeping.correlations,
+                'corr': housekeeping.cfg.correlations,
     }
     mass_thread.show(data, fmc_info)
 
@@ -175,9 +164,7 @@ def reporting(incl_datasets):
     else:
         check_set = None
     export_results_summary(
-        'job',
-        housekeeping.client,
-        housekeeping.folder,
+        housekeeping.cfg,
         check_set,
         housekeeping.cfg.all_stds['Set file'],
         incl_datasets,
@@ -203,17 +190,18 @@ central_panel_group = make_table_panel()
 
 housekeeping.balance_list.connect(update_balances)
 schemetable.check_good_runs_in_file.connect(check_good_runs_in_file)
+housekeeping.scheme_file.connect(schemetable.auto_load_scheme)
 
 mass_thread = MassCalcThread()
 mass_thread.report_summary.connect(reporting)
 
 layout = QtWidgets.QHBoxLayout()
-layout.addWidget(lhs_panel_group, 3)
-layout.addWidget(central_panel_group, 4)
-layout.addWidget(Logger(fmt='%(message)s'), 4)
+layout.addWidget(lhs_panel_group, 2)
+layout.addWidget(central_panel_group, 5)
+layout.addWidget(Logger(fmt='%(message)s'), 3)
 w.setLayout(layout)
-geo = utils.screen_geometry()
-w.resize(geo.width(), geo.height() // 1.25)
+# geo = utils.screen_geometry()
+# w.resize(geo.width(), geo.height() // 1.25)
 
 w.show()
 gui.exec()
