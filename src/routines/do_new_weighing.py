@@ -41,18 +41,28 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
 
 if __name__ == "__main__":
 
-    config = r'C:\Users\r.hawke.IRL\PycharmProjects\Mass-Circular-Weighing\config.xml'
+    config = r'I:\MSL\Private\Mass\transfer\Balance Software\K_C_Buildup\config.xml' #r'I:\MSL\Private\Mass\transfer\Balance Software\LUCY_BuildUp\config.xml'
     ### initialise configuration
     cfg = Configuration(config)
 
-    ### specify balance to use for weighing, and weights in comparison
-    scheme_entry = "01cMA 1r 1b 1l 1f" #"500 500MA 500MB" #"3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" #"1a 1b 1c 1d" # "5000 5000MA 5000MB"
+    cfg.init_ref_mass_sets()
+
+    '''
+    scheme_entries = [
+        "20KRA 10KMA+10KMB 20KRB 20KRC",
+        "20KRB 10KMA+10KMB 20KRC 20KRD",
+        "20KRC 10KMA+10KMB 20KRD 20KRA",
+        "20KRD 10KMA+10KMB 20KRA 20KRB",
+        ]'''
+    # #"500 500MA 500MB" #"3kn10+500mb+50mb+20mb 2ko+2kod 20KRD 10KMA+10KMB 20KRA 20KRB3kn11+500mb+50mb+20mb" #"1a 1b 1c 1d" # "5000 5000MA 5000MB"
     #"2000 2000MA 2000MB"  "1000 1000MA 1000MB"
     # "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example
     # "1 1s 0.5+0.5s" #
-    nominal_mass = 2  # nominal mass in g
-    bal_alias = 'MDE-demo' # codename for balance
+    nominal_mass = 100000  # nominal mass in g
+    bal_alias = 'K_C' # codename for balance
     omega_alias = 'Omega'
+
+    scheme_entry = "100kH 50kH+50kHd 100kHdd"
 
     filename = cfg.client + '_' + str(nominal_mass) # + '_' + run_id
 
@@ -60,10 +70,11 @@ if __name__ == "__main__":
     #     do_new_weighing(cfg, cfg.client, bal_alias, cfg.folder, filename, scheme_entry, nominal_mass,
     #                     timed=cfg.timed, drift=cfg.drift)
 
-    analyse_old_weighing(cfg, filename, scheme_entry, 'run_1')
+    # analyse_old_weighing(cfg, filename, scheme_entry, 'run_1')
 
     # balance, mode = cfg.get_bal_instance(bal_alias)
-    # analyse_all_weighings_in_file(cfg.folder, filename, scheme_entry, bal_mode=balance.mode, timed=cfg.timed, drift=cfg.drift)
+    #for scheme_entry in scheme_entries:
+    analyse_all_weighings_in_file(cfg, filename, scheme_entry)
 
     #inputdata = collate_a_data_from_json(cfg.folder, filename, scheme_entry)  # gets data in g
 

@@ -7,6 +7,7 @@ from src.routines.run_circ_weigh import *
 
 import winsound
 
+
 def label(name):
     return QtWidgets.QLabel(name)
 
@@ -30,7 +31,7 @@ class WeighingWorker(Worker):
 
         ac = self.cfg.acceptance_criteria(self.se_row_data['bal_alias'], float(self.se_row_data['nominal']))
 
-        # get OMEGA or Vaisala instance
+        # TODO: get OMEGA or Vaisala instance
         # if self.info['Omega logger']:
         #     omega_instance = cfg.get_omega_instance(self.info['Omega logger'])
         # else:

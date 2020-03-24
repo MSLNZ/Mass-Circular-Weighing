@@ -36,7 +36,7 @@ class Housekeeping(QtWidgets.QWidget):
         self.corr_io = QtWidgets.QLineEdit('None')
 
         self.cfg = None
-        self.go = Button(text='Confirm set up', left_click=self.initialise_cfg)
+        self.go = Button(text='Confirm settings', left_click=self.initialise_cfg)
 
     def arrange_housekeeping_box(self):
         self.formGroup = QtWidgets.QGroupBox()
