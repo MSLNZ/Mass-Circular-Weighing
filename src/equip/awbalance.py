@@ -2,7 +2,7 @@ import serial
 from src.equip.mettler import MettlerToledo
 from src.equip.mdebalance import Balance
 
-from ..gui.prompt_thread import PromptThread
+from src.gui.prompt_thread import PromptThread
 prompt_thread = PromptThread()
 from src.constants import FONTSIZE
 
