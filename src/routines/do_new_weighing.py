@@ -11,11 +11,7 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
     balance, mode = cfg.get_bal_instance(bal_alias)
     ac = cfg.acceptance_criteria(bal_alias, nominal_mass)
 
-    # get OMEGA instance if available
-    # if omega_alias:
-    #     omega_instance = cfg.get_omega_instance(omega_alias)
-    # else:
-    #     omega_instance=None
+    # get OMEGA instance for ambient monitoring
     omega_instance = cfg.get_omega_instance(bal_alias)
 
     # collect metadata
@@ -30,13 +26,13 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
     root = check_for_existing_weighdata(folder, url, scheme_entry)
     run_id = get_next_run_id(root, scheme_entry)
 
-    # weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, omega=omega_instance, **metadata)
-    #if not weighing_root:
-        #return False
+    weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, omega=omega_instance, **metadata)
+    if not weighing_root:
+        return False
 
-    #weigh_analysis = analyse_weighing(weighing_root, url, scheme_entry, run_id, timed, drift)
+    weigh_analysis = analyse_weighing(weighing_root, url, scheme_entry, run_id, mode, timed, drift)
 
-    #return weigh_analysis.metadata.get('Acceptance met?')
+    return weigh_analysis.metadata.get('Acceptance met?')
 
 
 if __name__ == "__main__":

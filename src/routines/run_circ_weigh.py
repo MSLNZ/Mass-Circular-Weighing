@@ -217,7 +217,7 @@ def check_ambient_pre(omega):
         log.warning('Missing initial ambient humidity value')
         return False
 
-    ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: np.round(t_start, 4), 'RH_pre (%)': np.round(rh_start, 4), }
+    ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: np.round(t_start, 2), 'RH_pre (%)': np.round(rh_start, 1), }
     log.info('Ambient conditions:' +
              'Temperature'+IN_DEGREES_C+': '+str(ambient_pre['T_pre'+IN_DEGREES_C])+
              '; Humidity (%): '+str(ambient_pre['RH_pre (%)']))

@@ -26,7 +26,8 @@ class PromptThread(Thread):
     def prompt(self, args, kwargs):
         """Popup a prompt"""
         self.reply = getattr(prompt, args[0])(args[1], *args[2:], **kwargs)
-        self.signal_prompt_done.emit()
+        if QtWidgets.QApplication.instance() is not None:
+            self.signal_prompt_done.emit()
 
     def wait_for_prompt_reply(self):
         """Block loop until the prompt popup window is closed"""
@@ -42,3 +43,10 @@ class PromptThread(Thread):
             self.prompt(args, kwargs)
         else:
             self.start(self, *args, **kwargs)
+
+
+if __name__ == '__main__':
+    pt = PromptThread()
+    pt.show('integer', 'Please select position', minimum=1, maximum=5,
+                       title='Balance Preparation')
+    print('Position:', pt.wait_for_prompt_reply())

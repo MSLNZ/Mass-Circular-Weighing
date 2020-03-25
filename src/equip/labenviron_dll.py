@@ -165,15 +165,24 @@ class LabEnviron64(Client64):
 
 
 if __name__ == '__main__':
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
     dll = LabEnviron64()
 
-    logger = 'mass 2'
-    sensor = 1
+    m1 = 'mass 1'
+    m2 = 'mass 2'
+    t1 = 'temperature 1'
 
-    print('Initial ambient conditions')
-    date_start, t_start, rh_start = dll.get_t_rh_now(logger, sensor)
+    # logger = t1
+    # sensor = 1
 
-    print(date_start, t_start, rh_start)
+    for logger in [m1, m2, t1]:
+        for sensor in [1, 2]:
+            print('Initial ambient conditions: ' + logger + ', sensor '+ str(sensor))
+            # date_start, t_start, rh_start = dll.get_t_rh_now(logger, sensor)
+            t_start, rh_start = dll.get_t_rh_during(logger, sensor, datetime(2020, 3, 17))
+            print(t_start, rh_start)
+
 
     # from time import sleep
     # sleep(66)

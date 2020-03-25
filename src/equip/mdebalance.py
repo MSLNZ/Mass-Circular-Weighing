@@ -1,12 +1,12 @@
 # Generic class for a balance without a computer interface
 
-from ..constants import SUFFIX, FONTSIZE
-from ..log import log
+from src.constants import SUFFIX, FONTSIZE
+from src.log import log
 from time import sleep
 
 import winsound
 
-from ..gui.prompt_thread import PromptThread
+from src.gui.prompt_thread import PromptThread
 prompt_thread = PromptThread()
 
 
@@ -79,6 +79,8 @@ class Balance(object):
         prompt_thread.show('item', 'Please select unit', ['µg', 'mg', 'g', 'kg'], font=FONTSIZE,
                            title='Balance Preparation')
         self._unit = prompt_thread.wait_for_prompt_reply()
+        if not self._unit:
+            self._want_abort = True
         return self._unit
 
     def zero_bal(self):

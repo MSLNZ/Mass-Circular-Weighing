@@ -126,18 +126,14 @@ class WeighingThread(Thread):
         zero = Button(text='Zero balance', left_click=self.zero_balance, )
         scale = Button(text='Scale adjustment', left_click=self.scale, )
         tare = Button(text='Tare balance', left_click=self.tare, )
-        start_weighing = Button(text='Start', left_click=self.start_weighing, )
-        reset_weighing = Button(text='Reset', left_click=self.reset_weighing, )
-        close_weighing = Button(text='Finish', left_click=self.window.close, )
+        start_weighing = Button(text='START', left_click=self.start_weighing, )
 
         controls = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QGridLayout()
-        controls_layout.addWidget(zero, 1, 0)
-        controls_layout.addWidget(scale, 2, 0)
-        controls_layout.addWidget(tare, 3, 0)
+        controls_layout.addWidget(zero, 0, 0)
+        controls_layout.addWidget(scale, 0, 1)
+        controls_layout.addWidget(tare, 1, 0)
         controls_layout.addWidget(start_weighing, 1, 1)
-        controls_layout.addWidget(reset_weighing, 2, 1)
-        controls_layout.addWidget(close_weighing, 3, 1)
         controls.setLayout(controls_layout)
 
         layout = QtWidgets.QVBoxLayout()
@@ -160,8 +156,8 @@ class WeighingThread(Thread):
         self.num_runs = se_row_data['num_runs']
 
         self.check_for_existing()
-
-        self.window.show()
+        if not self.bal.want_abort:
+            self.window.show()
 
     def zero_balance(self):
         self.bal.zero_bal()
@@ -175,9 +171,6 @@ class WeighingThread(Thread):
     def start_weighing(self, ):
         self.check_for_existing()
         self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.cfg, self.bal)
-
-    def reset_weighing(self, ):
-        self.bal._want_abort = False
 
     def close_comms(self, *args):
         self.bal._want_abort = True
