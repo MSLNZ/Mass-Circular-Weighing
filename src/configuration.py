@@ -70,7 +70,7 @@ class Configuration(object):
         else:
             self.all_checks = None
 
-    def get_bal_instance(self, alias, strict=True):
+    def get_bal_instance(self, alias, strict=True, **kwargs):
         """Selects balance class and returns balance instance
 
         Parameters
@@ -86,7 +86,7 @@ class Configuration(object):
         """
 
         mode = self.equipment[alias].user_defined['weighing_mode']
-        bal = self.bal_class[mode](self.equipment[alias])
+        bal = self.bal_class[mode](self.equipment[alias], **kwargs)
 
         return bal, mode
 

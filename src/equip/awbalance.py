@@ -2,13 +2,18 @@ import serial
 from src.equip.mettler import MettlerToledo
 from src.equip.mdebalance import Balance
 
+from src.log import log
+
 from src.gui.prompt_thread import PromptThread
-prompt_thread = PromptThread()
+from src.gui.widgets.aw_pos_allocator import AllocatorThread
 from src.constants import FONTSIZE
+
+prompt_thread = PromptThread()
+allocator = AllocatorThread()
 
 
 class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to balance
-    def __init__(self, record, reset=False):
+    def __init__(self, record, reset=False, demo=False, ):
         """Initialise Mettler Toledo Balance, with automatic weight loading, via computer interface
 
         Parameters
@@ -21,12 +26,15 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
         """
         super().__init__(record)
 
-        address = record.user_defined['address']
-        self.arduino = serial.Serial(port=address, baudrate=115200)
-        self.init_arduino()
+        if not demo:
+            address = record.user_defined['address']
+            self.arduino = serial.Serial(port=address, baudrate=115200)
+            self.init_arduino()
 
         self.num_pos = record.user_defined['pos']
         self._positions = range(1, record.user_defined['pos']+1, 1)
+
+        self.loading = None
 
         self.move_time = 0
 
@@ -42,16 +50,13 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
         print(self.arduino.readline().decode())
 
     def allocate_positions(self, wtgrps):
-        positions = []
-        for wtgrp in wtgrps:
-            prompt_thread.show('integer', 'Please select position for '+wtgrp, minimum=1, maximum=self.num_pos, font=FONTSIZE,
-                               title='Balance Preparation')
-            pos = prompt_thread.wait_for_prompt_reply()
-            positions.append(pos)
-
-        # if positions are all unique, accept, otherwise return
-        self._positions = positions
-        return self.positions
+        if len(wtgrps) > self.num_pos:
+            log.error('Too many weight groups for balance')
+            return None
+        w = AllocatorThread()
+        w.show(self.num_pos, wtgrps)
+        self.loading = w.wait_for_reply()
+        return self.loading
 
     def time_max_move(self, wtpos):
         hi = max(wtpos)
@@ -102,5 +107,4 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
 
 
     #TODO: add clean up to close connection
-
 
