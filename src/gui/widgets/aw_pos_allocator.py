@@ -1,117 +1,70 @@
-from msl.qt import Thread, Worker, prompt, Signal, QtCore, QtWidgets, QtGui, utils
+from msl.qt import QtWidgets, Button, Signal
+import numpy as np
 
 
-def label(name):
-    lbl = QtWidgets.QLabel(name)
-    lbl.wordWrap = True
-    return lbl
+class Allocator(QtWidgets.QWidget):
+    signal_alloc = Signal(list)
 
+    def __init__(self, num_pos, scheme_entry):
+        super(Allocator, self).__init__()
+        self.setWindowTitle('Position Allocator')
 
-def allocator(num_pos, scheme_entry):
-    """
+        pos = []
+        for i in range(num_pos):
+            pos.append('Position '+str(i+1))
+        self.pos_list = QtWidgets.QListWidget()
+        self.pos_list.addItems(pos)
 
-    Parameters
-    ----------
-    num_pos : int
-    scheme_entry : str
+        self.wtgrps = scheme_entry.split()
+        while len(self.wtgrps) < num_pos:
+            self.wtgrps.append('empty')
+        self.wtgrp_list = QtWidgets.QListWidget()
+        self.wtgrp_list.addItems(self.wtgrps)
+        self.wtgrp_list.setDragDropMode(self.wtgrp_list.InternalMove)
 
-    Returns
-    -------
+        lists = QtWidgets.QWidget()
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(self.pos_list, 1)
+        hbox.addWidget(self.wtgrp_list, 6)
+        lists.setLayout(hbox)
 
-    """
-    window = QtWidgets.QWidget()
-    f = QtGui.QFont()
-    f.setPointSize(FONTSIZE)
-    window.setFont(f)
-    window.setWindowTitle('Position Allocator')
-    # window.closeEvent =
-    geo = utils.screen_geometry()
-    window.resize(geo.width() // 2, geo.height())
+        shuffle = Button(text='Shuffle all down one position', left_click=self.roll)
+        accept = Button(text='Accept loading positions', left_click=self.accept_loading_order)
 
-    for i in range(num_pos):
-        print(i)
-    wtgrps = scheme_entry.split()
-    for wtgrp in wtgrps:
-        print(wtgrp)
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(lists)
+        vbox.addWidget(shuffle)
+        vbox.addWidget(accept)
+        self.setLayout(vbox)
 
-    return window
+    def roll(self):
+        loading = []
+        for i in range(num_pos):
+            loading.append(self.wtgrp_list.item(i).text())
+        self.wtgrps = np.roll(loading, 1)
+        self.wtgrp_list.clear()
+        self.wtgrp_list.addItems(self.wtgrps)
 
-    # self.scheme_entry = label('scheme_entry')
-    # self.nominal_mass = label('nominal')
-    # self.run_id = label('0')
-    # self.cycle = label('0')
-    # self.position = label('0')
-    # self.reading = label('0')
-
-
-
-class PromptWorker(Worker):
-
-    def __init__(self, parent, *args, **kwargs):
-        super(PromptWorker, self).__init__()
-        self.parent = parent
-        self.args = args
-        self.kwargs = kwargs
-
-    def process(self):
-        self.parent.signal_prompt.emit(self.args, self.kwargs)
-
-
-class PromptThread(Thread):
-
-    signal_prompt = Signal(tuple, dict)
-    signal_prompt_done = Signal()
-
-    def __init__(self):
-        super(PromptThread, self).__init__(PromptWorker)
-        self.reply = None
-        self.signal_prompt.connect(self.prompt)
-
-    def prompt(self, args, kwargs):
-        """Popup a prompt"""
-
-
-        self.reply = getattr(prompt, args[0])(args[1], *args[2:], **kwargs)
-
-
-        self.signal_prompt_done.emit()
-
-    def wait_for_prompt_reply(self):
-        """Block loop until the prompt popup window is closed"""
-        if QtWidgets.QApplication.instance() is not None:
-            loop = QtCore.QEventLoop()
-            self.signal_prompt_done.connect(loop.quit)
-            loop.exec_()
-        return self.reply
-
-    def show(self, *args, **kwargs):
-        self.reply = None
-        if QtWidgets.QApplication.instance() is None:
-            self.prompt(args, kwargs)
-        else:
-            self.start(self, *args, **kwargs)
+    def accept_loading_order(self):
+        loading = []
+        for i in range(num_pos):
+            loading.append(self.wtgrp_list.item(i).text())
+        print(loading)
+        self.close()
+        self.signal_alloc.emit(loading)
 
 
 if __name__ == '__main__':
-    from src.gui.prompt_thread import PromptThread
+    import sys
+    from msl.qt import application, excepthook
 
-    prompt_thread = PromptThread()
-    from src.constants import FONTSIZE
+    sys.excepthook = excepthook
+
+    gui = application()
 
     num_pos = 5
+    se = 'A B C'
 
-    def allocate_positions(wtgrps):
-        positions = []
-        for wtgrp in wtgrps:
-            prompt_thread.show('integer', 'Please select position for '+wtgrp, minimum=1, maximum=num_pos, font=FONTSIZE,
-                               title='Balance Preparation')
-            pos = prompt_thread.wait_for_prompt_reply()
-            positions.append(pos)
-
-        # if positions are all unique, accept, otherwise return
-        return positions
-
-    se = 'A B C D'
-    wtgrps = se.split()
-
-    print(allocate_positions(wtgrps))
+    w = Allocator(num_pos, se)
+    w.show()
+    gui.exec()
