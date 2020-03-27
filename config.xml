@@ -2,7 +2,7 @@
   <msl>
 
     <!-- Specify client-specific information. -->
-    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\Job</save_folder> <!-- parent folder -->
+    <save_folder>C:\Users\r.hawke\Documents\</save_folder> <!-- parent folder -->
     <job>job</job>
     <client>client</client>      <!-- Files will be created with this name inside the parent folder -->
     <client_masses>1r 1b 1l 1f</client_masses>
@@ -15,7 +15,7 @@
     <!-- Specify all balances available for weighings. -->
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
     <equipment alias="AW-demo" manufacturer="Mettler Toledo" model="Test_AW"/>
-    <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPR604"/>
+    <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPR604KMC"/>
     <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
     <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
@@ -35,7 +35,7 @@
 
     <!-- Specify where to find acceptance limits for circular weighing data. -->
     <acceptance_criteria>
-          <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
+          <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Balance register.xlsx</path>
           <sheet>AcceptanceCriteria</sheet>
           <EXCL>3</EXCL> <!-- criterion for excluding a single weighing within an automatic weighing sequence
                             from the final averaging (and from any tally of happy weighings).
@@ -44,11 +44,11 @@
 
     <!-- Specify all standard sets available for weighing analysis. -->
     <standards>
-          <MET19A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19A.set</MET19A>
-          <MET19B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19B.set</MET19B>
-          <MET16A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16A.set</MET16A>
-          <MET16B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16B.set</MET16B>
-          <CUSTOM>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\CUSTOM.set</CUSTOM>
+          <MET19A>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\MET19A.set</MET19A>
+          <MET19B>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\MET19B.set</MET19B>
+          <MET16A>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\MET16A.set</MET16A>
+          <MET16B>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\MET16B.set</MET16B>
+          <CUSTOM>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\CUSTOM.set</CUSTOM>
     </standards>
 
     <!-- Specify the Equipment-Register Databases to load equipment records from. -->
@@ -56,12 +56,12 @@
       <register
               team="M&amp;P"
               user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, address">
-          <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
+          <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>
 
       <register team="M&amp;P">
-          <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
+          <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Equipment register.xlsx</path>
           <sheet>Equipment</sheet>
       </register>
     </registers>
@@ -69,7 +69,7 @@
     <!-- Specify the Connections Databases to load connection records from. -->
     <connections>
       <connection>
-        <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
+        <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Equipment register.xlsx</path>
         <sheet>LenovoX260</sheet>
       </connection>
     </connections>

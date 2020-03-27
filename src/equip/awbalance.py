@@ -9,7 +9,6 @@ from src.gui.widgets.aw_pos_allocator import AllocatorThread
 from src.constants import FONTSIZE
 
 prompt_thread = PromptThread()
-allocator = AllocatorThread()
 
 
 class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to balance
@@ -31,10 +30,8 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
             self.arduino = serial.Serial(port=address, baudrate=115200)
             self.init_arduino()
 
-        self.num_pos = record.user_defined['pos']
-        self._positions = range(1, record.user_defined['pos']+1, 1)
-
-        self.loading = None
+        self.num_pos = record.user_defined['pos']  # num_pos is the total number of available loading positions
+        self._positions = None
 
         self.move_time = 0
 
@@ -44,6 +41,7 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
 
     @property
     def positions(self):
+        """Returns a list of positions for the weight groups in the order the groups appear in the scheme entry."""
         return self._positions
 
     def init_arduino(self):
@@ -53,10 +51,11 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
         if len(wtgrps) > self.num_pos:
             log.error('Too many weight groups for balance')
             return None
-        w = AllocatorThread()
-        w.show(self.num_pos, wtgrps)
-        self.loading = w.wait_for_reply()
-        return self.loading
+        # allocator = AllocatorThread()
+        w = AllocatorThread(self.num_pos, wtgrps)
+        w.show()
+        self._positions = w.wait_for_reply()
+        return self.positions
 
     def time_max_move(self, wtpos):
         hi = max(wtpos)

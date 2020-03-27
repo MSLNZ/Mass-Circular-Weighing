@@ -112,7 +112,8 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     weighing = CircWeigh(se)
     # assign positions to weight groups
     if bal.mode == 'aw':
-        positions = bal.allocate_positions(weighing.wtgrps)
+        if not bal.positions:
+            positions = bal.allocate_positions(weighing.wtgrps)
     else:
         positions = range(1, weighing.num_wtgrps + 1, 1)
 

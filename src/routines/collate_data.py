@@ -39,7 +39,7 @@ def collate_all_weighings(schemetable, cfg):
         if schemetable.cellWidget(row, 1).text():
             filename = client + '_' + schemetable.cellWidget(row, 1).text()
             url = os.path.join(folder, filename + '.json')
-            log.debug('Collated scheme entry '+schemetable.cellWidget(row, 0).text()+' from '+url)
+
             bal_alias = schemetable.cellWidget(row, 2).currentText()
             mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
             if mode == 'aw':
@@ -59,6 +59,8 @@ def collate_all_weighings(schemetable, cfg):
                 data[-len(newdata):]['residual (' + MU_STR + 'g)'] = newdata[:]['residual (' + MU_STR + 'g)']
                 data[-len(newdata):]['balance uncertainty ('+MU_STR+'g)'] = newdata[:]['balance uncertainty ('+MU_STR+'g)']
                 data[-len(newdata):]['Acceptance met?'] = newdata[:]['Acceptance met?']
+
+                log.debug('Collated scheme entry '+schemetable.cellWidget(row, 0).text()+' from '+url)
 
     return data
 

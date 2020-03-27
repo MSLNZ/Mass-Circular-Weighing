@@ -115,6 +115,7 @@ def collect_n_good_runs():
 
     weigh_thread = WeighingThread()
     all_my_threads.append(weigh_thread)
+
     weigh_thread.weighing_done.connect(check_good_runs_in_file)
     weigh_thread.show(se_row_data, housekeeping.cfg)
 

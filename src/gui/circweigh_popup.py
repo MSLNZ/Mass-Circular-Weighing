@@ -9,7 +9,9 @@ import winsound
 
 
 def label(name):
-    return QtWidgets.QLabel(name)
+    lbl = QtWidgets.QLabel(name)
+    lbl.wordWrap = True
+    return lbl
 
 
 class WeighingWorker(Worker):
@@ -105,6 +107,9 @@ class WeighingThread(Thread):
         self.window.setFont(f)
         self.window.setWindowTitle('Circular Weighing')
         self.window.closeEvent = self.close_comms
+        geo = utils.screen_geometry()
+        self.window.resize(geo.width() // 2, geo.height())
+
         self.scheme_entry = label('scheme_entry')
         self.nominal_mass = label('nominal')
         self.run_id = label('0')
@@ -140,9 +145,6 @@ class WeighingThread(Thread):
         layout.addWidget(status)
         layout.addWidget(controls)
         self.window.setLayout(layout)
-
-        geo = utils.screen_geometry()
-        self.window.resize(geo.width() // 2, geo.height())
 
         self.finished.connect(self.window.close)
 
