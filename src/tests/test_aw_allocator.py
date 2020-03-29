@@ -1,4 +1,4 @@
-from src.gui.widgets.aw_pos_allocator import AllocatorThread
+from src.gui.widgets.aw_pos_allocator import AllocatorDialog
 
 import sys
 
@@ -12,8 +12,8 @@ num_pos = 5
 se = 'A B C'
 wtgrps = se.split()
 
-w = AllocatorThread(num_pos, wtgrps)
+w = AllocatorDialog(num_pos, wtgrps)
 w.show()
-print(w.wait_for_reply())
 gui.exec()
-
+pos = w.positions
+print(pos)

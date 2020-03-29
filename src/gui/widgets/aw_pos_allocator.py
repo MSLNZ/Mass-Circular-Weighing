@@ -6,7 +6,7 @@ class AllocatorDialog(QtWidgets.QDialog):
 
     def __init__(self, num_pos, wtgrps, parent=None):
         super().__init__(parent=parent)
-        self.setWindowTitle('Position Allocator')
+        self.setWindowTitle('Allocate Weight Groups to Positions')
 
         self.wtgrps = wtgrps
         self.positions = []

@@ -4,11 +4,9 @@ from src.equip.mdebalance import Balance
 
 from src.log import log
 
-from src.gui.prompt_thread import PromptThread
-from src.gui.widgets.aw_pos_allocator import AllocatorThread
-from src.constants import FONTSIZE
+from src.gui.allocator_thread import AllocatorThread
 
-prompt_thread = PromptThread()
+from src.constants import FONTSIZE
 
 
 class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to balance
@@ -51,10 +49,9 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
         if len(wtgrps) > self.num_pos:
             log.error('Too many weight groups for balance')
             return None
-        # allocator = AllocatorThread()
-        w = AllocatorThread(self.num_pos, wtgrps)
-        w.show()
-        self._positions = w.wait_for_reply()
+        at = AllocatorThread()
+        at.show(self.num_pos, wtgrps)
+        self._positions = at.wait_for_prompt_reply()
         return self.positions
 
     def time_max_move(self, wtpos):
