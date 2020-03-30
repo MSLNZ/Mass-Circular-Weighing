@@ -42,7 +42,6 @@ class AllocatorThread(Thread):
     def show(self, *args, **kwargs):
         self.reply = None
         if QtWidgets.QApplication.instance() is None:
-            gui = application()
             self.allocator(args, kwargs)
         else:
             self.start(self, *args, **kwargs)

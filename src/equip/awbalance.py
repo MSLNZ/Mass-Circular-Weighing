@@ -4,8 +4,8 @@ from src.equip.mdebalance import Balance
 
 from src.log import log
 
-from src.gui.allocator_thread import AllocatorThread
-
+# from src.gui.allocator_thread import AllocatorThread
+from src.gui.widgets.aw_pos_allocator import AllocatorDialog
 from src.constants import FONTSIZE
 
 
@@ -23,10 +23,11 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
         """
         super().__init__(record)
 
-        if not demo:
-            address = record.user_defined['address']
-            self.arduino = serial.Serial(port=address, baudrate=115200)
-            self.init_arduino()
+        self.arduino = None
+        # if not demo:
+        #     address = record.user_defined['address']
+        #     self.arduino = serial.Serial(port=address, baudrate=115200)
+        #     self.init_arduino()
 
         self.num_pos = record.user_defined['pos']  # num_pos is the total number of available loading positions
         self._positions = None
@@ -45,13 +46,13 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
     def init_arduino(self):
         print(self.arduino.readline().decode())
 
-    def allocate_positions(self, wtgrps):
+    def allocate_positions(self, wtgrps, ):
         if len(wtgrps) > self.num_pos:
             log.error('Too many weight groups for balance')
             return None
-        at = AllocatorThread()
-        at.show(self.num_pos, wtgrps)
-        self._positions = at.wait_for_prompt_reply()
+        at = AllocatorDialog(self.num_pos, wtgrps)
+        at.exec()
+        self._positions = at.positions
         return self.positions
 
     def time_max_move(self, wtpos):
