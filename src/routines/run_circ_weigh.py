@@ -102,20 +102,15 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     metadata['Time unit'] = 'min'
     metadata['Ambient monitoring'] = omega
 
-    ambient_pre = None
-    if omega: #TODO: allow other forms of ambient monitoring
-        ambient_pre = check_ambient_pre(omega)
-    if not ambient_pre:
-        log.info('Measurement not started due to unsuitable ambient conditions')
-        return False
-
     weighing = CircWeigh(se)
     # assign positions to weight groups
     if bal.mode == 'aw':
         if not bal.positions:
             positions = bal.allocate_positions(weighing.wtgrps)
+        else:
+            positions = bal.positions
     else:
-        positions = range(1, weighing.num_wtgrps + 1, 1)
+        positions = range(1, weighing.num_wtgrps + 1)
 
     positionstr = ''
     positiondict = {}
@@ -129,6 +124,13 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
              '\nNumber of cycles = '+ str(weighing.num_cycles) +
              '\nWeight groups are positioned as follows:' +
              '\n' + positionstr.strip('\n'))
+
+    ambient_pre = None
+    if omega: #TODO: allow other forms of ambient monitoring
+        ambient_pre = check_ambient_pre(omega)
+    if not ambient_pre:
+        log.info('Measurement not started due to unsuitable ambient conditions')
+        return False
 
     data = np.empty(shape=(weighing.num_cycles, weighing.num_wtgrps, 2))
     weighdata = root['Circular Weighings'][se].require_dataset('measurement_' + run_id, data=data)

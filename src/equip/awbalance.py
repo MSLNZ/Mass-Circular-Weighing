@@ -9,7 +9,7 @@ allocator = AllocatorThread()
 
 
 class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to balance
-    def __init__(self, record, reset=False, demo=False, ):
+    def __init__(self, record, reset=False, ):
         """Initialise Mettler Toledo Balance, with automatic weight loading, via computer interface
 
         Parameters
@@ -22,10 +22,12 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
         """
         super().__init__(record)
 
-        if not demo:
-            address = record.user_defined['address']
-            self.arduino = serial.Serial(port=address, baudrate=115200)
-            self.init_arduino()
+        address = record.user_defined['address']
+        self.arduino = None
+        '''Return when using arduino:
+        serial.Serial(port=address, baudrate=115200)
+        self.init_arduino()
+        '''
 
         self.num_pos = record.user_defined['pos']  # num_pos is the total number of available loading positions
         self._positions = None
@@ -42,7 +44,14 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
         return self._positions
 
     def init_arduino(self):
+        """Initialisation procedure for weight changer arduino - TODO
+
+        Returns
+        -------
+        Bool to indicate ready status of weight changer
+        """
         print(self.arduino.readline().decode())
+        # if status BAD, set self._want_abort = True (see parent Balance class)
 
     def allocate_positions(self, wtgrps, ):
         if len(wtgrps) > self.num_pos:
@@ -50,17 +59,20 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
             return None
         allocator.show(self.num_pos, wtgrps)
         self._positions = allocator.wait_for_prompt_reply()
+        # TODO: at this point it would be sensible to ask operator to confirm ready for timed move routine to commence
+        # e.g. prompt ok_cancel to begin balance initialisation, commence time_max_move
         return self.positions
 
-    def time_max_move(self, wtpos):
-        hi = max(wtpos)
-        lo = min(wtpos)
-        print(hi, lo)
-        # move to hi
-        # start timer
-        # move to lo
-        # stop timer
-        self.move_time = 0 # elapsed_time
+    def time_max_move(self):
+        if not self.want_abort:
+            hi = max(self.positions)
+            lo = min(self.positions)
+            print(hi, lo)
+            # self.move_to_pos(hi)
+            # start timer
+            # self.move_to_pos(lo)
+            # stop timer
+            # self.move_time = elapsed_time
 
     def move_to_pos(self, pos):
         if not self.want_abort:
@@ -93,9 +105,9 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
         if not self.want_abort:
             # send command to arduino to unload balance
             unload_str = 'U '+str(pos)+'\n'
-            self.arduino.write(unload_str.encode())  # send: unload = U, and position = int
-            reply = self.arduino.readline()
-            print(reply)
+            # self.arduino.write(unload_str.encode())  # send: unload = U, and position = int
+            # reply = self.arduino.readline()
+            # print(reply)
             # winsound.Beep(880, 300)
             print('Unloaded '+mass+' (position '+str(pos)+')')
 
