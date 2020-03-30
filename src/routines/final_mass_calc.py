@@ -3,7 +3,7 @@ from datetime import datetime
 import numpy as np
 from msl.io import JSONWriter, read
 from src.log import log
-from src.constants import REL_UNC
+from src.constants import SW_VERSION, REL_UNC
 
 
 def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None):
@@ -36,7 +36,11 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     filesavepath = os.path.join(folder, client + '_finalmasscalc.json')
     make_backup(folder, filesavepath, client, )
 
-    metadata = {'Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'), "Client": client}
+    metadata = {
+        'Program Version': SW_VERSION,
+        'Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'),
+        "Client": client
+    }
     finalmasscalc = JSONWriter(filesavepath, metadata=metadata)
 
     mass_sets = finalmasscalc.require_group('1: Mass Sets')

@@ -242,3 +242,30 @@ def load_stds_from_set_file(path, wtset):
     fp.close()
     return stds
 
+# def get_std_info_excel(path, sheet=None, set_ID=""):
+#     std_set_table = read_table_excel(path, sheet=sheet)
+#
+#     std_set = {'Set file': path}
+#     for key in {'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (' + MU_STR + 'g)'}:
+#         std_set[key] = []
+#
+#     for r in range(len(std_set_table)):
+#         nom = std_set_table[r,0]
+#         trunc_val = '{:g}'.format((float(nom)))
+#         if float(trunc_val) > 999:
+#             trunc_val = '{:g}'.format(float(trunc_val) / 1000) + 'k'
+#         if std_set_table[r,1] is
+#         std_set['nominal (g)'].append(nom)
+#         std_set['weight ID'].append(trunc_val + id + set_ID)
+#         std_set['mass values (g)'].append(float(std_set_table[r,2]))
+#         std_set['uncertainties (' + MU_STR + 'g)'].append(float(std_set_table[r,2]))
+#
+#     return std_set
+
+
+# std_set_path = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\TradingStandards2015\StandardSets.xlsx'
+# check_set = get_std_info_excel(std_set_path, sheet='MET13B', set_ID='MB')
+# std_set = get_std_info_excel(std_set_path, sheet = 'MET13A', set_ID='MA')
+
+# print(check_set)
+# print(std_set)

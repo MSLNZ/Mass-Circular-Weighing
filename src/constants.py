@@ -2,6 +2,8 @@
 
 import os
 
+SW_VERSION = 0.0            # version of this Python program
+
 MU_STR = 'u' #'µ'                # ALT+0181 or 'µ'
 SIGMA_STR = 'σ'             # \u03C3 for sigma sign
 SQUARED_STR = '²'
