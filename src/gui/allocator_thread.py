@@ -1,4 +1,4 @@
-from msl.qt import application, Thread, Worker, Signal, QtCore, QtWidgets
+from msl.qt import Thread, Worker, Signal, QtCore, QtWidgets
 from src.gui.widgets.aw_pos_allocator import AllocatorDialog
 
 class AllocatorWorker(Worker):
@@ -47,7 +47,3 @@ class AllocatorThread(Thread):
             self.start(self, *args, **kwargs)
 
 
-if __name__ == '__main__':
-    pt = AllocatorThread()
-    pt.show(5, 'A B C'.split())
-    print('Position:', pt.wait_for_prompt_reply())
