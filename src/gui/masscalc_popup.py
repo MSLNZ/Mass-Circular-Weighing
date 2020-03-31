@@ -54,6 +54,7 @@ class DiffsTable(QtWidgets.QTableWidget):
     ['+ weight group', '- weight group', 'mass difference (g)',
     'balance uncertainty (' + MU_STR + 'g)', 'Acceptance met?', 'residual (' + MU_STR + 'g)']
     """
+    tickbox = Signal(int)
 
     def __init__(self, data):
         super(DiffsTable, self).__init__()
@@ -76,6 +77,24 @@ class DiffsTable(QtWidgets.QTableWidget):
             for j in range(self.columnCount()-1):
                 self.setCellWidget(i, j, QtWidgets.QLabel())
             self.setCellWidget(i, self.columnCount()-1, QtWidgets.QCheckBox())
+            self.cellWidget(i, self.columnCount() - 1).stateChanged.connect(self.update_checkboxes)
+
+    @Slot(int)
+    def update_checkboxes(self, state):
+        i = self.currentRow()
+        try:
+            a = (self.cellWidget(i, 0).text(), self.cellWidget(i, 1).text(), self.cellWidget(i, 2).text())
+            for j in range(self.rowCount()):
+                try:
+                    b = (self.cellWidget(j, 0).text(), self.cellWidget(j, 1).text(), self.cellWidget(j, 2).text())
+                    if a == b:
+                        # finds which other rows are from the same measurement run
+                        # and sets them to the same checked or unchecked state
+                        self.cellWidget(j, self.columnCount() - 1).setCheckState(state)
+                except AttributeError:  # e.g. no data in row yet
+                    pass
+        except AttributeError:  # e.g. no data in row yet
+            pass
 
     def fill_table(self, data):
         for i in range(len(data)):
@@ -126,6 +145,7 @@ class DiffsTable(QtWidgets.QTableWidget):
                     i += 1
                 else:
                     self.cellWidget(row, 9).setText("")
+
 
 class MassValuesTable(QtWidgets.QTableWidget):
 

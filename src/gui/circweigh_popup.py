@@ -10,7 +10,7 @@ import winsound
 
 def label(name):
     lbl = QtWidgets.QLabel(name)
-    lbl.wordWrap = True
+    lbl.setWordWrap(True)
     return lbl
 
 
