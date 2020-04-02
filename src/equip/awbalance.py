@@ -79,7 +79,7 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
             move_str = 'M '+str(pos)+'\n'   # send: move = M, and position = int
             print(move_str)
             # arduino.write(move_str.encode())
-            # reply = arduino.readline().decode
+            # reply = arduino.readline().decode()
             # print(reply)
 
     def load_bal(self, mass, pos):
@@ -106,7 +106,7 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
             # send command to arduino to unload balance
             unload_str = 'U '+str(pos)+'\n'
             # self.arduino.write(unload_str.encode())  # send: unload = U, and position = int
-            # reply = self.arduino.readline()
+            # reply = self.arduino.readline().decode()
             # print(reply)
             # winsound.Beep(880, 300)
             print('Unloaded '+mass+' (position '+str(pos)+')')
