@@ -324,7 +324,6 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
     (or None if weighing was not completed)
     """
     schemefolder = root['Circular Weighings'][se]
-    print(schemefolder)
     weighdata = schemefolder['measurement_' + run_id]
 
     if not weighdata.metadata.get('Weighing complete'):
@@ -361,7 +360,6 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
 
     print(schemefolder.name + '/analysis_' + run_id)
     a = root.remove(schemefolder.name+'/analysis_'+run_id)
-    print(a)
 
     weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
                                                  data=analysis, shape=(weighing.num_wtgrps, 1))
@@ -439,10 +437,8 @@ def analyse_all_weighings_in_file(cfg, filename, se):
     while True:
         try:
             run_id = 'run_' + str(i)
-            print(run_id)
             root = check_for_existing_weighdata(cfg.folder, url, se)
             weighdata = root['Circular Weighings'][se]['measurement_' + run_id]
-            print(['Circular Weighings'], [se], ['measurement_' + run_id])
             bal_alias = weighdata.metadata.get('Balance')
             bal_mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
             analyse_weighing(root, url, se, run_id, bal_mode, cfg.timed, cfg.drift)

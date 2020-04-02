@@ -8,7 +8,7 @@ import numpy as np
 
 def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass, timed=False, drift='quadratic drift'):
     # get balance instance
-    balance, mode = cfg.get_bal_instance(bal_alias, demo=True)
+    balance, mode = cfg.get_bal_instance(bal_alias)
     ac = cfg.acceptance_criteria(bal_alias, nominal_mass)
 
     # get OMEGA instance for ambient monitoring
@@ -37,28 +37,27 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
 
 if __name__ == "__main__":
 
-    config = r'I:\MSL\Private\Mass\transfer\Balance Software\K_C_Buildup\config.xml' #r'I:\MSL\Private\Mass\transfer\Balance Software\LUCY_BuildUp\config.xml'
+    config = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\LUCY\config.xml' #r'I:\MSL\Private\Mass\transfer\Balance Software\LUCY_BuildUp\config.xml'
     ### initialise configuration
     cfg = Configuration(config)
 
-    cfg.init_ref_mass_sets()
+    # cfg.init_ref_mass_sets()
 
-    '''
     scheme_entries = [
         "20KRA 10KMA+10KMB 20KRB 20KRC",
         "20KRB 10KMA+10KMB 20KRC 20KRD",
         "20KRC 10KMA+10KMB 20KRD 20KRA",
         "20KRD 10KMA+10KMB 20KRA 20KRB",
-        ]'''
+        ]
     # #"500 500MA 500MB" #"3kn10+500mb+50mb+20mb 2ko+2kod 20KRD 10KMA+10KMB 20KRA 20KRB3kn11+500mb+50mb+20mb" #"1a 1b 1c 1d" # "5000 5000MA 5000MB"
     #"2000 2000MA 2000MB"  "1000 1000MA 1000MB"
     # "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example
     # "1 1s 0.5+0.5s" #
-    nominal_mass = 100000  # nominal mass in g
-    bal_alias = 'K_C' # codename for balance
+    nominal_mass = 20000  # nominal mass in g
+    bal_alias = 'LUCY' # codename for balance
     omega_alias = 'Omega'
 
-    scheme_entry = "100kH 50kH+50kHd 100kHdd"
+    # scheme_entry = "100kH 50kH+50kHd 100kHdd"
 
     filename = cfg.client + '_' + str(nominal_mass) # + '_' + run_id
 
@@ -70,7 +69,7 @@ if __name__ == "__main__":
 
     # balance, mode = cfg.get_bal_instance(bal_alias)
     #for scheme_entry in scheme_entries:
-    analyse_all_weighings_in_file(cfg, filename, scheme_entry)
+    analyse_all_weighings_in_file(cfg, filename, scheme_entries[3])
 
     #inputdata = collate_a_data_from_json(cfg.folder, filename, scheme_entry)  # gets data in g
 
