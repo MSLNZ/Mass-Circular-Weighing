@@ -6,7 +6,7 @@ from src.log import log
 from src.constants import SW_VERSION, REL_UNC
 
 
-def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata, nbc=True, corr=None):
+def final_mass_calc(folder, client, client_wt_IDs, check_masses, std_masses, inputdata, nbc=True, corr=None):
     """Calculates mass values using matrix least squares methods
 
     Parameters
@@ -16,8 +16,8 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     client : str
         name of client
     client_wt_IDs : list
-        list of client wt IDs as str, as used in the circular weighing scheme
-    check_wt_IDs : list or None
+        list of client wt IDs as strings, as used in the circular weighing scheme
+    check_masses : dict
         list of check wt IDs as str, as used in the circular weighing scheme
         None if no check weights are used
     std_masses : dict
@@ -49,41 +49,28 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     scheme_std = mass_sets.require_group('Standard')
 
     # import lists of masses from supplied info
+    log.info('Beginning mass calculation for the following client masses:\n'+str(client_wt_IDs))
+    # get client weight IDs for metadata
     num_client_masses = len(client_wt_IDs)
     scheme_client.add_metadata(**{
         'Number of masses': num_client_masses,
-        'client weight ID': client_wt_IDs
+        'weight ID': client_wt_IDs
     })
 
-    if not check_wt_IDs:
+    # get number of check masses, if used, and save as dataset
+    if not check_masses:
+        num_check_masses = 0
         check_wt_IDs = []
-    num_check_masses = len(check_wt_IDs)
-    scheme_check.add_metadata(**{
-        'Number of masses': num_check_masses,
-        'check weight ID': check_wt_IDs
-    })
+        scheme_check.add_metadata(**{
+            'Number of masses': num_check_masses,
+            'Set Identifier': 'No check set'})
+        log.info('Checks: None')
+    else:
+        check_wt_IDs = check_masses['weight ID']
+        num_check_masses = make_stds_dataset('Checks', check_masses, scheme_check)
 
-    log.info('Beginning mass calculation with the following inputs\n' +
-             'Client masses: '+str(client_wt_IDs)+ '\n' +
-             'Check masses: ' + str(check_wt_IDs))
-
-    num_stds = len(std_masses['mass values (g)'])
-    std_masses_dataarray = np.empty(num_stds, dtype={
-            'names': ('std weight ID', 'nominal (g)', 'std mass values (g)', 'std uncertainties (ug)'),
-            'formats': (object, np.float, np.float, np.float)})
-    std_masses_dataarray['std weight ID'] = std_masses['weight ID']
-    std_masses_dataarray['nominal (g)'] = std_masses['nominal (g)']
-    std_masses_dataarray['std mass values (g)'] = std_masses['mass values (g)']
-    std_masses_dataarray['std uncertainties (ug)'] = std_masses['uncertainties (ug)']
-
-    scheme_std.add_metadata(**{
-        'Number of masses': num_stds,
-        'Set Identifier': std_masses['Set Identifier'],
-        'Calibrated': std_masses['Calibrated'],
-        'std weight ID': std_masses['weight ID'],
-    })
-    scheme_std.create_dataset('std mass values', data=std_masses_dataarray)
-    log.info('Standards: '+str(std_masses['weight ID']))
+    # get number of standards, and save as dataset
+    num_stds = make_stds_dataset('Standards', std_masses, scheme_std)
 
     num_unknowns = num_client_masses + num_check_masses + num_stds
     log.info('Number of unknowns = '+str(num_unknowns))
@@ -123,6 +110,7 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     x = designmatrix
     xT = designmatrix.T
     error_tally = 0
+
     for i in range(num_unknowns):
         sum = 0
         for r in range(num_obs):
@@ -130,6 +118,7 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
         if not sum:
             log.error("No comparisons in design matrix for "+allmassIDs[i])
             error_tally += 1
+        # double checks that all columns in the design matrix contain at least one non-zero value
     if error_tally > 0:
         return None
     log.debug('differences:\n' + str(differences))
@@ -208,7 +197,7 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     #det_varcovar_nbc = np.linalg.det(psi_nbc_hadamard)
     #det_varcovar_b = np.linalg.det(psi_b)
 
-    summarytable = np.empty((num_unknowns, 7), object)
+    summarytable = np.empty((num_unknowns, 8), object)
     cov = 2
     for i in range(num_unknowns):
         summarytable[i, 1] = allmassIDs[i]
@@ -217,11 +206,15 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
             summarytable[i, 2] = 'Client'
         elif i >= num_client_masses + num_check_masses:
             summarytable[i, 2] = 'Standard'
+
         else:
             summarytable[i, 2] = 'Check'
 
         summarytable[i, 3] = np.round(b[i], 9)
-        nom = "{0:.1g}".format(b[i])
+        if b[i] >= 1:
+            nom = format(int(b[i]), ',')
+        else:
+            nom = "{0:.1g}".format(b[i])
         if 'e-' in nom:
             nom = 0
         summarytable[i, 0] = nom
@@ -248,10 +241,12 @@ def final_mass_calc(folder, client, client_wt_IDs, check_wt_IDs, std_masses, inp
     leastsq_data.create_dataset('Input data with least squares residuals', data=inputdatares,
                                 metadata={'headers':
                                 ['+ weight group', '- weight group', 'mass difference (g)',
-                                               'balance uncertainty (ug)', 'residual (ug)']})
+                                 'balance uncertainty (ug)', 'residual (ug)']})
     leastsq_data.create_dataset('Mass values from least squares solution', data=summarytable,
                                 metadata={'headers':
-                                ['Nominal (g)', 'Weight ID', 'Set ID', 'Mass value (g)', 'Uncertainty (ug)', '95% CI', 'Cov']})
+                                ['Nominal (g)', 'Weight ID', 'Set ID',
+                                 'Mass value (g)', 'Uncertainty (ug)', '95% CI', 'Cov', "c.f. Reference value (g)",
+                                 ]})
 
     finalmasscalc.save(mode='w')
 
@@ -273,6 +268,29 @@ def make_backup(folder, filesavepath, client, ):
         root.save(root=existing_root, file=new_file, mode='w', encoding='utf-8', ensure_ascii=False)
         log.info('Backup of previous Final Mass Calc saved as {}'.format(new_file))
 
+
+def make_stds_dataset(type, masses_dict, scheme):
+    num_masses = len(masses_dict['weight ID'])
+    masses_dataarray = np.empty(num_masses, dtype={
+        'names': ('weight ID', 'nominal (g)', 'mass values (g)', 'std uncertainties (ug)'),
+        'formats': (object, np.float, np.float, np.float)})
+    masses_dataarray['weight ID'] = masses_dict['weight ID']
+    masses_dataarray['nominal (g)'] = masses_dict['nominal (g)']
+    masses_dataarray['mass values (g)'] = masses_dict['mass values (g)']
+    masses_dataarray['std uncertainties (ug)'] = masses_dict['uncertainties (ug)']
+
+    scheme.add_metadata(**{
+        'Number of masses': num_masses,
+        'Set Identifier': masses_dict['Set Identifier'],
+        'Calibrated': masses_dict['Calibrated'],
+        'weight ID': masses_dict['weight ID'],
+    })
+
+    scheme.create_dataset('mass values', data=masses_dataarray)
+
+    log.info(type + ' '+str(masses_dict['weight ID']))
+
+    return num_masses
 
 '''
 var = np.dot(r0.T, r0) / (num_obs - num_unknowns)

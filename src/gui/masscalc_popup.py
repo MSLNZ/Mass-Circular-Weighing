@@ -25,13 +25,22 @@ def filter_IDs(ID_list, inputdata):
 
 
 def filter_stds(std_masses, inputdata):
+    weightgroups = []
+    for i in inputdata['+ weight group'] + inputdata['- weight group']:
+        if '+' in i:
+            for j in i.split('+'):
+                weightgroups.append(j)
+        else:
+            weightgroups.append(i)
+
     relevant_IDs = []
     relevant_nominal = []
     relevant_massvals = []
     relevant_uncs = []
 
     for i, item in enumerate(std_masses['weight ID']):
-        if item in inputdata['+ weight group'] or item in inputdata['- weight group']:
+        if item in weightgroups:
+            print('yes', item)
             relevant_IDs.append(item)
             relevant_nominal.append(std_masses['nominal (g)'][i])
             relevant_massvals.append(std_masses['mass values (g)'][i])
@@ -46,6 +55,7 @@ def filter_stds(std_masses, inputdata):
         'uncertainties (ug)': relevant_uncs,
         'weight ID': relevant_IDs,
     }
+    print(std_masses_new)
     return std_masses_new
 
 
@@ -151,7 +161,10 @@ class MassValuesTable(QtWidgets.QTableWidget):
 
     def __init__(self):
         super(MassValuesTable, self).__init__()
-        self.header = ["Nominal (g)", "Weight ID", "Set ID", "Mass value (g)", "Uncertainty (ug)", "95% CI", "Cov"]
+        self.header = [
+            "Nominal (g)", "Weight ID", "Set ID",
+            "Mass value (g)", "Uncertainty (ug)", "95% CI", "Cov", "c.f. Reference value (g)",
+        ]
         self.setColumnCount(len(self.header))
         self.setHorizontalHeaderLabels(self.header)
 
@@ -192,17 +205,17 @@ class CalcWorker(Worker):
         # collate and sort metadata
         inputdata = self.cw_data_table.get_checked_rows()
         client_wt_IDs = filter_IDs(self.fmc_info['client_wt_IDs'], inputdata)
-        if self.fmc_info['check_wt_IDs'] is not None:
-            check_wt_IDs = filter_IDs(self.fmc_info['check_wt_IDs'], inputdata)
+        if self.fmc_info['check_masses'] is not None:
+            check_masses = filter_stds(self.fmc_info['check_masses'], inputdata)
         else:
-            check_wt_IDs = None
+            check_masses = None
         std_masses = filter_stds(self.fmc_info['std_masses'], inputdata)
         # send relevant information to matrix least squares mass calculation algorithm
         self.fmc = final_mass_calc(
             self.fmc_info['Folder'],
             self.fmc_info['Client'],
             client_wt_IDs,
-            check_wt_IDs,
+            check_masses,
             std_masses,
             inputdata,
             nbc=self.fmc_info['nbc'],
@@ -273,19 +286,14 @@ class MassCalcThread(Thread):
         self.start(self, self.inputdata_table, self.fmc_info, self.mass_vals_table)
 
     def export_to_report(self):
-        results_file_path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + '_finalmasscalc.json')
-        root = read(results_file_path)
+        # results_file_path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + '_finalmasscalc.json')
+        # root = read(results_file_path)
         # print('\ncollated input dataset:')
         # print(root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"])
 
         inc_datasets = self.inputdata_table.included_datasets
-        for tuple in inc_datasets:
-            path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + tuple[0])
-            # print(path)
-
-
-        # print('\noutput dataset:')
-        # print(root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"])
+        # for tuple in inc_datasets:
+        #     path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + tuple[0])
 
         self.report_summary.emit(inc_datasets)
 
