@@ -3,7 +3,7 @@ from datetime import datetime
 import numpy as np
 from msl.io import JSONWriter, read
 from src.log import log
-from src.constants import SW_VERSION, REL_UNC
+from src.constants import SW_VERSION, REL_UNC, DELTA_STR
 
 
 def final_mass_calc(folder, client, client_wt_IDs, check_masses, std_masses, inputdata, nbc=True, corr=None):
@@ -204,11 +204,21 @@ def final_mass_calc(folder, client, client_wt_IDs, check_masses, std_masses, inp
 
         if i < num_client_masses:
             summarytable[i, 2] = 'Client'
+            summarytable[i, 7] = ""
         elif i >= num_client_masses + num_check_masses:
             summarytable[i, 2] = 'Standard'
-
+            summarytable[i, 7] = 'c.f. {} g; {} {} g'.format(
+                std_masses['mass values (g)'][i - num_client_masses - num_check_masses],
+                DELTA_STR,
+                std_masses['mass values (g)'][i - num_client_masses - num_check_masses] - b[i],
+            )
         else:
             summarytable[i, 2] = 'Check'
+            summarytable[i, 7] = 'c.f. {} g; {} {} g'.format(
+                check_masses['mass values (g)'][i-num_client_masses],
+                DELTA_STR,
+                check_masses['mass values (g)'][i-num_client_masses] - b[i],
+            )
 
         summarytable[i, 3] = np.round(b[i], 9)
         if b[i] >= 1:

@@ -3,7 +3,7 @@ import os
 
 from src.constants import MU_STR
 
-from msl.qt import QtWidgets, Button, excepthook, Signal, Slot, utils
+from msl.qt import Qt, QtWidgets, Button, excepthook, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
 from msl.io import read
 
@@ -26,7 +26,7 @@ def filter_IDs(ID_list, inputdata):
 
 def filter_stds(std_masses, inputdata):
     weightgroups = []
-    for i in inputdata['+ weight group'] + inputdata['- weight group']:
+    for i in np.append(inputdata['+ weight group'], inputdata['- weight group']):
         if '+' in i:
             for j in i.split('+'):
                 weightgroups.append(j)
@@ -40,7 +40,6 @@ def filter_stds(std_masses, inputdata):
 
     for i, item in enumerate(std_masses['weight ID']):
         if item in weightgroups:
-            print('yes', item)
             relevant_IDs.append(item)
             relevant_nominal.append(std_masses['nominal (g)'][i])
             relevant_massvals.append(std_masses['mass values (g)'][i])
@@ -55,7 +54,7 @@ def filter_stds(std_masses, inputdata):
         'uncertainties (ug)': relevant_uncs,
         'weight ID': relevant_IDs,
     }
-    print(std_masses_new)
+
     return std_masses_new
 
 
@@ -263,7 +262,7 @@ class MassCalcThread(Thread):
         rhpanel_layout.addWidget(report_values)
         rhpanel.setLayout(rhpanel_layout)
 
-        splitter = QtWidgets.QSplitter()
+        splitter = QtWidgets.QSplitter(orientation=Qt.Vertical)
         splitter.addWidget(lhpanel)
         splitter.addWidget(rhpanel)
         splitter.setStretchFactor(0, self.inputdata_table.columnCount())
@@ -271,7 +270,6 @@ class MassCalcThread(Thread):
 
         window_layout = QtWidgets.QHBoxLayout()
         window_layout.addWidget(splitter)
-        # window_layout.addWidget(self.mass_vals_table)
         self.window.setLayout(window_layout)
         geo = utils.screen_geometry()
         self.window.resize(geo.width(), geo.height() // 2)

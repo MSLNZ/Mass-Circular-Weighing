@@ -2,10 +2,11 @@
 
 import os
 
-SW_VERSION = 0.0            # version of this Python program
+SW_VERSION = 0.0                # version of this Python program
 
-MU_STR = 'u' #'µ'                # ALT+0181 or 'µ'
-SIGMA_STR = 'σ'             # \u03C3 for sigma sign
+MU_STR = 'u' #'µ'               # ALT+0181 or 'µ'
+SIGMA_STR = 'σ'                 # \u03C3 for sigma sign
+DELTA_STR = 'Δ'                 # \u0394 for capital delta sign
 SQUARED_STR = '²'
 
 SUFFIX = {'µg': 1e-6, 'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
