@@ -4,6 +4,7 @@ from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot, uti
 from msl.io import read
 
 from src.log import log
+from src.constants import SW_VERSION
 from src.gui.widgets.housekeeping import Housekeeping
 from src.gui.widgets.scheme_table import SchemeTable
 from src.gui.circweigh_popup import WeighingThread
@@ -182,7 +183,7 @@ gui = application()
 w = QtWidgets.QWidget()
 rect = QtWidgets.QDesktopWidget()
 # w.setFixedSize(rect.width(), rect.height()*0.45)
-w.setWindowTitle('Mass Calibration: Main Window')
+w.setWindowTitle('Mass Calibration Program (version {}): Main Window'.format(SW_VERSION))
 
 housekeeping = Housekeeping()
 lhs_panel_group = housekeeping.lhs_panel_group()

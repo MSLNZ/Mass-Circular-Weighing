@@ -164,6 +164,7 @@ def final_mass_calc(folder, client, client_wt_IDs, check_masses, std_masses, inp
     inputdatares[:, 3] = uncerts
     inputdatares[:, 4] = np.round(r0, 3)
 
+    # check that the calculated residuals are less than twice the balance uncertainties in ug
     flag = []
     for entry in inputdatares:
         if np.absolute(entry[4]) > 2*entry[3]:

@@ -140,18 +140,6 @@ class Balance(object):
                 reading = prompt_thread.wait_for_prompt_reply()
                 if not reading and not reading == 0:
                      self._want_abort = True
-                # while not self.want_abort:
-                #     prompt_thread.show('yes_no_cancel', "Mass reading: "+str(reading)+' '+self._unit+
-                #                        '\n \nIs this reading correct?')
-                #     result = prompt_thread.wait_for_prompt_reply()
-                #     if result:
-                #         break
-                #     elif result is None:
-                #         self._want_abort = True
-                #         break
-                #     prompt_thread.show('double', "Enter balance reading: ", precision=self.dp,
-                #                        title='Circular Weighing')
-                #     reading = prompt_thread.wait_for_prompt_reply()
             except ValueError:
                 log.error("Invalid entry")
                 continue
