@@ -17,7 +17,7 @@ IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 REL_UNC = 0.03              # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1
 
 local_backup = r'C:\CircularWeighingData'
-config_default = os.path.abspath(os.path.join(r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing', 'config.xml'))
+config_default = os.path.abspath(os.path.join(r'I:\MSL\Private\Mass\Software Development\2020python', 'sample_config.xml'))
 save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
 job_default = ""
 client_default = ""
