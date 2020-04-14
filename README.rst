@@ -31,7 +31,7 @@ Dependencies
 
 Documentation
 -------------
-The documentation for **Mass-Circular-Weighing** can be found `here (link to be added)`.
+The documentation for **Mass-Circular-Weighing** can be found `here` (link to be added).
 
 
 .. _numpy: https://www.numpy.org/

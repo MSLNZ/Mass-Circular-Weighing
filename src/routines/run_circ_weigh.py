@@ -1,12 +1,15 @@
 import os
-from msl.io import JSONWriter, read
-from src.routines.circ_weigh_class import CircWeigh
-from src.constants import SW_VERSION, IN_DEGREES_C, SUFFIX, MU_STR, local_backup
-from src.equip.labenviron_dll import LabEnviron64
 from time import perf_counter
 from datetime import datetime
 import numpy as np
-from src.log import log
+
+from msl.io import JSONWriter, read
+
+from .. import __version__
+from ..routines.circ_weigh_class import CircWeigh
+from ..constants import IN_DEGREES_C, SUFFIX, MU_STR, local_backup
+from ..equip.labenviron_dll import LabEnviron64
+from ..log import log
 
 dll = LabEnviron64()
 
@@ -98,7 +101,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     """
     local_backup_file = os.path.join(local_backup_folder, url.split('\\')[-1])
 
-    metadata['Program Version'] = SW_VERSION
+    metadata['Program Version'] = __version__
     metadata['Mmt Timestamp'] = datetime.now().strftime('%d-%m-%Y %H:%M')
     metadata['Time unit'] = 'min'
     metadata['Ambient monitoring'] = omega

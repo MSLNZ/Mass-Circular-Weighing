@@ -3,15 +3,15 @@ import sys, os
 from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot, utils
 from msl.io import read
 
-from src.log import log
-from src.constants import SW_VERSION
-from src.gui.widgets.housekeeping import Housekeeping
-from src.gui.widgets.scheme_table import SchemeTable
-from src.gui.circweigh_popup import WeighingThread
-from src.gui.masscalc_popup import MassCalcThread
-from src.routines.run_circ_weigh import analyse_all_weighings_in_file
-from src.routines.collate_data import collate_all_weighings
-from src.routines.report_results import export_results_summary
+from ..log import log
+from .. import __version__
+from ..gui.widgets.housekeeping import Housekeeping
+from ..gui.widgets.scheme_table import SchemeTable
+from ..gui.circweigh_popup import WeighingThread
+from ..gui.masscalc_popup import MassCalcThread
+from ..routines.run_circ_weigh import analyse_all_weighings_in_file
+from ..routines.collate_data import collate_all_weighings
+from ..routines.report_results import export_results_summary
 
 
 def make_table_panel():
@@ -183,7 +183,7 @@ gui = application()
 w = QtWidgets.QWidget()
 rect = QtWidgets.QDesktopWidget()
 # w.setFixedSize(rect.width(), rect.height()*0.45)
-w.setWindowTitle('Mass Calibration Program (version {}): Main Window'.format(SW_VERSION))
+w.setWindowTitle('Mass Calibration Program (version {}): Main Window'.format(__version__))
 
 housekeeping = Housekeeping()
 lhs_panel_group = housekeeping.lhs_panel_group()

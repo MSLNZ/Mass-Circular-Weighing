@@ -2,8 +2,9 @@ import os
 from datetime import datetime
 import numpy as np
 from msl.io import JSONWriter, read
-from src.log import log
-from src.constants import SW_VERSION, REL_UNC, DELTA_STR
+from .. import __version__
+from ..log import log
+from ..constants import REL_UNC, DELTA_STR
 
 
 def final_mass_calc(folder, client, client_wt_IDs, check_masses, std_masses, inputdata, nbc=True, corr=None):
@@ -37,7 +38,7 @@ def final_mass_calc(folder, client, client_wt_IDs, check_masses, std_masses, inp
     make_backup(folder, filesavepath, client, )
 
     metadata = {
-        'Program Version': SW_VERSION,
+        'Program Version': __version__,
         'Timestamp': datetime.now().isoformat(sep=' ', timespec='minutes'),
         "Client": client
     }
