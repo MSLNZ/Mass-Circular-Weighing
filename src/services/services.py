@@ -7,7 +7,6 @@ from src.routines.collate_data import *
 from src.routines.final_mass_calc import final_mass_calc
 
 
-
 class CheckAmbient(Service):
 
     def __init__(self):

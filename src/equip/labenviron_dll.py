@@ -1,8 +1,9 @@
 import os
-from datetime import date, datetime
 import ctypes # this script uses byref, c_int32, create_string_buffer, c_int16
+from datetime import date, datetime
 
 from msl.loadlib import Server32, Client64, IS_PYTHON_64BIT
+
 if IS_PYTHON_64BIT:
     from src.gui.prompt_thread import PromptThread
     prompt_thread = PromptThread()
@@ -10,6 +11,7 @@ from src.constants import FONTSIZE
 from src.log import log
 
 diff = datetime(1970, 1, 1) - datetime(1904, 1, 1)
+
 
 class Labview32(Server32):
     """Create a 32-bit server to interface with Emile's LabVIEW dll"""

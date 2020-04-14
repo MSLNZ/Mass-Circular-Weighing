@@ -8,10 +8,10 @@ from src.constants import SW_VERSION
 from src.gui.widgets.housekeeping import Housekeeping
 from src.gui.widgets.scheme_table import SchemeTable
 from src.gui.circweigh_popup import WeighingThread
+from src.gui.masscalc_popup import MassCalcThread
 from src.routines.run_circ_weigh import analyse_all_weighings_in_file
 from src.routines.collate_data import collate_all_weighings
 from src.routines.report_results import export_results_summary
-from src.gui.masscalc_popup import MassCalcThread
 
 
 def make_table_panel():

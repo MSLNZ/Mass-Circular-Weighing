@@ -1,5 +1,7 @@
 from msl.qt import Thread, Worker, Signal, QtCore, QtWidgets
+
 from src.gui.widgets.aw_pos_allocator import AllocatorDialog
+
 
 class AllocatorWorker(Worker):
 

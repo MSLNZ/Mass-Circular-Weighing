@@ -1,11 +1,13 @@
 '''Class for Mettler Toledo Balance with computer interface'''
-
-from ..log import log
-from src.constants import SUFFIX
 from time import perf_counter
-from .mdebalance import Balance
+
 from msl.equipment import MSLTimeoutError
 from msl.qt import prompt, application
+
+from src.log import log
+from src.constants import SUFFIX
+from src.equip.mdebalance import Balance
+
 
 class MettlerToledo(Balance):
     def __init__(self, record, reset=False):

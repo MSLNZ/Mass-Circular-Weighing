@@ -1,10 +1,10 @@
 import serial
-from src.equip.mettler import MettlerToledo
-from src.equip.mdebalance import Balance
 
-from src.log import log
+from .mettler import MettlerToledo
+from .mdebalance import Balance
+from ..log import log
 
-from src.gui.allocator_thread import AllocatorThread
+from ..gui.allocator_thread import AllocatorThread
 allocator = AllocatorThread()
 
 

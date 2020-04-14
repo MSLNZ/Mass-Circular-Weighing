@@ -1,12 +1,11 @@
 # Generic class for a balance without a computer interface
-
-from src.constants import SUFFIX, FONTSIZE
-from src.log import log
+import winsound
 from time import sleep
 
-import winsound
+from ..constants import SUFFIX, FONTSIZE
+from ..log import log
 
-from src.gui.prompt_thread import PromptThread
+from ..gui.prompt_thread import PromptThread
 prompt_thread = PromptThread()
 
 

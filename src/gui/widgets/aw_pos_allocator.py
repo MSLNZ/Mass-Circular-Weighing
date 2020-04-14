@@ -1,5 +1,6 @@
-from msl.qt import QtWidgets, Button
 import numpy as np
+
+from msl.qt import QtWidgets, Button
 
 
 class AllocatorDialog(QtWidgets.QDialog):

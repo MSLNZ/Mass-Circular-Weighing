@@ -1,11 +1,12 @@
+import winsound
+import numpy as np
+
 from msl.qt import QtGui, QtWidgets, Button, excepthook, Logger, Signal, utils
 from msl.qt.threading import Thread, Worker
 
 from src.constants import MAX_BAD_RUNS, FONTSIZE
 from src.log import log
-from src.routines.run_circ_weigh import *
-
-import winsound
+from src.routines.run_circ_weigh import do_circ_weighing, analyse_weighing, check_for_existing_weighdata, check_existing_runs
 
 
 def label(name):

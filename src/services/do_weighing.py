@@ -1,6 +1,8 @@
 from msl.qt import prompt
 from msl.network import Service
+
 from src.routines.do_new_weighing import do_new_weighing
+
 
 class DoWeighing(Service):
 

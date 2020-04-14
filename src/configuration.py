@@ -1,13 +1,14 @@
+import numpy as np
+
 from msl.equipment import Config
 from msl import io
+
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
 from .equip.awbalance import AWBal
 
 from .constants import MU_STR, SUFFIX
 from .log import log
-
-import numpy as np
 
 
 class Configuration(object):

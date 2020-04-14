@@ -1,10 +1,11 @@
-from msl.loadlib import LoadLibrary #, utils
 import os
-from msl.io import read
 import xlwt
-from src.constants import IN_DEGREES_C, MU_STR
 
-from src.log import log
+from msl.loadlib import LoadLibrary #, utils
+from msl.io import read
+
+from .constants import IN_DEGREES_C, MU_STR
+from .log import log
 # info = utils.get_com_info()
 # for key, value in info.items():
 #     if 'Microsoft' in value['ProgID']:
