@@ -84,7 +84,7 @@ def read(filename):
 
 def fetch_init(key):
     # open the __init__.py file to determine the value instead of importing the package to get the value
-    init_text = read('mass_circular_weighing/__init__.py')
+    init_text = read('src/__init__.py')
     return re.search(r'{}\s*=\s*(.*)'.format(key), init_text).group(1).strip('\'\"')
 
 
@@ -130,7 +130,18 @@ def get_version():
 
 
 # specify the packages that mass-circular-weighing depends on
-install_requires = []
+install_requires = [
+    'msl-equipment @ https://github.com/MSLNZ/msl-equipment/archive/master.tar.gz',
+    'msl-qt @ https://github.com/MSLNZ/msl-qt/archive/master.tar.gz',
+    'msl-io @ https://github.com/MSLNZ/msl-io/archive/master.tar.gz',
+    'msl-loadlib',
+    'msl-network',
+    'PyQt5',
+    'pythonnet',
+    'comtypes',
+    'xlwt',
+]
+
 
 testing = {'test', 'tests'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if testing else []
@@ -161,8 +172,9 @@ setup(
     tests_require=tests_require,
     install_requires=install_requires,
     cmdclass={'docs': BuildDocs, 'apidocs': ApiDocs},
-    packages=find_packages(include=('mass_circular_weighing',)),
+    packages=['src'],
     include_package_data=True,  # includes all files specified in MANIFEST.in when building the distribution
+    package_dir={'mass-circular-weighing': 'src'},
 )
 
 if 'dev' in version and not version.endswith('editable'):

@@ -1,16 +1,5 @@
-Mass-Circular-Weighing
-======================
-
-**Mass-Circular-Weighing** is a Python program designed to assist with
-the calibration of masses at the Measurement Standards Laboratory of New Zealand.
-Weighings are performed using the method of circular weighing described in
-`A general approach to comparisons in the presence of drift
-<https://www.callaghaninnovation.govt.nz/general-approach-comparisons-presence-drift>`_.
-
-
-
 Install
--------
+=======
 
 To install Mass-Circular-Weighing, run:
 
@@ -19,7 +8,7 @@ To install Mass-Circular-Weighing, run:
    pip install mass-circular-weighing
 
 Dependencies
-++++++++++++
+------------
 * Python 3.6 or 3.7.  To use Python 3.8, `Python for .NET`_ will need to be installed separately.
 * numpy_
 * xlwt_
@@ -29,9 +18,6 @@ Dependencies
 * `MSL Package Manager`_, which is then used to install equipment, qt, loadlib, io, and network
   (all from the master branch) and their dependencies.
 
-Documentation
--------------
-The documentation for **Mass-Circular-Weighing** can be found `here (link to be added)`.
 
 
 .. _numpy: https://www.numpy.org/
