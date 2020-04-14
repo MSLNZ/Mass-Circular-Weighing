@@ -29,6 +29,15 @@ Dependencies
 * `MSL Package Manager`_, which is then used to install equipment, qt, loadlib, io, and network
   (all from the master branch) and their dependencies.
 
+Other requirements
+------------------
+
+To run the program, you will need to be able to access the *Balance Register* and the *Equipment Register*
+which are stored on the I: drive in `I:\\MSL\\Private\\MAP\\Equipment register`.
+
+
+
+
 Documentation
 -------------
 The documentation for **Mass-Circular-Weighing** can be found `here` (link to be added).
