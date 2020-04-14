@@ -177,42 +177,43 @@ all_my_threads = []
 sys.excepthook = excepthook
 
 
-def create_gui():
-    # could ask user to load config file here?
+# could ask user to load config file here?
 
-    gui = application()
+gui = application()
 
-    w = QtWidgets.QWidget()
-    rect = QtWidgets.QDesktopWidget()
-    # w.setFixedSize(rect.width(), rect.height()*0.45)
-    w.setWindowTitle('Mass Calibration Program (version {}): Main Window'.format(__version__))
+w = QtWidgets.QWidget()
+rect = QtWidgets.QDesktopWidget()
+# w.setFixedSize(rect.width(), rect.height()*0.45)
+w.setWindowTitle('Mass Calibration Program (version {}): Main Window'.format(__version__))
 
-    housekeeping = Housekeeping()
-    lhs_panel_group = housekeeping.lhs_panel_group()
-    schemetable = SchemeTable()
-    central_panel_group = make_table_panel()
+housekeeping = Housekeeping()
+lhs_panel_group = housekeeping.lhs_panel_group()
+schemetable = SchemeTable()
+central_panel_group = make_table_panel()
 
-    housekeeping.balance_list.connect(update_balances)
-    schemetable.check_good_runs_in_file.connect(check_good_runs_in_file)
-    housekeeping.scheme_file.connect(schemetable.auto_load_scheme)
+housekeeping.balance_list.connect(update_balances)
+schemetable.check_good_runs_in_file.connect(check_good_runs_in_file)
+housekeeping.scheme_file.connect(schemetable.auto_load_scheme)
 
-    mass_thread = MassCalcThread()
-    mass_thread.report_summary.connect(reporting)
+mass_thread = MassCalcThread()
+mass_thread.report_summary.connect(reporting)
 
-    layout = QtWidgets.QHBoxLayout()
-    layout.addWidget(lhs_panel_group, 2)
-    layout.addWidget(central_panel_group, 5)
-    layout.addWidget(Logger(fmt='%(message)s'), 3)
-    w.setLayout(layout)
-    # geo = utils.screen_geometry()
-    # w.resize(geo.width(), geo.height() // 1.25)
+layout = QtWidgets.QHBoxLayout()
+layout.addWidget(lhs_panel_group, 2)
+layout.addWidget(central_panel_group, 5)
+layout.addWidget(Logger(fmt='%(message)s'), 3)
+w.setLayout(layout)
+# geo = utils.screen_geometry()
+# w.resize(geo.width(), geo.height() // 1.25)
 
+
+def show_gui():
     w.show()
     gui.exec()
 
 
-    def clean_up_thread(self, thread_instance):
-        for i, item in enumerate(all_my_threads):
-            if thread_instance is item:
-                del all_my_threads[i]
-                break
+def clean_up_thread(self, thread_instance):
+    for i, item in enumerate(all_my_threads):
+        if thread_instance is item:
+            del all_my_threads[i]
+            break

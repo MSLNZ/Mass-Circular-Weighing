@@ -177,7 +177,7 @@ setup(
     package_dir={'mass-circular-weighing': 'src'},
     entry_points={
         'console_scripts': [
-            'show-gui = src.gui.gui:create_gui',
+            'show-gui = src.gui.gui:show_gui',
         ],
     },
 )
