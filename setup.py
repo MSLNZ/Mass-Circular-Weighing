@@ -175,6 +175,11 @@ setup(
     packages=['src'],
     include_package_data=True,  # includes all files specified in MANIFEST.in when building the distribution
     package_dir={'mass-circular-weighing': 'src'},
+    entry_points={
+        'console_scripts': [
+            'show-gui = src.gui.gui:create_gui',
+        ],
+    },
 )
 
 if 'dev' in version and not version.endswith('editable'):
@@ -183,14 +188,14 @@ if 'dev' in version and not version.endswith('editable'):
     if sys.argv[0] == 'setup.py' and 'install' in sys.argv and not {'--help', '-h'}.intersection(sys.argv):
         # python setup.py install
         try:
-            cmd = [sys.executable, '-c', 'import mass_circular_weighing as p; print(p.__file__)']
+            cmd = [sys.executable, '-c', 'import src as p; print(p.__file__)']
             output = subprocess.check_output(cmd, cwd=os.path.dirname(sys.executable))
             init_path = output.strip().decode()
         except:
             pass
     elif 'egg_info' in sys.argv:
         # pip install
-        init_path = os.path.dirname(sys.argv[0]) + '/mass_circular_weighing/__init__.py'
+        init_path = os.path.dirname(sys.argv[0]) + '/src/__init__.py'
 
     if init_path and os.path.isfile(init_path):
         with open(init_path, mode='r+') as fp:
