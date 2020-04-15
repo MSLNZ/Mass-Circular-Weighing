@@ -2,10 +2,6 @@
 
 import os
 
-from . import __version__
-
-SW_VERSION = __version__       # version of this Python program
-
 MU_STR = 'u' #'µ'               # ALT+0181 or 'µ'
 SIGMA_STR = 'σ'                 # \u03C3 for sigma sign
 DELTA_STR = 'Δ'                 # \u0394 for capital delta sign
@@ -23,7 +19,7 @@ config_default = os.path.abspath(os.path.join(r'I:\MSL\Private\Mass\Software Dev
 save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
 job_default = ""
 client_default = ""
-client_wt_IDs_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000'
+client_wt_IDs_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000 10000'
 
 MAX_BAD_RUNS = 6
 

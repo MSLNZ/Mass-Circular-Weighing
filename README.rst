@@ -33,14 +33,21 @@ Other requirements
 ------------------
 
 To run the program, you will need to be able to access the *Balance Register* and the *Equipment Register*
-which are stored on the I: drive in `I:\\MSL\\Private\\MAP\\Equipment register`.
+which are stored on the I: drive in I:\\MSL\\Private\\MAP\\Equipment register.
 
+To enable ambient logging (e.g. of Omega loggers) via Emile's LabVIEW server, run LVRTE2010std.exe from
+I:\MSL\Shared\Temperature\LabVIEW RuntimeEngines.
 
+.. Note::
+   This install will require administrator rights on a Callaghan Innovation computer.
+
+To test that the LabVIEW runtime engine has installed correctly, run labenviron_dll.py.
+It should return ambient data from the selected Omega logger sensor.
 
 
 Documentation
 -------------
-The documentation for **Mass-Circular-Weighing** can be found `here` (link to be added).
+The documentation for **Mass-Circular-Weighing** can be found here (link to be added).
 
 
 .. _numpy: https://www.numpy.org/

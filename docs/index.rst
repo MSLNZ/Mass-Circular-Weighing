@@ -3,7 +3,7 @@
 Mass-Circular-Weighing
 ======================
 
-**Mass-Circular-Weighing** is a Python program intended to be used for the calibration of masses
+**Mass-Circular-Weighing** is a Python program intended for the calibration of masses
 at the Measurement Standards Laboratory of New Zealand.
 Weighings are performed using the method of circular weighing described in
 `A general approach to comparisons in the presence of drift
@@ -16,25 +16,24 @@ automatic weight changers.  This program does not allow for weighings using a be
 
 Getting Started
 ---------------
-For each calibration, a config.xml file is needed which follows the format in MSL-equipment.
-This file holds important information such as
-which balances and standard mass sets are available,
-where to find the equipment register(s),
-limits on ambient conditions,
-and 'housekeeping' details for the particular calibration (job number, client, client masses etc).
-More information about the config.xml file is provided **HERE**:ref:`config.xml`.
-
-A weighing scheme is also needed.
-
 Here's a quick list of the steps in the program.
-More information about the various parts of the program are provided in the linka
+More information about the various parts of the program are provided in the links.
 
-1. prepare a config.xml file as described above
-   (this process may be facilitated by a widget at some point in the future)
-2. run show-gui.
+1. :ref:`install` the program
+2. Run show-gui.
    (or an executable to be produced for software version 1!)
-3. Load the config.xml file and/or enter details in the relevant boxes in the Housekeeping panel
-4. Decide on a weighing scheme and either enter it manually into the Scheme Table
+3. Load a *config.xml* file and/or enter details in the relevant boxes in the Housekeeping panel
+   (this process may be facilitated by a widget at some point in the future)
+
+        For each calibration, a *config.xml* file is needed which follows the format described in MSL-Equipment_.
+        This file holds important information such as
+        where to find the equipment register(s),
+        which balances and standard mass sets are available,
+        limits on ambient conditions,
+        and 'housekeeping' details for the particular calibration (job number, client, client masses etc).
+        More information about the config.xml file is provided under :ref:`configfile`.
+
+4. Decide on a weighing scheme and either enter it manually into the :ref:`schemetable`
    or load it from an Excel file by drag-drop into the table.
 5. Check that the scheme entries have been entered using the same weight IDs as in the weight sets
 6. Save the scheme
@@ -54,6 +53,9 @@ Contents
    :maxdepth: 2
 
    Install <install>
+   Config File <configfile>
+   Equipment Registers <equip_registers>
+   Scheme Table <scheme_table>
    License <license>
    Authors <authors>
    Release Notes <changelog>
@@ -64,3 +66,5 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. _MSL-Equipment: https://msl-equipment.readthedocs.io/en/latest/
