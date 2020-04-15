@@ -137,7 +137,6 @@ install_requires = [
     'msl-loadlib',
     'msl-network',
     'PyQt5',
-    'pythonnet',
     'comtypes',
     'xlwt',
 ]

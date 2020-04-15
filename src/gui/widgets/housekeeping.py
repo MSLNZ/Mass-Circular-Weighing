@@ -16,9 +16,9 @@ class Housekeeping(QtWidgets.QWidget):
     def __init__(self):
         super(Housekeeping, self).__init__()
 
-        self.config_io = FileSelect(config_default, 'shell32|4')
+        self.config_io = FileSelect(config_default, QtWidgets.QStyle.SP_DialogOpenButton)
         self.load_from_config_but = Button(text='Load details from config file', left_click=self.load_from_config)
-        self.folder_io = Browse(save_folder_default, 'shell32|4')
+        self.folder_io = Browse(save_folder_default, QtWidgets.QStyle.SP_DialogOpenButton)
         self.job_io = QtWidgets.QLineEdit(job_default)
         self.client_io = QtWidgets.QLineEdit(client_default)
         self.client_masses_io = QtWidgets.QTextEdit(client_wt_IDs_default)
