@@ -1,6 +1,6 @@
 .. _schemetable:
 
-Weighing Schemes and the Scheme Table
+The Scheme Table
 =====================================
 
 A weighing scheme describes the comparisons involved in a calibration,
@@ -20,7 +20,7 @@ The columns in the scheme table are:
 5.  The number of acceptable runs that have been collected (not editable)
 
 Entries in these columns must follow specific formats.
-For example, within a weight group individual masses are described by strings,
+For example, within a weight group individual masses are described by their 'weight IDs' (strings),
 and multiple masses in a weight group are grouped into a weight group using '+'.
 Weight groups in a comparison are separated by spaces. For example, the scheme table might look like this:
 

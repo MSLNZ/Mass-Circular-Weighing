@@ -31,7 +31,7 @@ More information about the various parts of the program are provided in the link
         which balances and standard mass sets are available,
         limits on ambient conditions,
         and 'housekeeping' details for the particular calibration (job number, client, client masses etc).
-        More information about the config.xml file is provided under :ref:`configfile`.
+        More information about the *config.xml* file is provided under :ref:`configfile`.
 
 4. Decide on a weighing scheme and either enter it manually into the :ref:`schemetable`
    or load it from an Excel file by drag-drop into the table.
@@ -53,8 +53,8 @@ Contents
    :maxdepth: 2
 
    Install <install>
-   Config File <configfile>
    Equipment Registers <equip_registers>
+   Configuration File <configfile>
    Scheme Table <scheme_table>
    License <license>
    Authors <authors>

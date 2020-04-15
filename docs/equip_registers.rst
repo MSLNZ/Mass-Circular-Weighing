@@ -10,8 +10,9 @@ equipment in use, and how each computer connects to the equipment.
 More information about these two different types of `Database Formats`_ can be found in
 `Equipment-Register Database`_ and `Connections Database`_ respectively.
 
-The registers relevant for this program are the *Balance Register* and the *Equipment Register*
-that are stored on the I: drive in I:\\MSL\\Private\\MAP\\Equipment register.
+The registers relevant for this program are the *Balance Register* and the *Equipment Register*.
+
+    At MSL these registers are stored on the I: drive in I:\\MSL\\Private\\MAP\\Equipment register.
 
 To add new equipment (except balances), add the appropriate details to the `Equipment` sheet in the *Equipment Register*.
 
@@ -31,7 +32,7 @@ Allowed weighing modes for balances are:
 For **aw** balances, enter the number of available weighing positions in the # pos column,
 and the address of the weight changer (Arduino) in the WC_Address column.
 
-        This program does not allow for weighings using a beam balance.
+This program does not allow for weighings using a beam balance.
 
 Enter the Omega logger sensor in the Ambient monitoring column following the format for other entries.
 

@@ -4,17 +4,17 @@ The Configuration File
 ======================
 
 The :ref:`mass-circular-weighing-welcome` program uses Joe Borbely's MSL packages, in particular MSL-Equipment_,
-and so a *config.xml* file is needed for each circular weighing, as described in `Configuration File`_
+and so a *config.xml* file is needed for each circular weighing, as described in `Configuration File`_.
 
 As well as specifying the relevant equipment register(s), this *config.xml* file also keeps a record of
-        which balances and standard mass sets are available,
-        limits on ambient conditions,
-        and 'housekeeping' details for the particular calibration (job number, client, client masses etc).
+which balances and standard mass sets are available, limits on ambient conditions,
+and 'housekeeping' details for the particular calibration (job number, client, client masses etc).
 
 To set up a *config.xml* file for the :ref:`mass-circular-weighing-welcome` program, a template is provided below
 with some explanation of the structure and tags.
 
-    At MSL this sample *config.xml* file can be found at I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\sample_config.xml
+    At MSL this sample *config.xml* file can be found at I:\\MSL\\Private\\Mass\\transfer\\Balance Software\\Sample Data\\sample_config.xml
+
 
 .. code-block:: xml
 
