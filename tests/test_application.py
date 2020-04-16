@@ -1,5 +1,5 @@
 import pytest
-from src.configuration import Configuration
+from mass_circular_weighing.configuration import Configuration
 
 
 def test_acceptance_criteria():

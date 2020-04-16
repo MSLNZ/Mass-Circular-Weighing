@@ -1,7 +1,7 @@
-from src.configuration import Configuration
-from src.routines.run_circ_weigh import *
-#from src.routines.collate_data import collate_a_data_from_json
-#from src.routines.final_mass_calc import final_mass_calc
+from mass_circular_weighing.configuration import Configuration
+from mass_circular_weighing.routines.run_circ_weigh import *
+#from mass_circular_weighing.routines.collate_data import collate_a_data_from_json
+#from mass_circular_weighing.routines.final_mass_calc import final_mass_calc
 
 import numpy as np
 

@@ -1,7 +1,7 @@
 ### NOTE THAT THIS SCRIPT IS FOR DIRECT READING OF OMEGA LOGGERS. FOR CALIBRATED VALUES USE LABENVIRON_DLL ###
 
 import numpy as np
-from src.constants import IN_DEGREES_C
+from mass_circular_weighing.constants import IN_DEGREES_C
 
 
 class Omega(object):

@@ -5,10 +5,10 @@ from datetime import date, datetime
 from msl.loadlib import Server32, Client64, IS_PYTHON_64BIT
 
 if IS_PYTHON_64BIT:
-    from src.gui.prompt_thread import PromptThread
+    from mass_circular_weighing.gui.prompt_thread import PromptThread
     prompt_thread = PromptThread()
-from src.constants import FONTSIZE
-from src.log import log
+from mass_circular_weighing.constants import FONTSIZE
+from mass_circular_weighing.log import log
 
 diff = datetime(1970, 1, 1) - datetime(1904, 1, 1)
 

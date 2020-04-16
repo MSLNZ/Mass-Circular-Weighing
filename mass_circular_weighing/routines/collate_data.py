@@ -15,7 +15,7 @@ def collate_all_weighings(schemetable, cfg):
     schemetable : QWidget
         taken from centre panel of main gui
     cfg : :class:`Configuration`
-        from src.configuration, as initialised during set-up
+        from mass_circular_weighing.configuration, as initialised during set-up
 
     Returns
     -------

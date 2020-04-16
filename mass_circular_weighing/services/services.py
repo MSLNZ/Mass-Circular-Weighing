@@ -1,10 +1,10 @@
 from msl.network import Service
 #from msl.qt import prompt
 
-from src.routines.do_new_weighing import do_new_weighing
-from src.routines.run_circ_weigh import check_ambient_pre, analyse_old_weighing, analyse_all_weighings_in_file
-from src.routines.collate_data import *
-from src.routines.final_mass_calc import final_mass_calc
+from mass_circular_weighing.routines.do_new_weighing import do_new_weighing
+from mass_circular_weighing.routines.run_circ_weigh import check_ambient_pre, analyse_old_weighing, analyse_all_weighings_in_file
+from mass_circular_weighing.routines.collate_data import *
+from mass_circular_weighing.routines.final_mass_calc import final_mass_calc
 
 
 class CheckAmbient(Service):

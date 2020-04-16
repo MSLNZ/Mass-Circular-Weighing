@@ -3,7 +3,7 @@ import os
 
 from msl.qt import QtWidgets, QtCore, io, prompt, Signal, Slot
 
-from src.log import log
+from mass_circular_weighing.log import log
 
 
 class SchemeTable(QtWidgets.QTableWidget):

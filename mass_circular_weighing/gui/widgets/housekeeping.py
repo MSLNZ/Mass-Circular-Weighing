@@ -2,10 +2,10 @@ import os
 
 from msl.qt import QtWidgets, Button, Signal
 
-from src.log import log
-from src.constants import config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
-from src.configuration import Configuration
-from src.gui.widgets.browse import Browse, FileSelect, label
+from mass_circular_weighing.log import log
+from mass_circular_weighing.constants import config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
+from mass_circular_weighing.configuration import Configuration
+from mass_circular_weighing.gui.widgets.browse import Browse, FileSelect, label
 
 
 class Housekeeping(QtWidgets.QWidget):

@@ -78,7 +78,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     Parameters
     ----------
     bal : :class:`Balance`
-        balance instance, initialised using src.configuration using a balance alias
+        balance instance, initialised using mass_circular_weighing.configuration using a balance alias
     se : str
         scheme entry
     root : :class:`root`
@@ -429,7 +429,7 @@ def analyse_all_weighings_in_file(cfg, filename, se):
     Parameters
     ----------
     cfg : :class:`Configuration`
-        configuration instance (see src.Configuration)
+        configuration instance (see mass_circular_weighing.Configuration)
     filename : :class:`str`
         e.g. client_nominal
     se : :class:`str`
