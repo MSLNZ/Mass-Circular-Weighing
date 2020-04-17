@@ -2,7 +2,9 @@ from msl.qt import QtWidgets, Button, prompt
 
 
 def label(name):
-    return QtWidgets.QLabel(name)
+    lbl = QtWidgets.QLabel(name)
+    lbl.setWordWrap(True)
+    return lbl
 
 
 class Browse(QtWidgets.QWidget):

@@ -2,10 +2,10 @@ import os
 
 from msl.qt import QtWidgets, Button, Signal
 
-from mass_circular_weighing.log import log
-from mass_circular_weighing.constants import config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
-from mass_circular_weighing.configuration import Configuration
-from mass_circular_weighing.gui.widgets.browse import Browse, FileSelect, label
+from ...log import log
+from ...constants import config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
+from ...configuration import Configuration
+from .browse import Browse, FileSelect, label
 
 
 class Housekeeping(QtWidgets.QWidget):
@@ -150,25 +150,3 @@ class Housekeeping(QtWidgets.QWidget):
             self.scheme_file.emit(scheme_path)
 
         return True
-
-
-if __name__ == "__main__":
-    import sys
-    from msl.qt import application, excepthook
-
-    sys.excepthook = excepthook
-
-    gui = application()
-
-    housekeeping = Housekeeping()
-    lhs_panel_group = housekeeping.lhs_panel_group()
-
-    w = QtWidgets.QWidget()
-
-    layout = QtWidgets.QHBoxLayout()
-    layout.addWidget(lhs_panel_group)
-
-    w.setLayout(layout)
-
-    w.show()
-    gui.exec()

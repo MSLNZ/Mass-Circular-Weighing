@@ -68,3 +68,4 @@ Indices and tables
 * :ref:`search`
 
 .. _MSL-Equipment: https://msl-equipment.readthedocs.io/en/latest/
+.. _useful-RST-tips: https://docutils.sourceforge.io/docs/user/rst/quickref.html#escaping
