@@ -3,22 +3,22 @@ import os
 from msl.qt import QtWidgets, Button, Signal, Slot
 from msl.equipment import Config, utils
 
-from mass_circular_weighing.log import log
-from mass_circular_weighing.constants import IN_DEGREES_C, config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
-from mass_circular_weighing.gui.widgets.browse import Browse, FileSelect, label
+from ...log import log
+from ...constants import IN_DEGREES_C, config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
+from .browse import Browse, label
 
 
-class ConfigEditor(QtWidgets.QWidget):
+class ConfigEditor(QtWidgets.QDialog):
 
     update_ref_mass_sets = Signal(object)
 
-    def __init__(self):
-        super(ConfigEditor, self).__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
 
-        self.config_io = FileSelect(config_default, QtWidgets.QStyle.SP_DialogOpenButton)
-        self.load_from_config_but = Button(text='Load existing config file', left_click=self.load_from_config)
+        self.config_io = Browse(config_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file')
+        self.config_io.textbox.textChanged.connect(self.load_from_config)
 
-        self.folder_io = Browse(save_folder_default, QtWidgets.QStyle.SP_DialogOpenButton)
+        self.folder_io = Browse(save_folder_default, QtWidgets.QStyle.SP_DialogOpenButton, find='folder')
         self.job_io = QtWidgets.QLineEdit(job_default)
         self.client_io = QtWidgets.QLineEdit(client_default)
         self.client_masses_io = QtWidgets.QTextEdit(client_wt_IDs_default)
@@ -34,8 +34,6 @@ class ConfigEditor(QtWidgets.QWidget):
         self.corr_io = QtWidgets.QLineEdit('None')
 
         self.ambient_form = QtWidgets.QFormLayout()
-
-        # self.registers_table = QtWidgets.QTableWidget()
         self.bal_reg_form = QtWidgets.QFormLayout()
         self.equip_reg_form = QtWidgets.QFormLayout()
         self.connections_form = QtWidgets.QFormLayout()
@@ -43,12 +41,18 @@ class ConfigEditor(QtWidgets.QWidget):
 
         self.go = Button(text='Save settings', left_click=self.save_cfg)
 
+        self.arrange_widget_layout()
+
+    @property
+    def new_config(self):
+        newconfig = os.path.join(self.folder_io.textbox.text(), self.job_io.text() + '_config.xml')
+        return newconfig
+
     def arrange_housekeeping_box(self):
         formGroup = QtWidgets.QGroupBox()
         formlayout = QtWidgets.QFormLayout()
 
         formlayout.addRow(label('Configuration file'), self.config_io)
-        formlayout.setWidget(1, 2, self.load_from_config_but)
         formlayout.addRow(label('Folder for saving data'), self.folder_io)
         formlayout.addRow(label('Job'), self.job_io)
         formlayout.addRow(label('Client'), self.client_io)
@@ -79,7 +83,7 @@ class ConfigEditor(QtWidgets.QWidget):
         self.mass_set_table.setRowCount(numrows)
         for i in range(numrows):
             self.mass_set_table.setCellWidget(i, 0, QtWidgets.QLineEdit())
-            self.mass_set_table.setCellWidget(i, 1, FileSelect("", QtWidgets.QStyle.SP_DialogOpenButton))
+            self.mass_set_table.setCellWidget(i, 1, Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file'))
             if root:
                 self.mass_set_table.cellWidget(i, 0).setText(str(root.find('standards')[i].tag))
                 self.mass_set_table.cellWidget(i, 1).textbox.setText(str(root.find('standards')[i].text))
@@ -153,12 +157,12 @@ class ConfigEditor(QtWidgets.QWidget):
     def make_reg_box(self, form):
         form.removeRow(0)
         form.removeRow(1)
-        form.addRow(label('Path'), FileSelect("", QtWidgets.QStyle.SP_DialogOpenButton))
+        form.addRow(label('Path'), Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file'))
         form.addRow(label('Sheet'), QtWidgets.QLineEdit())
 
     def make_acceptance_box(self):
         self.acceptance_form = QtWidgets.QFormLayout()
-        self.acceptance_form.addRow(label('Path'), FileSelect("", QtWidgets.QStyle.SP_DialogOpenButton))
+        self.acceptance_form.addRow(label('Path'), Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file'))
         self.acceptance_form.addRow(label('Sheet'), QtWidgets.QLineEdit())
         self.acceptance_form.addRow(label('Exclusion limit'), QtWidgets.QDoubleSpinBox())
 
@@ -204,22 +208,25 @@ class ConfigEditor(QtWidgets.QWidget):
 
         formGroup = self.arrange_housekeeping_box()
         optionsGroup = self.arrange_options_box()
+        lhs = QtWidgets.QVBoxLayout()
+        lhs.addWidget(formGroup)
+        lhs.addWidget(optionsGroup)
 
         ref_masses_box = self.arrange_refmasses_box()
         ambient = self.arrange_ambient()
+        clay = QtWidgets.QVBoxLayout()
+        clay.addWidget(ref_masses_box)
+        clay.addWidget(ambient)
 
         registers_box = self.arrange_registers_box()
+        rhs = QtWidgets.QVBoxLayout()
+        rhs.addWidget(registers_box)
+        rhs.addWidget(self.go)
 
-        layout = QtWidgets.QGridLayout()
-        # ...from row, from col, rowspan, colspan
-        layout.addWidget(formGroup, 0, 0, 2, 1)
-        layout.addWidget(optionsGroup, 2, 0)
-
-        layout.addWidget(ref_masses_box, 0, 1)
-        layout.addWidget(ambient, 1, 1, 2, 1)
-
-        layout.addWidget(registers_box, 0, 2, 2, 1)
-        layout.addWidget(self.go, 2, 2)
+        layout = QtWidgets.QHBoxLayout()
+        layout.addLayout(lhs, stretch=0)
+        layout.addLayout(clay, stretch=5)
+        layout.addLayout(rhs, stretch=0)
 
         self.setLayout(layout)
 
@@ -339,84 +346,10 @@ class ConfigEditor(QtWidgets.QWidget):
             connections.find(key).text = value
 
         # save file
-        newconfig = os.path.join(self.folder_io.textbox.text(), self.job_io.text() + '_config.xml')
-        with open(newconfig, mode='w', encoding='utf-8') as fp:
+        with open(self.new_config, mode='w', encoding='utf-8') as fp:
             fp.write(utils.convert_to_xml_string(c.root))
 
-        return newconfig
-
-
-if __name__ == "__main__":
-    import sys
-    from msl.qt import application, excepthook
-
-    sys.excepthook = excepthook
-
-    gui = application()
-
-    widgey = ConfigEditor()
-    widgey.arrange_widget_layout()
-    widgey.show()
-
-    gui.exec()
+        self.close()
 
 
 
-
-
-"""Extra functions not included atm:'
-
-    self.equipment_table = QtWidgets.QTableWidget()
-        
-    def make_equipment_table(self, root=None):
-        ## this isn't really what I want though - need the entries here to match available balances in equip register!
-        headers = ['Alias', 'Manufacturer', 'Model']
-        self.equipment_table.setColumnCount(len(headers))
-        self.equipment_table.setHorizontalHeaderLabels(headers)
-        if root:
-            equip = root.findall('equipment')
-            numrows=len(equip)
-        else:
-            numrows = 2
-        self.equipment_table.setRowCount(numrows)
-        for i in range(numrows):
-            for j in range(len(headers)):
-                self.equipment_table.setCellWidget(i, j, QtWidgets.QLineEdit())
-        # if root:
-        #     for i, e in enumerate(root.findall('equipment')):
-        #         self.equipment_table.cellWidget(i, 0).setText(e[0])
-        #         self.equipment_table.cellWidget(i, 1).textbox.setText(str(root.find('standards')[i].text))
-
-        self.equipment_table.resizeColumnsToContents()
-        header = self.equipment_table.horizontalHeader()
-        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-        
-        
-        # def make_register_table(self, root=None):
-    #     headers = ['Path to register', 'Sheet', 'Admin info', ]
-    #     self.registers_table.setColumnCount(len(headers))
-    #     self.registers_table.setHorizontalHeaderLabels(headers)
-    #     self.registers_table.setColumnHidden(2, True)
-    #     regs = []
-    #     if root:
-    #         regs = root.find('registers').findall('register')
-    #         numrows=len(regs)
-    #     else:
-    #         numrows = 2
-    #     self.registers_table.setRowCount(numrows)
-    #     for i in range(numrows):
-    #         self.registers_table.setCellWidget(i, 0, FileSelect("", QtWidgets.QStyle.SP_DialogOpenButton))
-    #         self.registers_table.setCellWidget(i, 1, QtWidgets.QLineEdit())
-    #         self.registers_table.setCellWidget(i, 2, label(name=''))
-    #         if regs:
-    #             self.registers_table.cellWidget(i, 2).setText(str(regs[i].attrib))
-    #             for element in regs[i]:
-    #                 if element.tag == 'path':
-    #                     self.registers_table.cellWidget(i, 0).textbox.setText(str(element.text))
-    #                 if element.tag == 'sheet':
-    #                     self.registers_table.cellWidget(i, 1).setText(str(element.text))
-    #
-    #     header = self.registers_table.horizontalHeader()
-    #     header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-    #     self.registers_table.resizeColumnsToContents()    
-"""

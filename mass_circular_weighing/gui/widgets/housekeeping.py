@@ -5,7 +5,9 @@ from msl.qt import QtWidgets, Button, Signal
 from ...log import log
 from ...constants import config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
 from ...configuration import Configuration
-from .browse import Browse, FileSelect, label
+from .browse import Browse, label
+from mass_circular_weighing.gui.threads.configedit_thread import ConfigEditorThread
+cfe = ConfigEditorThread()
 
 
 class Housekeeping(QtWidgets.QWidget):
@@ -16,44 +18,51 @@ class Housekeeping(QtWidgets.QWidget):
     def __init__(self):
         super(Housekeeping, self).__init__()
 
-        self.config_io = FileSelect(config_default, QtWidgets.QStyle.SP_DialogOpenButton)
-        self.load_from_config_but = Button(text='Load details from config file', left_click=self.load_from_config)
-        self.folder_io = Browse(save_folder_default, QtWidgets.QStyle.SP_DialogOpenButton)
-        self.job_io = QtWidgets.QLineEdit(job_default)
-        self.client_io = QtWidgets.QLineEdit(client_default)
-        self.client_masses_io = QtWidgets.QTextEdit(client_wt_IDs_default)
+        self.config_io = Browse(config_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file')
+        self.config_io.textbox.textChanged.connect(self.load_from_config)
+        self.edit_config_but = Button(text='Edit config file', left_click=self.edit_config)
+
+        self.folder_io = label(save_folder_default)
+        self.job_io = label(job_default)
+        self.client_io = label(client_default)
+        self.client_masses_io = label(client_wt_IDs_default)
         self.stds = ['None']
         self.checks = ['None']
 
-        self.cb_stds_io = QtWidgets.QComboBox()
-        self.cb_checks_io = QtWidgets.QComboBox()
+        self.cb_stds_io = label("")
+        self.cb_checks_io = label("")
 
-        self.drift_io = QtWidgets.QComboBox()
-        self.drift_io.addItems(['auto select', 'no drift', 'linear drift', 'quadratic drift', 'cubic drift'])
-
-        self.timed_io = QtWidgets.QComboBox()
-        self.timed_io.addItems(['NO', 'YES'])
-
-        self.corr_io = QtWidgets.QLineEdit('None')
+        self.drift_io = label('auto select')
+        self.timed_io = label('NO')
+        self.corr_io = label('None')
 
         self.cfg = None
         self.go = Button(text='Confirm settings', left_click=self.initialise_cfg)
 
     def arrange_housekeeping_box(self):
-        self.formGroup = QtWidgets.QGroupBox()
+        formGroup = QtWidgets.QGroupBox()
         formlayout = QtWidgets.QFormLayout()
 
-        formlayout.addRow(label('Configuration file'), self.config_io)
-        formlayout.addRow(label(' '), self.load_from_config_but)
+        config_box = self.arrange_config_box()
+        formlayout.setWidget(0, 2, config_box)
         formlayout.addRow(label('Folder for saving data'), self.folder_io)
         formlayout.addRow(label('Job'), self.job_io)
         formlayout.addRow(label('Client'), self.client_io)
         formlayout.addRow(label('List of client masses'), self.client_masses_io)
         formlayout.addRow(label('Standard mass set'), self.cb_stds_io)
         formlayout.addRow(label('Check mass set'), self.cb_checks_io)
-        self.formGroup.setLayout(formlayout)
+        formGroup.setLayout(formlayout)
 
-        return self.formGroup
+        return formGroup
+
+    def arrange_config_box(self):
+        configbox = QtWidgets.QGroupBox('Configuration File')
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.config_io)#, 0, 0, 1, 2)
+        # layout.addWidget(self.load_from_config_but, 1, 0)
+        layout.addWidget(self.edit_config_but)#, 1, 1)
+        configbox.setLayout(layout)
+        return configbox
 
     def arrange_options_box(self):
         self.optionsGroup = QtWidgets.QGroupBox('Options for analysis')
@@ -66,12 +75,12 @@ class Housekeeping(QtWidgets.QWidget):
         return self.optionsGroup
 
     def lhs_panel_group(self):
-        self.arrange_housekeeping_box()
+        formGroup = self.arrange_housekeeping_box()
         self.arrange_options_box()
 
         lhs_panel_group = QtWidgets.QGroupBox('Housekeeping')
         lhs_panel_layout = QtWidgets.QVBoxLayout()
-        lhs_panel_layout.addWidget(self.formGroup)
+        lhs_panel_layout.addWidget(formGroup)
         lhs_panel_layout.addWidget(self.optionsGroup)
         lhs_panel_layout.addWidget(self.go)
         lhs_panel_group.setLayout(lhs_panel_layout)
@@ -81,50 +90,30 @@ class Housekeeping(QtWidgets.QWidget):
     def load_from_config(self):
         if os.path.isfile(self.config_io.textbox.text()):
             self.cfg = Configuration(self.config_io.textbox.text())
-            self.folder_io.textbox.setText(self.cfg.folder)
+            self.folder_io.setText(self.cfg.folder)
             self.job_io.setText(self.cfg.job)
             self.client_io.setText(self.cfg.client)
             self.client_masses_io.setText(self.cfg.client_wt_IDs)
 
-            self.stds = ['None']
-            self.checks = ['None']
-            for std in self.cfg.cfg.root.find('standards'):
-                self.stds.append(std.tag)
-                self.checks.append(std.tag)
-            self.cb_stds_io.clear()
-            self.cb_checks_io.clear()
-            self.cb_stds_io.addItems(self.stds)
-            self.cb_checks_io.addItems(self.checks)
-            self.cb_stds_io.setCurrentText(self.cfg.std_set)
-            self.cb_checks_io.setCurrentText(self.cfg.check_set_text)
+            self.cb_stds_io.setText(self.cfg.std_set)
+            self.cb_checks_io.setText(self.cfg.check_set_text)
 
-            self.drift_io.setCurrentText(self.cfg.drift_text)
-            self.timed_io.setCurrentText(self.cfg.timed_text)
+            self.drift_io.setText(self.cfg.drift_text)
+            self.timed_io.setText(self.cfg.timed_text)
             self.corr_io.setText(self.cfg.correlations)
 
         else:
             log.error('Config file does not exist at {!r}'.format(self.config_io.textbox.text()))
 
+    def edit_config(self):
+        cfe.show(self.config_io.textbox.text())
+        newconfig = cfe.wait_for_prompt_reply()
+        self.config_io.textbox.setText(newconfig)
+        self.load_from_config()
+
     def initialise_cfg(self):
-        """Set and log values for configuration variables"""
-        if os.path.isfile(self.config_io.textbox.text()):
-            self.cfg = Configuration(self.config_io.textbox.text())
-        else:
-            log.error('Config file does not exist at {!r}'.format(self.config_io.textbox.text()))
-        self.cfg.std_set = self.cb_stds_io.currentText()
-        self.cfg.check_set_text = self.cb_checks_io.currentText()
+        """Set and log values for configuration variables; initialise next phase of calibration"""
         self.cfg.init_ref_mass_sets()
-
-        self.cfg.folder = self.folder_io.textbox.text()
-        self.cfg.job = self.job_io.text()
-        self.cfg.client = self.client_io.text()
-        self.cfg.client_wt_IDs = self.client_masses_io.toPlainText()
-
-        self.cfg.drift_text = self.drift_io.currentText()
-        self.cfg.timed_text = self.timed_io.currentText()
-        self.cfg.correlations = self.corr_io.text()
-
-        # TODO: amend values and save config file to reflect changes?
 
         log.info('Config file: '+ self.config_io.textbox.text())
         log.info('Save folder: ' + self.cfg.folder)

@@ -7,8 +7,8 @@ from ..log import log
 from .. import __version__
 from ..gui.widgets.housekeeping import Housekeeping
 from ..gui.widgets.scheme_table import SchemeTable
-from ..gui.circweigh_popup import WeighingThread
-from ..gui.masscalc_popup import MassCalcThread
+from mass_circular_weighing.gui.threads.circweigh_popup import WeighingThread
+from mass_circular_weighing.gui.threads.masscalc_popup import MassCalcThread
 from ..routines.run_circ_weigh import analyse_all_weighings_in_file
 from ..routines.collate_data import collate_all_weighings
 from ..routines.report_results import export_results_summary
@@ -30,6 +30,7 @@ class MCWGui(QtWidgets.QWidget):
         self.setWindowTitle('Mass Calibration Program (version {}): Main Window'.format(__version__))
 
         self.housekeeping = Housekeeping()
+        self.housekeeping.load_from_config()
         lhs_panel_group = self.housekeeping.lhs_panel_group()
         self.schemetable = SchemeTable()
         central_panel_group = self.make_table_panel()
