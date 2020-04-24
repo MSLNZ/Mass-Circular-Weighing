@@ -1,10 +1,12 @@
 # this script will collect data from multiple json files for the same client weighing
 
 import os
+import numpy as np
+
 from msl.io import read
+
 from ..constants import MU_STR, SUFFIX
 from ..log import log
-import numpy as np
 
 
 def collate_all_weighings(schemetable, cfg):
