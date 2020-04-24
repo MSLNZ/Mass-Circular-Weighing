@@ -1,10 +1,7 @@
-import serial
-
-from .mettler import MettlerToledo
 from .mdebalance import Balance
 from ..log import log
 
-from ..gui.allocator_thread import AllocatorThread
+from mass_circular_weighing.gui.threads.allocator_thread import AllocatorThread
 allocator = AllocatorThread()
 
 

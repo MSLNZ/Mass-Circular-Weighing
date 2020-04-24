@@ -5,7 +5,7 @@ from datetime import date, datetime
 from msl.loadlib import Server32, Client64, IS_PYTHON_64BIT
 
 if IS_PYTHON_64BIT:
-    from mass_circular_weighing.gui.prompt_thread import PromptThread
+    from mass_circular_weighing.gui.threads.prompt_thread import PromptThread
     prompt_thread = PromptThread()
 from mass_circular_weighing.constants import FONTSIZE
 from mass_circular_weighing.log import log

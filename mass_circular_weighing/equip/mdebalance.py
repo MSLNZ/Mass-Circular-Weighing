@@ -5,7 +5,7 @@ from time import sleep
 from ..constants import SUFFIX, FONTSIZE
 from ..log import log
 
-from ..gui.prompt_thread import PromptThread
+from mass_circular_weighing.gui.threads.prompt_thread import PromptThread
 prompt_thread = PromptThread()
 
 
@@ -31,7 +31,7 @@ class Balance(object):
             resolution = record.user_defined['resolution'].split()
             self._resolution = float(resolution[0])*SUFFIX[resolution[1]]/SUFFIX[self.unit]
         except:
-             self._resolution = 0.000001
+            self._resolution = 0.000001
         self.dp = self.calc_dp()
 
         self.stable_wait = record.user_defined['stable_wait']
@@ -61,8 +61,8 @@ class Balance(object):
         :class:`float`
             The number of decimal places displayed on the balance
         """
-        str = "{:.0e}".format(self.resolution)
-        e = float(str.split('e')[1])
+        res_string = "{:.0e}".format(self.resolution)
+        e = float(res_string.split('e')[1])
         if e < 0:
             return -e
         return 0

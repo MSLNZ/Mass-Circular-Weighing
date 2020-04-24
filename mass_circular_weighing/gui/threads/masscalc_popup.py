@@ -1,15 +1,14 @@
 import numpy as np
 import os
 
-from mass_circular_weighing.constants import MU_STR
-
 from msl.qt import Qt, QtWidgets, Button, excepthook, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
 from msl.io import read
 
-from mass_circular_weighing.log import log
+from ...log import log
+from ...constants import MU_STR
+from ...routines.final_mass_calc import final_mass_calc
 
-from mass_circular_weighing.routines.final_mass_calc import final_mass_calc
 
 def label(name):
     return QtWidgets.QLabel(name)
