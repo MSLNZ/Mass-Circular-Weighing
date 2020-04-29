@@ -1,6 +1,6 @@
 from msl.qt import Thread, Worker, Signal, QtCore, QtWidgets
 
-from mass_circular_weighing.gui.widgets.aw_pos_allocator import AllocatorDialog
+from ..widgets.aw_pos_allocator import AllocatorDialog
 
 
 class AllocatorWorker(Worker):

@@ -1,9 +1,9 @@
-from mass_circular_weighing.configuration import Configuration
-from mass_circular_weighing.routines.run_circ_weigh import *
+import numpy as np
+
+from ..configuration import Configuration
+from .run_circ_weigh import *
 #from mass_circular_weighing.routines.collate_data import collate_a_data_from_json
 #from mass_circular_weighing.routines.final_mass_calc import final_mass_calc
-
-import numpy as np
 
 
 def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass, timed=False, drift='quadratic drift'):

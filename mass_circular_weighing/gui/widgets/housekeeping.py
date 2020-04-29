@@ -6,7 +6,7 @@ from ...log import log
 from ...constants import config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
 from ...configuration import Configuration
 from .browse import Browse, label
-from mass_circular_weighing.gui.threads.configedit_thread import ConfigEditorThread
+from ..threads.configedit_thread import ConfigEditorThread
 cfe = ConfigEditorThread()
 
 

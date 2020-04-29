@@ -1,5 +1,6 @@
 import numpy as np
-from mass_circular_weighing.log import log
+
+from ..log import log
 
 """ This class uses matrix least squares analysis for circular weighing measurement sequences
 For more information, see 'A General Approach to Comparisons in the Presence of Drift'

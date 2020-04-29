@@ -1,6 +1,6 @@
 from msl.qt import Thread, Worker, Signal, QtCore, QtWidgets
 
-from mass_circular_weighing.gui.widgets.config_editor import ConfigEditor
+from ..widgets.config_editor import ConfigEditor
 
 
 class ConfigEditorWorker(Worker):

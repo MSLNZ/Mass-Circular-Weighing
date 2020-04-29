@@ -5,14 +5,13 @@ from msl.io import read
 
 from ..log import log
 from .. import __version__
-from ..gui.widgets.housekeeping import Housekeeping
-from ..gui.widgets.scheme_table import SchemeTable
-from mass_circular_weighing.gui.threads.circweigh_popup import WeighingThread
-from mass_circular_weighing.gui.threads.masscalc_popup import MassCalcThread
 from ..routines.run_circ_weigh import analyse_all_weighings_in_file
 from ..routines.collate_data import collate_all_weighings
 from ..routines.report_results import export_results_summary
-
+from ..gui.widgets.housekeeping import Housekeeping
+from ..gui.widgets.scheme_table import SchemeTable
+from .threads.circweigh_popup import WeighingThread
+from .threads.masscalc_popup import MassCalcThread
 
 all_my_threads = []
 

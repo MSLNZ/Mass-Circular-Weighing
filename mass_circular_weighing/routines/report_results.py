@@ -1,7 +1,9 @@
-from mass_circular_weighing.results_summary import WordDoc
 import os
+
 from msl.io import read, read_table_excel
-from mass_circular_weighing.log import log
+
+from ..log import log
+from ..results_summary import WordDoc
 
 
 def export_results_summary(cfg, check_file, std_file, incl_datasets):

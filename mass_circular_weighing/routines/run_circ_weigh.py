@@ -111,6 +111,8 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     if bal.mode == 'aw':
         if not bal.positions:
             positions = bal.allocate_positions(weighing.wtgrps)
+            print(positions)
+            # TODO: deal with what happens if the allocator is cancelled out of before setting weighing order
         else:
             positions = bal.positions
     else:

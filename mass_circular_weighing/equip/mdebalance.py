@@ -5,7 +5,7 @@ from time import sleep
 from ..constants import SUFFIX, FONTSIZE
 from ..log import log
 
-from mass_circular_weighing.gui.threads.prompt_thread import PromptThread
+from ..gui.threads.prompt_thread import PromptThread
 prompt_thread = PromptThread()
 
 

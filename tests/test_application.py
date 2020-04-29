@@ -1,4 +1,5 @@
 import pytest
+
 from mass_circular_weighing.configuration import Configuration
 
 

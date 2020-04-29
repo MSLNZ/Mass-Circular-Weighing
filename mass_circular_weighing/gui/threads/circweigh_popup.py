@@ -4,10 +4,10 @@ import numpy as np
 from msl.qt import QtGui, QtWidgets, Button, excepthook, Logger, Signal, utils
 from msl.qt.threading import Thread, Worker
 
-from mass_circular_weighing.constants import MAX_BAD_RUNS, FONTSIZE
-from mass_circular_weighing.gui.widgets.browse import label
-from mass_circular_weighing.log import log
-from mass_circular_weighing.routines.run_circ_weigh import do_circ_weighing, analyse_weighing, check_for_existing_weighdata, check_existing_runs
+from ...log import log
+from ...constants import MAX_BAD_RUNS, FONTSIZE
+from ...routines.run_circ_weigh import do_circ_weighing, analyse_weighing, check_for_existing_weighdata, check_existing_runs
+from ..widgets.browse import label
 
 
 class WeighingWorker(Worker):

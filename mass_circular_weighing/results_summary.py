@@ -14,6 +14,7 @@ from .log import log
 # https://docs.microsoft.com/en-us/office/vba/api/word.application
 # https://support.microsoft.com/en-nz/help/316383/how-to-automate-word-from-visual-basic-net-to-create-a-new-document
 
+
 def greg_format(number):
     before, after = '{:.9f}'.format(number).split('.')
     return before + '.' + ' '.join(after[i:i+3] for i in range(0, len(after), 3))

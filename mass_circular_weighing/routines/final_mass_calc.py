@@ -1,7 +1,9 @@
 import os
 from datetime import datetime
 import numpy as np
+
 from msl.io import JSONWriter, read
+
 from .. import __version__
 from ..log import log
 from ..constants import REL_UNC, DELTA_STR

@@ -4,9 +4,9 @@ from time import perf_counter
 from msl.equipment import MSLTimeoutError
 from msl.qt import prompt, application
 
-from mass_circular_weighing.log import log
-from mass_circular_weighing.constants import SUFFIX
-from mass_circular_weighing.equip.mdebalance import Balance
+from ..log import log
+from ..constants import SUFFIX
+from .mdebalance import Balance
 
 
 class MettlerToledo(Balance):
