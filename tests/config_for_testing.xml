@@ -2,9 +2,9 @@
   <msl>
 
     <!-- Specify client-specific information. -->
-    <save_folder>C:\Users\r.hawke\Documents\</save_folder> <!-- parent folder -->
+    <save_folder>C:\Users\r.hawke\PycharmProjects\test_json_files\AsureQ_Mar</save_folder> <!-- parent folder -->
     <job>job</job>
-    <client>client</client>      <!-- Files will be created with this name inside the parent folder -->
+    <client>'AsureQ_Mar'</client>      <!-- Files will be created with this name inside the parent folder -->
     <client_masses>1r 1b 1l 1f</client_masses>
     <std_set>CUSTOM</std_set>       <!-- Use only names of sets as in <standards> below. -->
     <check_set>None</check_set>     <!-- Use only names of sets as in <standards> below, or None. -->
