@@ -22,6 +22,7 @@ def test_generate_design_matrices():
     assert cw.num_readings == 12
 
     cw.generate_design_matrices(times=[])
+    assert cw.trend == 'reading'
     id = [[1., 0., 0., 0.],
        [0., 1., 0., 0.],
        [0., 0., 1., 0.],
@@ -51,7 +52,9 @@ def test_generate_design_matrices():
 
 
 def test_determine_drift():
+
     cw.determine_drift(dataset)
+    # note that this function calls cw.expected_vals_drift(dataset, drift)
 
     checkstdevs =  {
         'no drift': 4.30300283,
@@ -61,6 +64,7 @@ def test_determine_drift():
     }
     for key, val in cw.stdev.items():
         assert val == checkstdevs.get(key)
+    # here we assume that the residuals are also correct as they are used to determine the stdev
 
 
 def test_expected_vals_drift():
@@ -68,8 +72,7 @@ def test_expected_vals_drift():
     cw.expected_vals_drift(dataset, 'quadratic drift')
 
     cw_b = cw.b['quadratic drift']
-    b = [2.25626344e+01,  7.44643179e+02 , 3.08234839e+03, 4.00637826e+03,
-     - 1.11955645e+00,  4.33467742e-03]
+    b = [2.25626344e+01,  7.44643179e+02 , 3.08234839e+03, 4.00637826e+03, -1.11955645e+00,  4.33467742e-03]
     assert [cw_b[i] == pytest.approx(b[i]) for i in range(len(b))]
 
     cw_res = cw.residuals['quadratic drift']
@@ -94,12 +97,14 @@ def test_expected_vals_drift():
 
 
 def test_drift_coeffs():
+
     dc = cw.drift_coeffs('quadratic drift')
     assert dc['linear drift'] == '-1.1196 (0.131)'
     assert dc['quadratic drift'] == '0.0043347 (0.0115)'
 
 
 def test_item_diff():
+
     analysis = cw.item_diff('quadratic drift')
     checkdata = np.array([('1a', '1b', -722.08054435, 0.34277932),
               ('1b', '1c', -2337.70520833, 0.34201342),
@@ -113,9 +118,19 @@ def test_item_diff():
             else:
                 assert analysis[i][j] == pytest.approx(checkdata[i][j])
 
+    checkdiffs = {
+        'grp1 - grp2': '-722.08 (0.343)',
+        'grp2 - grp3': '-2337.7 (0.342)',
+        'grp3 - grp4': '-924.03 (0.343)',
+        'grp4 - grp1': '3983.8 (0.358)'
+    }
+    for key, val in cw.grpdiffs.items():
+        assert val == checkdiffs[key]
+
 
 
 if __name__ == '__main__':
+
     test_generate_design_matrices()
     test_determine_drift()
     test_expected_vals_drift()
