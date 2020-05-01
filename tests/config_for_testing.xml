@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+  <msl>
+
+    <!-- Specify client-specific information. -->
+    <save_folder>C:\Users\r.hawke\Documents\</save_folder> <!-- parent folder -->
+    <job>job</job>
+    <client>client</client>      <!-- Files will be created with this name inside the parent folder -->
+    <client_masses>1r 1b 1l 1f</client_masses>
+    <std_set>CUSTOM</std_set>       <!-- Use only names of sets as in <standards> below. -->
+    <check_set>None</check_set>     <!-- Use only names of sets as in <standards> below, or None. -->
+    <drift>auto select</drift>  <!-- Allowed options: auto select, linear drift, quadratic drift, cubic drift -->
+    <use_times>NO</use_times>       <!-- Allowed options: YES or NO -->
+    <correlations>None</correlations>       <!-- Allowed options: None, or matrix of correlations-->
+
+    <!-- Specify all balances available for weighings. -->
+    <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
+    <equipment alias="AW-demo" manufacturer="Mettler Toledo" model="Test_AW"/>
+    <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPR604KMC"/>
+    <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
+    <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
+    <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
+    <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
+    <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
+    <equipment alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
+
+    <equipment alias="OMEGA" manufacturer="OMEGA" model="iTHX-W"/>
+
+    <!-- Specify the limits for ambient conditions to begin weighing. -->
+    <min_temp units="C">18.1</min_temp>
+    <max_temp units="C">30</max_temp>
+    <min_rh units="%">30</min_rh>
+    <max_rh units="%">70</max_rh>
+
+    <!-- Specify the limits for changes in ambient conditions during weighing. -->
+    <max_temp_change units="C">0.5</max_temp_change>
+    <max_rh_change units="%">15</max_rh_change>
+
+    <!-- Specify where to find acceptance limits for circular weighing data. -->
+    <acceptance_criteria>
+          <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Balance register.xlsx</path>
+          <sheet>AcceptanceCriteria</sheet>
+          <EXCL>3</EXCL> <!-- criterion for excluding a single weighing within an automatic weighing sequence
+                            from the final averaging (and from any tally of happy weighings).
+                            Currently set to a rather arbitrary value without any experimental basis... -->
+    </acceptance_criteria>
+
+    <!-- Specify all standard sets available for weighing analysis. -->
+    <standards>
+          <MET19A>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\MET19A.set</MET19A>
+          <MET19B>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\MET19B.set</MET19B>
+          <MET16A>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\MET16A.set</MET16A>
+          <MET16B>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\MET16B.set</MET16B>
+          <CUSTOM>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Reference masses SET files\CUSTOM.set</CUSTOM>
+    </standards>
+
+    <!-- Specify the Equipment-Register Databases to load equipment records from. -->
+    <registers>
+      <register
+              team="M&amp;P"
+              user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, address">
+          <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Balance register.xlsx</path>
+          <sheet>Balances</sheet>
+      </register>
+
+      <register team="M&amp;P">
+          <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Equipment register.xlsx</path>
+          <sheet>Equipment</sheet>
+      </register>
+    </registers>
+
+    <!-- Specify the Connections Databases to load connection records from. -->
+    <connections>
+      <connection>
+        <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Equipment register.xlsx</path>
+        <sheet>LenovoX260</sheet>
+      </connection>
+    </connections>
+
+  </msl>

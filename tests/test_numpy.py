@@ -182,3 +182,7 @@ def test_roll():
 
     assert [a_roll[i] == e[i] for i in range(n)]
 
+
+# np.where, np.hstack(uncerts), np.absolute, np.float
+# plus longer calculations
+
