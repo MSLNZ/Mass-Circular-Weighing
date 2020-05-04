@@ -112,7 +112,6 @@ class ConfigEditor(QtWidgets.QDialog):
 
     def arrange_refmasses_box(self):
         ref_masses_box = QtWidgets.QGroupBox("Reference Masses")
-        self.make_mass_set_table()
         formlayout = QtWidgets.QFormLayout()
         formlayout.setWidget(0, 2, self.mass_set_table)
         formlayout.addRow(label('Standard mass set'), self.cb_stds_io)
