@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 import os
 
 from msl.io import read
@@ -7,20 +6,14 @@ from msl.io import read
 from mass_circular_weighing.routines.circ_weigh_class import CircWeigh
 from mass_circular_weighing.constants import SUFFIX
 
-# testing repeatability of CircWeigh analysis (and json read)
-# using data from an Asure Quality calibration
+# testing consistency of CircWeigh analysis and json read
+# using data from the first 6 runs of an Asure Quality calibration at 1 kg
 # undertaken in March 2018 using the VBA automatic weighing procedure on HK1000
-# and visually compared with the analysis from the VBA program
+# which has been visually compared with the analysis from the VBA program
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 jsonfile_for_test = os.path.join(ROOT_DIR, r'examples\AsureQ_Mar_1000.json')
 root = read(jsonfile_for_test)
-
-for ds in root.datasets():
-    if 'measurement_run_3' in str(ds.name):
-        dataset = ds
-    elif 'analysis_run_3' in str(ds.name):
-        check_analysis = ds
 
 se = "1000 1000MA 1000MB"
 cw = CircWeigh(se)
@@ -29,7 +22,7 @@ checkstdevs = {}
 drift_keys = ['no drift', 'linear drift', 'quadratic drift', 'cubic drift']
 
 
-def test_generate_design_matrices():
+def do_generate_design_matrices():
 
     for i, grp in enumerate(["1000", "1000MA", "1000MB"]):
         assert cw.wtgrps[i] == grp
@@ -69,7 +62,7 @@ def test_generate_design_matrices():
                     assert cw.matrices.get(key)[j][3+col] == j**(col+1)
 
 
-def test_determine_drift():
+def do_determine_drift(dataset, check_analysis):
 
     assert cw.determine_drift(dataset[:, :, 1]) == 'cubic drift'
     # note that this function calls cw.expected_vals_drift(dataset, drift)
@@ -88,7 +81,7 @@ def test_determine_drift():
     # here we assume that the residuals are also correct as they are used to determine the stdev
 
 
-def test_expected_vals_drift(drift=None):
+def do_expected_vals_drift(dataset, check_analysis, drift=None):
 
     unit = dataset.metadata['Unit']
     unit2 = check_analysis.metadata["Mass unit"]
@@ -104,11 +97,15 @@ def test_expected_vals_drift(drift=None):
     assert cw.stdev[drift] == checkstdevs[drift]
 
     accept = cw.stdev[drift]*SUFFIX[unit] < max_stdev*SUFFIX['ug']
+    # note that the json file claims acceptance has not been met,
+    # because the mde balance class was used to enter the data
+    # and thus  the acceptance criterion is as used here.
+    # In reality, the weighing was an automatic weighing, which allows a larger
+    # standard deviation for individual weighing runs as they are averaged at the end.
+    assert accept == check_accept
 
-    # assert accept == check_accept
 
-
-def test_drift_coeffs(drift=None):
+def do_drift_coeffs(check_analysis, drift=None):
 
     if not drift:
         drift = check_analysis.metadata["Selected drift"]
@@ -121,7 +118,7 @@ def test_drift_coeffs(drift=None):
         pass
 
 
-def test_item_diff(drift=None):
+def do_item_diff(check_analysis, drift=None):
 
     if not drift:
         drift = check_analysis.metadata["Selected drift"]
@@ -134,30 +131,41 @@ def test_item_diff(drift=None):
                 assert analysis[i][j] == check_analysis[i][j]
             else:
                 assert analysis[i][j] == pytest.approx(check_analysis[i][j])
-                # assert analysis[i][j] == pytest.approx(check_analysis[i][j])
 
-    # checkdiffs = {}
-    # for grp in range(cw.num_wtgrps - 1):
-    #     key = 'grp' + str(grp + 1) + ' - grp' + str(grp + 2)
-    #     value = "{0:.5g}".format(check_analysis[2][grp]) \
-    #             + ' (' + "{0:.3g}".format(check_analysis[3][grp]) + ')'
-    #     checkdiffs[key] = value
-    #
-    # checkdiffs['grp' + str(cw.num_wtgrps) + ' - grp1'] = \
-    #     "{0:.5g}".format(check_analysis[2][-1]) \
-    #             + ' (' + "{0:.3g}".format(check_analysis[3][-1]) + ')'
-    #
-    # for key, val in cw.grpdiffs.items():
-    #     print(key, val)
-    #     print(checkdiffs[key])
-    #     # assert val == checkdiffs[key]
+    checkdiffs = {}
 
+    for grp in range(cw.num_wtgrps - 1):
+        key = 'grp' + str(grp + 1) + ' - grp' + str(grp + 2)
+        value = "{0:.5g}".format(check_analysis[grp][2]) \
+                + ' (' + "{0:.3g}".format(check_analysis[grp][3]) + ')'
+        checkdiffs[key] = value
+
+    checkdiffs['grp' + str(cw.num_wtgrps) + ' - grp1'] = \
+        "{0:.5g}".format(check_analysis[-1][2]) \
+                + ' (' + "{0:.3g}".format(check_analysis[-1][3]) + ')'
+
+    for key, val in cw.grpdiffs.items():
+        assert val == checkdiffs[key]
+
+
+def test_run_analysis():
+    for i in range(1, 7):
+
+        # find the appropriate data
+        for ds in root.datasets():
+            if 'measurement_run_'+str(i) in str(ds.name):
+                dataset = ds
+            elif 'analysis_run_'+str(i) in str(ds.name):
+                check_analysis = ds
+
+        # do the analysis and check that it is consistent with the example json file data
+        do_generate_design_matrices()
+        do_determine_drift(dataset, check_analysis)
+        do_expected_vals_drift(dataset, check_analysis)
+        do_drift_coeffs(check_analysis, 'linear drift')
+        do_item_diff(check_analysis, 'linear drift')
 
 
 if __name__ == '__main__':
 
-    test_generate_design_matrices()
-    test_determine_drift()
-    test_expected_vals_drift()
-    test_drift_coeffs()
-    test_item_diff()
+    test_run_analysis()

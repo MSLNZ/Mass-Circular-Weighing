@@ -27,3 +27,7 @@ def test_acceptance_criteria():
     ac = cfg.acceptance_criteria('MDE-demo', 500)
     assert ac['Max stdev from CircWeigh ('+MU_STR+'g)'] == 20.
     assert ac['Stdev for balance ('+MU_STR+'g)'] == 15.
+
+
+if __name__ == '__main__':
+    test_acceptance_criteria()
