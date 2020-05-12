@@ -56,6 +56,8 @@ class AWBal(Balance):  # TODO: change back to MettlerToledo when connecting to b
             return None
         allocator.show(self.num_pos, wtgrps)
         self._positions = allocator.wait_for_prompt_reply()
+        if not self.positions:
+            self._want_abort = True
         # TODO: at this point it would be sensible to ask operator to confirm ready for timed move routine to commence
         # e.g. prompt ok_cancel to begin balance initialisation, commence time_max_move
         return self.positions
