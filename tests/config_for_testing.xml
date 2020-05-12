@@ -2,13 +2,13 @@
   <msl>
 
     <!-- Specify client-specific information. -->
-    <save_folder>C:\Users\r.hawke\PycharmProjects\test_json_files\AsureQ_Mar</save_folder> <!-- parent folder -->
+    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\AsureQ_Mar</save_folder> <!-- parent folder -->
     <job>job</job>
     <client>'AsureQ_Mar'</client>      <!-- Files will be created with this name inside the parent folder -->
-    <client_masses>1r 1b 1l 1f</client_masses>
+    <client_masses>1 2 5 10 20 50 100 200 500 1000</client_masses>
     <std_set>CUSTOM</std_set>       <!-- Use only names of sets as in <standards> below. -->
     <check_set>None</check_set>     <!-- Use only names of sets as in <standards> below, or None. -->
-    <drift>auto select</drift>  <!-- Allowed options: auto select, linear drift, quadratic drift, cubic drift -->
+    <drift>linear drift</drift>  <!-- Allowed options: auto select, linear drift, quadratic drift, cubic drift -->
     <use_times>NO</use_times>       <!-- Allowed options: YES or NO -->
     <correlations>None</correlations>       <!-- Allowed options: None, or matrix of correlations-->
 

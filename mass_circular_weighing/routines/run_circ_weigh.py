@@ -47,7 +47,7 @@ def check_for_existing_weighdata(folder, url, se):
     else:
         if not os.path.exists(folder):
             os.makedirs(folder)
-        print('Creating new file for weighing')
+        log.debug('Creating new file for weighing')
         root = JSONWriter()
 
     root.require_group('Circular Weighings')
@@ -344,14 +344,14 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
     weighing.generate_design_matrices(times)
 
     if not drift:
-        drift = weighing.determine_drift(weighdata[:, :, 1])  # allows program to select optimum drift correctiond
+        drift = weighing.determine_drift(weighdata[:, :, 1])  # allows program to select optimum drift correction
         log.info('Residual std dev. for each drift order:')
         for key, value in weighing.stdev.items():
             log.info(tab + key + ':\t' + str(value))
     else:
-        weighing.expected_vals_drift(weighdata[:, :, 1], drift)
+        weighing.determine_drift(weighdata[:, :, 1])
         log.info('Residual std dev. for '+drift+' correction:\n' + tab
-                 + str(weighing.stdev))
+                 + str(weighing.stdev[drift]))
 
     massunit = weighdata.metadata.get('Unit')
     log.info('Selected ' + drift + ' correction (in ' + massunit + ' per ' + weighing.trend + '):\n' + tab
@@ -363,7 +363,7 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
     for key, value in weighing.grpdiffs.items():
         log.info(tab + key + ':\t' + value)
 
-    print(schemefolder.name + '/analysis_' + run_id)
+    # print(schemefolder.name + '/analysis_' + run_id)
     a = root.remove(schemefolder.name+'/analysis_'+run_id)
 
     weighanalysis = root.require_dataset(schemefolder.name+'/analysis_'+run_id,
@@ -438,6 +438,7 @@ def analyse_all_weighings_in_file(cfg, filename, se):
         scheme entry, as per standard format e.g. "1 1s 0.5+0.5s"
     """
     url = cfg.folder + "\\" + filename + '.json'
+
     i = 1
     while True:
         try:
