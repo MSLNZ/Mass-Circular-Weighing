@@ -1,0 +1,387 @@
+#File created with: MSL JSONWriter version 1.0
+{
+  "Circular Weighings": {
+    "20KRA 10KMA+10KMB 20KRB 20KRC": {
+      "measurement_run_1": {
+        "Client": "BuildUp_50kg",
+        "Balance": "LUCY",
+        "Unit": "g",
+        "Nominal mass (g)": 20000.0,
+        "Max stdev from CircWeigh (ug)": 50000.0,
+        "Stdev for balance (ug)": 50000.0,
+        "Mmt Timestamp": "05-03-2020 11:00",
+        "Time unit": "min",
+        "Ambient monitoring": {
+          "Inst": "mass 2",
+          "Sensor": 1,
+          "MIN_T": 18.1,
+          "MAX_T": 30.0,
+          "MAX_T_CHANGE": 0.5,
+          "MIN_RH": 30.0,
+          "MAX_RH": 70.0,
+          "MAX_RH_CHANGE": 15.0
+        },
+        "Weight group loading order": {
+          "Position 1": "20KRA",
+          "Position 2": "10KMA+10KMB",
+          "Position 3": "20KRB",
+          "Position 4": "20KRC"
+        },
+        "T (°C)": "20.03 to 20.08",
+        "RH (%)": "52.0 to 52.3",
+        "Ambient OK?": true,
+        "Weighing complete": true,
+        "dtype": "<f8",
+        "data": [
+          [
+            [0.0,20000.05],
+            [0.670045,20000.06],
+            [1.278651,20000.07],
+            [1.668289,20000.09]
+          ],
+          [
+            [2.035179,20000.09],
+            [2.67405,20000.06],
+            [3.106647,20000.08],
+            [3.415623,20000.1]
+          ],
+          [
+            [3.753995,20000.1],
+            [4.461147,20000.09],
+            [4.851128,20000.11],
+            [5.149722,20000.12]
+          ]
+        ]
+      },
+      "measurement_run_2": {
+        "Client": "BuildUp_50kg",
+        "Balance": "LUCY",
+        "Unit": "g",
+        "Nominal mass (g)": 20000.0,
+        "Max stdev from CircWeigh (ug)": 50000.0,
+        "Stdev for balance (ug)": 50000.0,
+        "Mmt Timestamp": "05-03-2020 11:27",
+        "Time unit": "min",
+        "Ambient monitoring": {
+          "Inst": "mass 2",
+          "Sensor": 1,
+          "MIN_T": 18.1,
+          "MAX_T": 30.0,
+          "MAX_T_CHANGE": 0.5,
+          "MIN_RH": 30.0,
+          "MAX_RH": 70.0,
+          "MAX_RH_CHANGE": 15.0
+        },
+        "Weight group loading order": {
+          "Position 1": "20KRA",
+          "Position 2": "10KMA+10KMB",
+          "Position 3": "20KRB",
+          "Position 4": "20KRC"
+        },
+        "T (°C)": "20.14 to 20.17",
+        "RH (%)": "52.8 to 53.1",
+        "Ambient OK?": true,
+        "Weighing complete": true,
+        "dtype": "<f8",
+        "data": [
+          [
+            [0.0,20000.06],
+            [0.742468,20000.04],
+            [1.144307,20000.05],
+            [1.463281,20000.07]
+          ],
+          [
+            [1.804256,20000.07],
+            [2.541035,20000.05],
+            [3.011481,20000.06],
+            [3.361212,20000.07]
+          ],
+          [
+            [3.687103,20000.08],
+            [4.24791,20000.05],
+            [4.635825,20000.06],
+            [4.95725,20000.09]
+          ]
+        ]
+      },
+      "analysis_run_1": {
+        "Analysis Timestamp": "31-03-2020 15:28",
+        "Residual std devs": "{'no drift': 0.02041241, 'linear drift': 0.00862582, 'quadratic drift': 0.00930612, 'cubic drift': 0.00901553}",
+        "Selected drift": "linear drift",
+        "Uses mmt times": false,
+        "Mass unit": "g",
+        "Drift unit": "g per reading",
+        "Acceptance met?": true,
+        "Exclude": false,
+        "linear drift": "0.0046875 (0.000762)",
+        "dtype": [
+          ["+ weight group","object"],
+          ["- weight group","object"],
+          ["mass difference","float64"],
+          ["residual","float64"]
+        ],
+        "data": [
+          ["20KRA","10KMA+10KMB",0.014687499991850927,0.007084099223361564],
+          ["10KMA+10KMB","20KRB",-0.011979166665696539,0.007084099223361565],
+          ["20KRB","20KRC",-0.011979166636592709,0.007084099223361564],
+          ["20KRC","20KRA",0.00927083331043832,0.007405049589676]
+        ]
+      },
+      "analysis_run_2": {
+        "Analysis Timestamp": "31-03-2020 15:28",
+        "Residual std devs": "{'no drift': 0.00866025, 'linear drift': 0.0046291, 'quadratic drift': 0.005, 'cubic drift': 0.00427327}",
+        "Selected drift": "cubic drift",
+        "Uses mmt times": false,
+        "Mass unit": "g",
+        "Drift unit": "g per reading",
+        "Acceptance met?": true,
+        "Exclude": false,
+        "linear drift": "0.007663 (0.0035)",
+        "quadratic drift": "-0.0013451 (0.000759)",
+        "cubic drift": "8.1522e-05 (4.55e-05)",
+        "dtype": [
+          ["+ weight group","object"],
+          ["- weight group","object"],
+          ["mass difference","float64"],
+          ["residual","float64"]
+        ],
+        "data": [
+          ["20KRA","10KMA+10KMB",0.026471832825336605,0.003587274268481805],
+          ["10KMA+10KMB","20KRB",-0.007105931726982817,0.0035552265082031613],
+          ["20KRB","20KRC",-0.01686143022379838,0.003587274268481876],
+          ["20KRC","20KRA",-0.002504470874555409,0.004167764310360481]
+        ]
+      }
+    },
+    "20KRB 10KMA+10KMB 20KRC 20KRD": {
+      "measurement_run_1": {
+        "Client": "BuildUp_50kg",
+        "Balance": "LUCY",
+        "Unit": "g",
+        "Nominal mass (g)": 20000.0,
+        "Max stdev from CircWeigh (ug)": 50000.0,
+        "Stdev for balance (ug)": 50000.0,
+        "Mmt Timestamp": "05-03-2020 11:36",
+        "Time unit": "min",
+        "Ambient monitoring": {
+          "Inst": "mass 2",
+          "Sensor": 1,
+          "MIN_T": 18.1,
+          "MAX_T": 30.0,
+          "MAX_T_CHANGE": 0.5,
+          "MIN_RH": 30.0,
+          "MAX_RH": 70.0,
+          "MAX_RH_CHANGE": 15.0
+        },
+        "Weight group loading order": {
+          "Position 1": "20KRB",
+          "Position 2": "10KMA+10KMB",
+          "Position 3": "20KRC",
+          "Position 4": "20KRD"
+        },
+        "T (°C)": "20.17 to 20.21",
+        "RH (%)": "53.4 to 54.1",
+        "Ambient OK?": true,
+        "Weighing complete": true,
+        "dtype": "<f8",
+        "data": [
+          [
+            [0.0,20000.03],
+            [0.634602,20000.03],
+            [1.049561,20000.06],
+            [1.356764,20000.04]
+          ],
+          [
+            [1.673036,20000.04],
+            [2.297591,20000.01],
+            [2.645901,20000.06],
+            [2.941125,20000.05]
+          ],
+          [
+            [3.336112,20000.05],
+            [3.890778,20000.05],
+            [4.283857,20000.06],
+            [4.558577,20000.07]
+          ]
+        ]
+      },
+      "analysis_run_1": {
+        "Analysis Timestamp": "31-03-2020 15:39",
+        "Residual std devs": "{'no drift': 0.01354006, 'linear drift': 0.01104644, 'quadratic drift': 0.01099242, 'cubic drift': 0.01202805}",
+        "Selected drift": "quadratic drift",
+        "Uses mmt times": false,
+        "Mass unit": "g",
+        "Drift unit": "g per reading",
+        "Acceptance met?": true,
+        "Exclude": false,
+        "linear drift": "-0.00125 (0.00346)",
+        "quadratic drift": "0.0003125 (0.000302)",
+        "dtype": [
+          ["+ weight group","object"],
+          ["- weight group","object"],
+          ["mass difference","float64"],
+          ["residual","float64"]
+        ],
+        "data": [
+          ["20KRB","10KMA+10KMB",0.011562499275896698,0.009047927351788117],
+          ["10KMA+10KMB","20KRC",-0.027812498941784725,0.009027711004242501],
+          ["20KRC","20KRD",0.009479166415985674,0.009047927351788108],
+          ["20KRD","20KRB",0.006770833249902353,0.009436718142967706]
+        ]
+      }
+    },
+    "20KRC 10KMA+10KMB 20KRD 20KRA": {
+      "measurement_run_1": {
+        "Client": "BuildUp_50kg",
+        "Balance": "LUCY",
+        "Unit": "g",
+        "Nominal mass (g)": 20000.0,
+        "Max stdev from CircWeigh (ug)": 50000.0,
+        "Stdev for balance (ug)": 50000.0,
+        "Mmt Timestamp": "05-03-2020 11:43",
+        "Time unit": "min",
+        "Ambient monitoring": {
+          "Inst": "mass 2",
+          "Sensor": 1,
+          "MIN_T": 18.1,
+          "MAX_T": 30.0,
+          "MAX_T_CHANGE": 0.5,
+          "MIN_RH": 30.0,
+          "MAX_RH": 70.0,
+          "MAX_RH_CHANGE": 15.0
+        },
+        "Weight group loading order": {
+          "Position 1": "20KRC",
+          "Position 2": "10KMA+10KMB",
+          "Position 3": "20KRD",
+          "Position 4": "20KRA"
+        },
+        "T (°C)": "20.19 to 20.21",
+        "RH (%)": "54.2 to 55.1",
+        "Ambient OK?": true,
+        "Weighing complete": true,
+        "dtype": "<f8",
+        "data": [
+          [
+            [0.0,20000.05],
+            [0.572177,20000.01],
+            [0.990963,20000.05],
+            [1.288456,20000.04]
+          ],
+          [
+            [1.608438,20000.05],
+            [2.104565,20000.02],
+            [2.596173,20000.06],
+            [2.880088,20000.04]
+          ],
+          [
+            [3.227909,20000.05],
+            [3.846042,20000.02],
+            [4.231205,20000.04],
+            [4.532832,20000.06]
+          ]
+        ]
+      },
+      "analysis_run_1": {
+        "Analysis Timestamp": "31-03-2020 15:39",
+        "Residual std devs": "{'no drift': 0.00816497, 'linear drift': 0.00830949, 'quadratic drift': 0.00895529, 'cubic drift': 0.00944114}",
+        "Selected drift": "no drift",
+        "Uses mmt times": false,
+        "Mass unit": "g",
+        "Drift unit": "g per reading",
+        "Acceptance met?": true,
+        "Exclude": false,
+        "dtype": [
+          ["+ weight group","object"],
+          ["- weight group","object"],
+          ["mass difference","float64"],
+          ["residual","float64"]
+        ],
+        "data": [
+          ["20KRC","10KMA+10KMB",0.03333333332921029,0.006666666666963768],
+          ["10KMA+10KMB","20KRD",-0.03333333333284827,0.006666666666963768],
+          ["20KRD","20KRA",0.0033333333340124227,0.006666666666963768],
+          ["20KRA","20KRC",-0.003333333330374444,0.006666666666963768]
+        ]
+      }
+    },
+    "20KRD 10KMA+10KMB 20KRA 20KRB": {
+      "measurement_run_1": {
+        "Client": "BuildUp_50kg",
+        "Balance": "LUCY",
+        "Unit": "g",
+        "Nominal mass (g)": 20000.0,
+        "Max stdev from CircWeigh (ug)": 50000.0,
+        "Stdev for balance (ug)": 50000.0,
+        "Mmt Timestamp": "05-03-2020 11:53",
+        "Time unit": "min",
+        "Ambient monitoring": {
+          "Inst": "mass 2",
+          "Sensor": 1,
+          "MIN_T": 18.1,
+          "MAX_T": 30.0,
+          "MAX_T_CHANGE": 0.5,
+          "MIN_RH": 30.0,
+          "MAX_RH": 70.0,
+          "MAX_RH_CHANGE": 15.0
+        },
+        "Weight group loading order": {
+          "Position 1": "20KRD",
+          "Position 2": "10KMA+10KMB",
+          "Position 3": "20KRA",
+          "Position 4": "20KRB"
+        },
+        "T (°C)": "20.21 to 20.23",
+        "RH (%)": "55.7 to 56.2",
+        "Ambient OK?": true,
+        "Weighing complete": true,
+        "dtype": "<f8",
+        "data": [
+          [
+            [0.0,20000.04],
+            [0.529362,20000.02],
+            [0.899335,20000.04],
+            [1.205984,20000.03]
+          ],
+          [
+            [1.521429,20000.04],
+            [1.993037,20000.01],
+            [2.357127,20000.03],
+            [2.633783,20000.01]
+          ],
+          [
+            [2.976115,20000.04],
+            [3.516593,20000.01],
+            [3.883444,20000.04],
+            [4.174604,20000.02]
+          ]
+        ]
+      },
+      "analysis_run_1": {
+        "Analysis Timestamp": "31-03-2020 15:39",
+        "Residual std devs": "{'no drift': 0.00645497, 'linear drift': 0.00636209, 'quadratic drift': 0.00632172, 'cubic drift': 0.00578483}",
+        "Selected drift": "cubic drift",
+        "Uses mmt times": false,
+        "Mass unit": "g",
+        "Drift unit": "g per reading",
+        "Acceptance met?": true,
+        "Exclude": false,
+        "linear drift": "0.0038102 (0.00474)",
+        "quadratic drift": "-0.0013131 (0.00103)",
+        "cubic drift": "9.058e-05 (6.16e-05)",
+        "dtype": [
+          ["+ weight group","object"],
+          ["- weight group","object"],
+          ["mass difference","float64"],
+          ["residual","float64"]
+        ],
+        "data": [
+          ["20KRD","10KMA+10KMB",0.027082661457825452,0.004856174786559287],
+          ["10KMA+10KMB","20KRA",-0.02282604036736302,0.004812791004394029],
+          ["20KRA","20KRB",0.017808538425015286,0.004856174786559383],
+          ["20KRB","20KRD",-0.022065159515477717,0.005641997362208905]
+        ]
+      }
+    }
+  }
+}
