@@ -15,13 +15,6 @@
     <!-- Specify all balances available for weighings. -->
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
     <equipment alias="AW-demo" manufacturer="Mettler Toledo" model="Test_AW"/>
-    <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPR604KMC"/>
-    <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
-    <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
-    <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
-    <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
-    <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
-    <equipment alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
 
     <equipment alias="OMEGA" manufacturer="OMEGA" model="iTHX-W"/>
 
@@ -38,7 +31,7 @@
     <!-- Specify where to find acceptance limits for circular weighing data.
     (i.e. specify the path to the Balance register, which should not change) -->
     <acceptance_criteria>
-          <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
+          <path>tests\samples\Balance register.xlsx</path>
           <sheet>AcceptanceCriteria</sheet>
           <EXCL>3</EXCL> <!-- criterion for excluding a single weighing within an automatic weighing sequence
                             from the final averaging (and from any tally of happy weighings).
@@ -48,11 +41,8 @@
     <!-- Specify all standard sets available for weighing analysis using individual tags such as <MET19A>.
     Whichever tags are used here must also be used when specifying the std_set and check_set.. -->
     <standards>
-          <MET19A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19A.set</MET19A>
-          <MET19B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19B.set</MET19B>
-          <MET16A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16A.set</MET16A>
-          <MET16B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16B.set</MET16B>
-          <CUSTOM>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\CUSTOM.set</CUSTOM>
+          <MET14A>tests\samples\final_mass_calc\MET14A.set</MET14A>
+          <MET14B>tests\samples\final_mass_calc\MET14B.set</MET14B>
     </standards>
 
     <!-- Specify the Equipment-Register Databases to load equipment records from.
@@ -62,12 +52,12 @@
       <register
               team="M&amp;P"
               user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, address">
-          <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
+          <path>tests\samples\Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>
 
       <register team="M&amp;P">
-          <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
+          <path>tests\samples\Equipment register.xlsx</path>
           <sheet>Equipment</sheet>
       </register>
     </registers>
@@ -77,7 +67,7 @@
     Make sure to specify the correct sheet for the computer in use -->
     <connections>
       <connection>
-        <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
+        <path>tests\samples\Equipment register.xlsx</path>
         <sheet>LenovoX260</sheet>
       </connection>
     </connections>
