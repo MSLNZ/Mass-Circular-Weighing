@@ -3,7 +3,7 @@
   "Circular Weighings": {
     "1000 1000MA 1000MB": {
       "measurement_run_1": {
-        "Client": "AsureQ_Mar",
+        "Client": "CircWeighData",
         "Balance": "MDE-demo",
         "Unit": "mg",
         "Nominal mass (g)": 1000,
@@ -45,7 +45,7 @@
         ]
       },
       "measurement_run_2": {
-        "Client": "AsureQ_Mar",
+        "Client": "CircWeighData",
         "Balance": "MDE-demo",
         "Unit": "mg",
         "Nominal mass (g)": 1000,
@@ -87,7 +87,7 @@
         ]
       },
       "measurement_run_3": {
-        "Client": "AsureQ_Mar",
+        "Client": "CircWeighData",
         "Balance": "MDE-demo",
         "Unit": "mg",
         "Nominal mass (g)": 1000,
@@ -129,7 +129,7 @@
         ]
       },
       "measurement_run_4": {
-        "Client": "AsureQ_Mar",
+        "Client": "CircWeighData",
         "Balance": "MDE-demo",
         "Unit": "mg",
         "Nominal mass (g)": 1000,
@@ -171,7 +171,7 @@
         ]
       },
       "measurement_run_5": {
-        "Client": "AsureQ_Mar",
+        "Client": "CircWeighData",
         "Balance": "MDE-demo",
         "Unit": "mg",
         "Nominal mass (g)": 1000,
@@ -213,7 +213,7 @@
         ]
       },
       "measurement_run_6": {
-        "Client": "AsureQ_Mar",
+        "Client": "CircWeighData",
         "Balance": "MDE-demo",
         "Unit": "mg",
         "Nominal mass (g)": 1000,

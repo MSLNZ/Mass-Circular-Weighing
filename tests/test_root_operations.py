@@ -5,7 +5,7 @@ import pytest
 from msl.io import JSONWriter, read
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-jsonfile_for_test = os.path.join(ROOT_DIR, r'examples\BuildUp_50kg_20000.json')
+jsonfile_for_test = os.path.join(ROOT_DIR, r'tests\samples\BuildUp_50kg_20000.json')
 
 
 def check_remove(url=jsonfile_for_test, se="20KRA 10KMA+10KMB 20KRB 20KRC"):

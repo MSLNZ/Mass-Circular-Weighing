@@ -7,12 +7,12 @@ from mass_circular_weighing.routines.circ_weigh_class import CircWeigh
 from mass_circular_weighing.constants import SUFFIX
 
 # testing consistency of CircWeigh analysis and json read
-# using data from the first 6 runs of an Asure Quality calibration at 1 kg
-# undertaken in March 2018 using the VBA automatic weighing procedure on HK1000
-# which has been visually compared with the analysis from the VBA program
+# using data from the first 6 runs of a calibration at 1 kg
+# undertaken on 20 March 2018 using the VBA automatic weighing procedure on HK1000
+# and which has been visually compared with the analysis from the VBA program
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-jsonfile_for_test = os.path.join(ROOT_DIR, r'examples\AsureQ_Mar_1000.json')
+jsonfile_for_test = os.path.join(ROOT_DIR, r'tests\samples\CircWeighData_1000.json')
 root = read(jsonfile_for_test)
 
 se = "1000 1000MA 1000MB"

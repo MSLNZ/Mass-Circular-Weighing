@@ -5,7 +5,7 @@ from mass_circular_weighing.configuration import Configuration
 from mass_circular_weighing.constants import MU_STR
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-config_for_test = os.path.join(ROOT_DIR, r'tests\config_for_testing.xml')
+config_for_test = os.path.join(ROOT_DIR, r'tests\samples\config_for_testing.xml')
 
 
 def test_acceptance_criteria():
