@@ -1,8 +1,6 @@
 import os
-import xlwt
 from tabulate import tabulate
 
-from msl.loadlib import LoadLibrary #, utils
 from msl.io import read
 
 from .constants import IN_DEGREES_C, MU_STR
@@ -30,51 +28,52 @@ def list_to_csstr(idlst):
 
 
 class LaTexDoc(object):
+    def make_title(self, title):
+        self.fp.write(
+            '\\begin{document}\n'
+            '\\title{' + title.replace('_', " ") + '}\n'
+            '\\maketitle\n\n'
+        )
+
     def __init__(self, filename):
         #
         self.fp = open(filename, mode='w', encoding='utf-8')
         self.fp.write(
                 '\\documentclass[12pt]{article}\n'
+                '\\usepackage[a4paper,margin=2cm,landscape]{geometry}\n'
+                '\\usepackage{tabu}\n'
+                '\\usepackage{longtable}\n'
+                '\\usepackage{url}\n'
                 '\\usepackage{layouts}\n\n'
         )
 
         self.collate_ambient = {'T'+IN_DEGREES_C: [], 'RH (%)': []}
 
-    def make_title(self, title):
-        self.fp.write(
-            '\\begin{document}\n'
-            '\\title{' + title + '}\n'
-            '\\maketitle\n\n'
-        )
-
     def make_heading1(self, heading):
         # Insert a heading.
-        self.fp.write('\\section*{' + heading + '}\n')
+        self.fp.write('\n\\section*{' + heading + '}\n')
 
     def make_heading2(self, heading):
         # Insert a heading.
-        self.fp.write('\\subsection*{' + heading + '}\n')
+        self.fp.write('\n\\subsection*{' + heading + '}\n')
 
     def make_heading3(self, heading):
         # Insert a heading.
-        self.fp.write('\\subsubsection*{' + heading + '}\n')
+        self.fp.write('\n\\subsubsection*{' + heading + '}\n')
 
     def make_heading4(self, heading):
         # Insert a heading.
-        self.fp.write('\\paragraph{\\emph{' + heading + '}}\n')
+        self.fp.write('\n\\paragraph{\\emph{' + heading + '}}\n')
 
     def make_normal_text(self, text, size=None):
         #Insert another paragraph.
         if size:
-            self.fp.write('\\paragraph{\\' + size + '{' + text + '}}\n')
+            self.fp.write('\n\\paragraph{\\' + size + '{' + text + '}}\n')
         else:
-            self.fp.write('\\paragraph{' + text + '}\n')
+            self.fp.write('\n\\paragraph{' + text + '}\n')
 
     def page_break(self):
         self.fp.write('\\pagebreak')
-
-    def save_doc(self, filename):
-        pass
 
     def close_doc(self):
         self.fp.write(
@@ -84,65 +83,73 @@ class LaTexDoc(object):
         self.fp.close()
 
     def init_report(self, job, client, folder):
-        ffolder = folder.replace('\\', "\\textbackslash ", )
         self.make_title(job + " for " + client)
-        self.make_normal_text("Data files saved in " + ffolder + '\n')
+        self.fp.write("Data files saved in \\url{" + folder + '} \n')
 
     def make_table_norm(self, data):
         # 'Insert a table, fill it with data, and make the first row
         # 'bold and italic.
-        print(data, type(data))
+        # print(data, type(data), tabulate(data, tablefmt="latex"))
         self.fp.write(tabulate(data, tablefmt="latex"))
 
     def make_table_struct(self, headers, data):
         # 'Insert a table, fill it with data, and make the first row
         # 'bold and italic.
-        print(data, headers)
-        self.fp.write(tabulate(data, headers=headers, tablefmt="latex"))
+        # print(tabulate(data.data,tablefmt="latex"))
+        self.fp.write(tabulate(data.data, headers=headers, tablefmt="latex"))
 
     def make_table_wts(self, client_wt_IDs, check_wt_IDs, check_set_file_path, std_wt_IDs, std_set_file_path):
         self.fp.write(
-            '\\begin{tabular}{ll}\n'
-            '\\hline '
-            ' Client weights:  & '+ str(client_wt_IDs) + '\n'
-            ' Check weights:   & '+ str(check_wt_IDs) + '\n'
-            '                  & '+ str(check_set_file_path) + '\n'
-            ' Standard weights & '+ str(std_wt_IDs) + '\n'
-            '                  & '+ str(std_set_file_path) + '\n'                                                                                                                              ' Client weights:  & '+ str(client_wt_IDs) + '\n'
-            '\hline'
-            '\end{tabular}'
+            '\n\\begin{tabu}{lX}\n'
+            ' Client weights:  & '+ str(client_wt_IDs) + '\\\\ \n'
+            ' Check weights:   & '+ str(check_wt_IDs) + '\\\\ \n'
+            '                  & \\url{'+ str(check_set_file_path) + '} \\\\ \n'
+            ' Standard weights & '+ str(std_wt_IDs) + '\\\\ \n'
+            '                  & \\url{'+ str(std_set_file_path) + '} \\\\ \n'
+            '\n\\end{tabu}'
         )
 
     def make_table_wts_nochecks(self, client_wt_IDs, std_wt_IDs, std_set_file_path):
         self.fp.write(
-            '\\begin{tabular}{ll}\n'
-            '\\hline '
-            ' Client weights:  & '+ str(client_wt_IDs) + '\n'
-            ' Check weights:   &    None                    \n'
-            ' Standard weights & '+ str(std_wt_IDs) + '\n'
-            '                  & '+ str(std_set_file_path) + '\n'                                                                                                                              ' Client weights:  & '+ str(client_wt_IDs) + '\n'
-            '\hline'
-            '\end{tabular}'
+            '\n\\begin{tabu}{lX}\n'
+            ' Client weights:  & ' + str(client_wt_IDs) + '\\\\ \n'
+            ' Check weights:   &    None                    \\\\ \n'
+            ' Standard weights & '+ str(std_wt_IDs) + '\\\\ \n'
+            '                  & \\url{'+ str(std_set_file_path) + '} \\\\ \n'
+            '\n\\end{tabu}'
         )
 
-    def make_table_massdata(self, data, masscol=None):
+    def make_table_massdata(self, data, headers, masscol=None):
         """Makes table of structured data containing one column of mass data to be formatted in 'Greg' formatting"""
-        self.make_table_norm(data.data)
+        # self.fp.write("\\begin{landscape}\n")
+        self.fp.write("\\begin{small}\n")
+        data_as_str = tabulate(data.data, tablefmt="latex", headers=headers)
+        data_as_str = data_as_str\
+            .replace('\\begin{tabular}', '\\begin{longtabu} to \\textwidth ') \
+            .replace('\\end{tabular}', '\\end{longtabu}') \
+            .replace("Δ", "\t$\\Delta$")\
+            .replace('+', ' + ')
+        self.fp.write(data_as_str)
+        self.fp.write("\n\\end{small}\n")
+
 
     def add_weighing_scheme(self, scheme, fmc_root, check_file, std_file):
-        client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("client weight ID"))
+        client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("weight ID"))
         if check_file:
             checks = {
-                'weight ID': list_to_csstr(fmc_root["1: Mass Sets"]["Check"].metadata.get("check weight ID")),
+                'weight ID': list_to_csstr(fmc_root["1: Mass Sets"]["Check"].metadata.get("weight ID")),
                 'Set file': check_file
             }
         else:
             checks = None
-        std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("std weight ID"))
+        std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("weight ID"))
 
         self.make_heading1('Weighing Scheme')
         headers = ['Weight groups', 'Nominal mass(g)', 'Balance alias', '# runs']
         self.make_table_struct(headers, scheme)
+
+        self.make_normal_text("")
+
         if checks is not None:
             self.make_table_wts(client_wt_IDs, checks['weight ID'], checks['Set file'], std_wts, std_file)
         else:
@@ -156,50 +163,47 @@ class LaTexDoc(object):
 
         self.make_heading2('Input data')
         input_data = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
-        self.make_table_massdata(input_data, 3)
+        h1 = input_data.metadata.get('metadata')['headers']
+        self.make_table_massdata(input_data, h1, 3)
 
         self.make_heading2('Mass values from Least Squares solution')
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
         h2 = mvals.metadata.get('metadata')['headers']
-        self.make_table_massdata(mvals, 4)
+        self.make_table_massdata(mvals, h2, 4)
         meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
         self.make_normal_text(
                 "Number of observations = " + str(meta['Number of observations']) +
                 ", Number of unknowns = " + str(meta['Number of unknowns']) +
-                ", Degrees of freedom = " + str(meta['Degrees of freedom']) +
-                ", \nRelative uncertainty for no buoyancy correction (ppm) = " + str(meta['Relative uncertainty for no buoyancy correction (ppm)']) +
-                ", \nSum of residues squared (ug^2) = " + str(meta['Sum of residues squared ('+MU_STR+'g^2)'])
+                ", Degrees of freedom = " + str(meta['Degrees of freedom'])
         )
-        self.page_break()
+        self.make_normal_text(
+                "Relative uncertainty for no buoyancy correction (ppm) = " +
+                str(meta['Relative uncertainty for no buoyancy correction (ppm)'])
+        )
+        self.make_normal_text(
+            "Sum of residues squared ($\\mu^2$) = " + str(meta['Sum of residues squared ('+MU_STR+'g^2)'])
+        )
 
     def make_table_run_meta(self, cw_run_meta):
         """Makes table of ambient and other metadata from circular weighing run"""
+        print(cw_run_meta)
         self.fp.write(
             '\\begin{tabular}{ll}\n'
             '\\hline '
             ' Time:  & '+ cw_run_meta.get("Mmt Timestamp").split()[1] + '&'
             ' Date:   & '+ cw_run_meta.get("Mmt Timestamp").split()[0]+ '&'
             ' Balance  & '+ cw_run_meta.get("Balance") + '&'
-            ' Unit: & ' + cw_run_meta.get("Unit") + '\n'
+            ' Unit: & ' + cw_run_meta.get("Unit") + '\\\\ \n'
             ' Temp (°C): & ' + cw_run_meta.get("T"+IN_DEGREES_C) + '&'
             ' RH (%): & ' + cw_run_meta.get("RH (%)") +  '&' 
-            " Ambient OK? & " + str(cw_run_meta.get("Ambient OK?")) + '\n'                                                                                                                              ' Client weights:  & '+ str(client_wt_IDs) + '\n'
+            " Ambient OK? & " + str(cw_run_meta.get("Ambient OK?")) + '\\\\ \n'     
             '\\hline'
             '\\end{tabular}'
         )
 
     def make_table_diffs_meta(self, cw_anal_meta):
         '''Makes table of metadata from circular weighing analysis'''
-        table = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, 4, 2) # 1 = autofit, 0 not
-        table.Range.ParagraphFormat.SpaceAfter = 0
-        table.Cell(1, 1).Range.Text = 'Analysis uses times?'
-        table.Cell(1, 2).Range.Text = str(cw_anal_meta.get("Uses mmt times"))
-        table.Cell(2, 1).Range.Text = "Residual std devs:"
         res_dict = cw_anal_meta.get("Residual std devs")
-        table.Cell(2, 2).Range.Text = res_dict.strip("{").strip("}")
-        table.Cell(3, 1).Range.Text = 'Selected drift:'
-        table.Cell(3, 2).Range.Text = cw_anal_meta.get("Selected drift")
-        table.Cell(4, 1).Range.Text = "Drift components ("+ cw_anal_meta.get("Drift unit") + "):"
         drifts = ""
         try:
             drifts += 'linear drift:\t' + cw_anal_meta.get("linear drift")
@@ -207,9 +211,17 @@ class LaTexDoc(object):
             drifts += '\ncubic drift:\t' + cw_anal_meta.get("cubic drift")
         except TypeError:
             pass
-        table.Cell(4, 2).Range.Text = drifts
-        table.Range.Font.Size = self.smallfont
-        table.Columns.Autofit()
+        self.fp.write(
+            '\n\\begin{small}'
+            '\n\\begin{tabu}{lX}\n'
+            ' Analysis uses times?  & '+ str(cw_anal_meta.get("Uses mmt times")) + '\\\\ \n'
+            ' Residual std devs:  & '+ res_dict.strip("{").strip("}") + '\\\\ \n'
+            ' Selected drift:  & ' + cw_anal_meta.get("Selected drift") + '\\\\ \n'
+            ' Standard weights & '+ str(std_wt_IDs) + '\\\\ \n'
+            ' Drift components (' + cw_anal_meta.get("Drift unit") + "): & " + drifts + '\\\\ \n'
+            '\n\\end{tabu}'
+            '\n\\end{small}'
+        )
 
     def make_table_cwdata(self, wtpos, weighdata):
         '''Makes table of raw circular weighing data with headings '(position) weight group',
@@ -313,14 +325,14 @@ class LaTexDoc(object):
                         d = weighdata.metadata.get("Weight group loading order") # new way of recording groups
                         for key, value in d.items():
                             wtpos.append([value, key.strip("Position ")])
-                    self.make_table_cwdata(wtpos, weighdata)
+                    # self.make_table_cwdata(wtpos, weighdata)
 
                     self.make_heading4('Column average differences')
                     analysisdata = root.require_dataset(
                         root['Circular Weighings'][se].name + '/analysis_' + run_id)
-                    self.make_table_cw_diffs(analysisdata.data)
-                    self.make_normal_text(" ", self.smallfont)
-                    self.make_table_diffs_meta(analysisdata.metadata)
+                    # self.make_table_cw_diffs(analysisdata.data)
+                    self.make_normal_text(" ", 'small')
+                    # self.make_table_diffs_meta(analysisdata.metadata)
 
     def add_weighing_datasets(self, client, folder, scheme, incl_datasets):
         self.make_heading1("Circular Weighing Data")
@@ -340,12 +352,12 @@ class LaTexDoc(object):
                     self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
 
         self.make_heading2("Overall ambient conditions for included weighings")
-        self.make_normal_text(
-            "T"+IN_DEGREES_C+":\t" + str(min(self.collate_ambient["T"+IN_DEGREES_C])) + " to " + str(max(self.collate_ambient["T"+IN_DEGREES_C]))
-        )
-        self.make_normal_text(
-            "RH (%):\t" + str(round(min(self.collate_ambient["RH (%)"]), 1)) + " to " + str(round(max(self.collate_ambient["RH (%)"]), 1))
-        )
+        # self.make_normal_text(
+        #     "T"+IN_DEGREES_C+":\t" + str(min(self.collate_ambient["T"+IN_DEGREES_C])) + " to " + str(max(self.collate_ambient["T"+IN_DEGREES_C]))
+        # )
+        # self.make_normal_text(
+        #     "RH (%):\t" + str(round(min(self.collate_ambient["RH (%)"]), 1)) + " to " + str(round(max(self.collate_ambient["RH (%)"]), 1))
+        # )
 
 
 

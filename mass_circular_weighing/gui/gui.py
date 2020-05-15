@@ -175,17 +175,12 @@ class MCWGui(QtWidgets.QWidget):
         if not self.housekeeping.cfg.all_stds:
             self.housekeeping.initialise_cfg()
 
-        if self.housekeeping.cfg.all_checks is not None:
-            check_wt_IDs = self.housekeeping.cfg.all_checks['weight ID']
-        else:
-            check_wt_IDs = None
-
         data = collate_all_weighings(self.schemetable, self.housekeeping.cfg)
 
         fmc_info = {'Folder': self.housekeeping.cfg.folder,
                     'Client': self.housekeeping.cfg.client,
                     'client_wt_IDs': self.housekeeping.cfg.client_wt_IDs,
-                    'check_wt_IDs': check_wt_IDs,
+                    'check_masses': self.housekeeping.cfg.all_checks,
                     'std_masses': self.housekeeping.cfg.all_stds,
                     'nbc': True,
                     'corr': self.housekeeping.cfg.correlations,

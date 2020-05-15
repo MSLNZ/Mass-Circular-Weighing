@@ -214,15 +214,15 @@ class WordDoc(object):
         self.make_normal_text("", size=self.smallfont)
 
     def add_weighing_scheme(self, scheme, fmc_root, check_file, std_file):
-        client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("client weight ID"))
+        client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("weight ID"))
         if check_file:
             checks = {
-                'weight ID': list_to_csstr(fmc_root["1: Mass Sets"]["Check"].metadata.get("check weight ID")),
+                'weight ID': list_to_csstr(fmc_root["1: Mass Sets"]["Check"].metadata.get("weight ID")),
                 'Set file': check_file
             }
         else:
             checks = None
-        std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("std weight ID"))
+        std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("weight ID"))
 
         self.make_heading1('Weighing Scheme')
         headers = ['Weight groups', 'Nominal mass(g)', 'Balance alias', '# runs']
