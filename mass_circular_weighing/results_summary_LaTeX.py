@@ -5,18 +5,6 @@ from msl.io import read
 
 from .constants import IN_DEGREES_C, MU_STR
 from .log import log
-# info = utils.get_com_info()
-# for key, value in info.items():
-#     if 'Microsoft' in value['ProgID']:
-#         print(key, value)
-
-# https://docs.microsoft.com/en-us/office/vba/api/word.application
-# https://support.microsoft.com/en-nz/help/316383/how-to-automate-word-from-visual-basic-net-to-create-a-new-document
-
-
-def greg_format(number):
-    before, after = '{:.9f}'.format(number).split('.')
-    return before + '.' + ' '.join(after[i:i+3] for i in range(0, len(after), 3))
 
 
 def list_to_csstr(idlst):
@@ -41,8 +29,10 @@ class LaTexDoc(object):
         self.fp.write(
                 '\\documentclass[12pt]{article}\n'
                 '\\usepackage[a4paper,margin=2cm,landscape]{geometry}\n'
+                '\\usepackage{booktabs}\n'
                 '\\usepackage{tabu}\n'
                 '\\usepackage{longtable}\n'
+                "\\usepackage{siunitx}\n"
                 '\\usepackage{url}\n'
                 '\\usepackage{layouts}\n\n'
         )
@@ -86,18 +76,6 @@ class LaTexDoc(object):
         self.make_title(job + " for " + client)
         self.fp.write("Data files saved in \\url{" + folder + '} \n')
 
-    def make_table_norm(self, data):
-        # 'Insert a table, fill it with data, and make the first row
-        # 'bold and italic.
-        # print(data, type(data), tabulate(data, tablefmt="latex"))
-        self.fp.write(tabulate(data, tablefmt="latex"))
-
-    def make_table_struct(self, headers, data):
-        # 'Insert a table, fill it with data, and make the first row
-        # 'bold and italic.
-        # print(tabulate(data.data,tablefmt="latex"))
-        self.fp.write(tabulate(data.data, headers=headers, tablefmt="latex"))
-
     def make_table_wts(self, client_wt_IDs, check_wt_IDs, check_set_file_path, std_wt_IDs, std_set_file_path):
         self.fp.write(
             '\n\\begin{tabu}{lX}\n'
@@ -122,16 +100,41 @@ class LaTexDoc(object):
     def make_table_massdata(self, data, headers, masscol=None):
         """Makes table of structured data containing one column of mass data to be formatted in 'Greg' formatting"""
         # self.fp.write("\\begin{landscape}\n")
-        self.fp.write("\\begin{small}\n")
-        data_as_str = tabulate(data.data, tablefmt="latex", headers=headers)
-        data_as_str = data_as_str\
-            .replace('\\begin{tabular}', '\\begin{longtabu} to \\textwidth ') \
-            .replace('\\end{tabular}', '\\end{longtabu}') \
-            .replace("Δ", "\t$\\Delta$")\
-            .replace('+', ' + ')
-        self.fp.write(data_as_str)
-        self.fp.write("\n\\end{small}\n")
 
+        if masscol == 3:  # Input data table
+            col_type_str = "ll S S S"
+            headerstr = " {+ weight group} & {- weight group} & {mass difference (g)} & " \
+                        "{balance uncertainty (ug)} & {residual (ug)} \\\\"
+        elif masscol == 4:  # MSL data table
+            col_type_str = "S ll S S S S l"
+            headerstr = " {Nominal (g)} & {Weight ID} & {Set ID} & {Mass value (g)} & {Uncertainty (ug)} & " \
+                        "{95\% CI} & {Cov} & {c.f. Reference value (g)} \\\\"
+        else:
+            log.error("Unknown data table type")
+            return None
+
+        self.fp.write(
+            "\n\\begin{small}\n"
+            "\\begin{longtabu} to \\textwidth {" + col_type_str + "}\n"
+            "\\toprule"
+        )
+        # headerstr = "\n "
+        # for h in headers:
+        #     headerstr += "{" + h + "} & "
+        # headerstr.strip('& ').replace("%", "\\ %")+'\\\\ \n'
+        self.fp.write(headerstr)
+        self.fp.write("\n\\midrule")
+
+        data_as_str = tabulate(data.data, tablefmt="latex_booktabs")
+        data_as_str = data_as_str.split("toprule")[-1]
+        data_as_str = data_as_str.strip("tabular}")
+        data_as_str = data_as_str.replace("Δ", "\t$\\Delta$").replace('+', ' + ')
+        self.fp.write(data_as_str)
+
+        self.fp.write(
+            "longtabu}"
+            "\n\\end{small}\n"
+        )
 
     def add_weighing_scheme(self, scheme, fmc_root, check_file, std_file):
         client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("weight ID"))
@@ -146,7 +149,7 @@ class LaTexDoc(object):
 
         self.make_heading1('Weighing Scheme')
         headers = ['Weight groups', 'Nominal mass(g)', 'Balance alias', '# runs']
-        self.make_table_struct(headers, scheme)
+        self.fp.write(tabulate(scheme.data, headers=headers, tablefmt="latex_booktabs"))
 
         self.make_normal_text("")
 
@@ -186,18 +189,16 @@ class LaTexDoc(object):
 
     def make_table_run_meta(self, cw_run_meta):
         """Makes table of ambient and other metadata from circular weighing run"""
-        print(cw_run_meta)
+
         self.fp.write(
-            '\\begin{tabular}{ll}\n'
-            '\\hline '
+            '\\begin{tabular}{llllllll}\n'
             ' Time:  & '+ cw_run_meta.get("Mmt Timestamp").split()[1] + '&'
             ' Date:   & '+ cw_run_meta.get("Mmt Timestamp").split()[0]+ '&'
             ' Balance  & '+ cw_run_meta.get("Balance") + '&'
             ' Unit: & ' + cw_run_meta.get("Unit") + '\\\\ \n'
             ' Temp (°C): & ' + cw_run_meta.get("T"+IN_DEGREES_C) + '&'
-            ' RH (%): & ' + cw_run_meta.get("RH (%)") +  '&' 
+            ' RH (\\%): & ' + cw_run_meta.get("RH (%)") +  '&' 
             " Ambient OK? & " + str(cw_run_meta.get("Ambient OK?")) + '\\\\ \n'     
-            '\\hline'
             '\\end{tabular}'
         )
 
@@ -217,7 +218,6 @@ class LaTexDoc(object):
             ' Analysis uses times?  & '+ str(cw_anal_meta.get("Uses mmt times")) + '\\\\ \n'
             ' Residual std devs:  & '+ res_dict.strip("{").strip("}") + '\\\\ \n'
             ' Selected drift:  & ' + cw_anal_meta.get("Selected drift") + '\\\\ \n'
-            ' Standard weights & '+ str(std_wt_IDs) + '\\\\ \n'
             ' Drift components (' + cw_anal_meta.get("Drift unit") + "): & " + drifts + '\\\\ \n'
             '\n\\end{tabu}'
             '\n\\end{small}'
@@ -232,73 +232,66 @@ class LaTexDoc(object):
         wtpos : list of weight groups and positions as tuples
         weighdata : structured array
         '''
-        rows = len(weighdata) + 1
+        rows = len(weighdata)
         cols = len(wtpos) * 2
-        oTable = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, rows, cols)
-        # oTable.Range.ParagraphFormat.SpaceAfter = 6
+        col_str = cols*'S'
+
+        self.fp.write(
+            '\n\\begin{tabular}{'+col_str+'}'
+            '\n\\toprule \n'
+        )
+
+        headers = ""
+        time_reads = ""
         for c in range(len(wtpos)):
-            oTable.Cell(1, 2*c+1).Range.Text = "(" + str(wtpos[c][1]) + ") " + str(wtpos[c][0])
-            # oTable.Cell(1, 2*(c + 1)).Range.Text = str(wtpos[c][1])
-            for r in range(2, rows+1):
-                oTable.Cell(r, 2 * c + 1).Range.Text = '{:.2f}'.format(weighdata[r-2][c][0])
-                oTable.Cell(r, 2 * (c + 1)).Range.Text = '{:.6g}'.format(weighdata[r-2][c][1])
-        oTable.Rows.Item(1).Range.Font.Bold = True
-        oTable.Rows.Item(1).Range.Font.Italic = True
+            headers += " \\multicolumn{2}{c}{(" + str(wtpos[c][1]) + ") " + str(wtpos[c][0]) + '} & '
+            time_reads += ' {Time} & {Reading} & '
 
-        oTable.Range.Font.Size = self.smallfont
-        oTable.Columns.Autofit()
+        self.fp.write(headers.strip('& ')+'\\\\ \n')
+        self.fp.write(time_reads.strip('& ')+'\\\\ \n')
+        self.fp.write(' \\midrule \n')
 
-        for c in range(len(wtpos)):
-            myCells = self.oDoc.Range(oTable.Cell(1, c+1).Range.Start, oTable.Cell(1, c+2).Range.End)
-            myCells.Cells.Merge()
-            # https://docs.microsoft.com/en-us/office/vba/api/word.cells.merge
+        for r in range(0, rows):
+            row_str = " "
+            for c in range(len(wtpos)):
+                row_str += '{:.2f}'.format(weighdata[r][c][0]) + ' & ' + '{:.6g}'.format(weighdata[r][c][1]) + ' & '
+            self.fp.write(row_str.strip('& ') + '\\\\ \n')
 
-        oTable.Rows.Item(1).Range.ParagraphFormat.Alignment = 1
-        oTable.Borders.Enable = True
+        self.fp.write(
+            '\n\\bottomrule \n'
+            '\n\\end{tabular}\n'
+            '\n '
+        )
 
     def make_table_cw_diffs(self, data):
         """Makes table of differences e.g. position 0 - position 1, mass difference, residual.
         Uses original units from weighing."""
-        headers = ["+ weight group", "- weight group", "mass difference", "residual"]
-        rows = len(data) + 1
-        cols = len(headers)
-        oTable = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, rows, cols)
-        oTable.Range.ParagraphFormat.SpaceAfter = 0
-        for c in range(1, cols + 1):
-            oTable.Cell(1, c).Range.Text = str(headers[c - 1])
-            for r in range(2, rows + 1):
-                if c > 2:
-                    oTable.Cell(r, c).Range.Text = '{:.7f}'.format(data[r - 2][c - 1])
-                    oTable.Cell(r, c).Range.ParagraphFormat.Alignment = 2
-                else:
-                    oTable.Cell(r, c).Range.Text = str(data[r - 2][c - 1])
-        oTable.Rows.Item(1).Range.Font.Bold = True
-        oTable.Rows.Item(1).Range.Font.Italic = True
-
-        oTable.Range.Font.Size = self.smallfont
-        oTable.Columns.Autofit()
+        headers = ["{+ weight group}", "{- weight group}", "{mass difference}", "{residual}"]
+        tab_str = tabulate(data.data, headers=headers, tablefmt="latex_booktabs", )
+        tab_str = tab_str.replace("\}", "}").replace("\{", "{").replace("{llrr}", "{l l S S}")
+        self.fp.write(tab_str + "\n")
 
     def add_weighing_dataset(self, cw_file, se, nom, incl_datasets):
         """How to add a dataset from a single circular weighing"""
         if not os.path.isfile(cw_file):
-            print('No data yet collected for '+se)
+            log.warning('No data yet collected for '+se)
         else:
             self.make_heading2(se)
-            print('Reading '+cw_file)
+            log.info('Reading '+cw_file)
             root = read(cw_file)
             wt_grps = se.split()
 
             for dataset in root['Circular Weighings'][se].datasets():
                 dname = dataset.name.split('_')
-                ambient = False
+                ambient = True # TODO: make false when executing from GUI
 
                 if dname[0][-8:] == 'analysis':
                     run_id = 'run_' + dname[2]
                     if (str(float(nom)), se, dname[2]) in incl_datasets:
-                        self.make_heading3(run_id)
+                        self.make_heading3(run_id.replace('_', ' '))
                         ambient = True
                     else:
-                        self.make_heading3(run_id + "(EXCLUDED)")
+                        self.make_heading3(run_id.replace('_', ' ') + " (EXCLUDED)")
 
                     weighdata = root.require_dataset(
                         root['Circular Weighings'][se].name + '/measurement_' + run_id)
@@ -313,26 +306,31 @@ class LaTexDoc(object):
                         for rh in rhs:
                             self.collate_ambient['RH (%)'].append(float(rh))
 
-                    self.make_heading4('Balance readings')
-                    self.make_normal_text('Note times are in minutes; weighing positions are in brackets.')
+                    self.make_heading4('Balance readings \\\\')
+                    self.fp.write('Note times are in minutes; weighing positions are in brackets.  \\\\ \n')
 
                     wtpos = []
-                    try:
-                        for i in range(1, len(wt_grps) + 1):
-                            a = weighdata.metadata.get("grp"+str(i)).split() # old way of recording groups
-                            wtpos.append([a[0], a[-1]])
-                    except AttributeError:
-                        d = weighdata.metadata.get("Weight group loading order") # new way of recording groups
-                        for key, value in d.items():
-                            wtpos.append([value, key.strip("Position ")])
-                    # self.make_table_cwdata(wtpos, weighdata)
+                    for i in range(1, len(wt_grps) + 1):
+                        a = weighdata.metadata.get("grp"+str(i)) # old way of recording groups
+                        if a:
+                            wtpos.append([a, i])
+                        else:
+                            d = weighdata.metadata.get("Weight group loading order") # new way of recording groups
+                            for key, value in d.items():
+                                wtpos.append([value, key.strip("Position ")])
+                                break
+                    self.make_table_cwdata(wtpos, weighdata)
 
-                    self.make_heading4('Column average differences')
+                    self.make_heading4('Column average differences  \\\\ \n')
+                    self.fp.write(' ')
                     analysisdata = root.require_dataset(
                         root['Circular Weighings'][se].name + '/analysis_' + run_id)
-                    # self.make_table_cw_diffs(analysisdata.data)
-                    self.make_normal_text(" ", 'small')
-                    # self.make_table_diffs_meta(analysisdata.metadata)
+
+                    self.make_table_cw_diffs(analysisdata)
+
+                    self.fp.write("\n   ") #make_normal_text(" ", 'tiny')
+
+                    self.make_table_diffs_meta(analysisdata.metadata)
 
     def add_weighing_datasets(self, client, folder, scheme, incl_datasets):
         self.make_heading1("Circular Weighing Data")
@@ -347,17 +345,17 @@ class LaTexDoc(object):
                 nom = scheme[row][1]
                 cw_file = os.path.join(folder, client + '_' + nom + '.json')
                 if not os.path.isfile(cw_file):
-                    print('No data yet collected for ' + se)
+                    log.warning('No data yet collected for ' + se)
                 else:
                     self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
 
         self.make_heading2("Overall ambient conditions for included weighings")
-        # self.make_normal_text(
-        #     "T"+IN_DEGREES_C+":\t" + str(min(self.collate_ambient["T"+IN_DEGREES_C])) + " to " + str(max(self.collate_ambient["T"+IN_DEGREES_C]))
-        # )
-        # self.make_normal_text(
-        #     "RH (%):\t" + str(round(min(self.collate_ambient["RH (%)"]), 1)) + " to " + str(round(max(self.collate_ambient["RH (%)"]), 1))
-        # )
+        self.fp.write(
+            "T"+IN_DEGREES_C+":\t" + str(min(self.collate_ambient["T"+IN_DEGREES_C])) + " to " + str(max(self.collate_ambient["T"+IN_DEGREES_C])) + "\\\\"
+        )
+        self.fp.write(
+            "RH (\\%):\t" + str(round(min(self.collate_ambient["RH (%)"]), 1)) + " to " + str(round(max(self.collate_ambient["RH (%)"]), 1))
+        )
 
 
 
