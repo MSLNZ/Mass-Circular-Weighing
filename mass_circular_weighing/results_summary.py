@@ -225,7 +225,7 @@ class WordDoc(object):
         std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("weight ID"))
 
         self.make_heading1('Weighing Scheme')
-        headers = ['Weight groups', 'Nominal mass(g)', 'Balance alias', '# runs']
+        headers = ['Weight groups', 'Nominal mass(g)', 'Balance', '# runs']
         self.make_table_struct(headers, scheme)
         if checks is not None:
             self.make_table_wts(client_wt_IDs, checks['weight ID'], checks['Set file'], std_wts, std_file)

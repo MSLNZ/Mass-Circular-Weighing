@@ -28,7 +28,8 @@ class LaTexDoc(object):
         self.fp = open(filename, mode='w', encoding='utf-8')
         self.fp.write(
                 '\\documentclass[12pt]{article}\n'
-                '\\usepackage[a4paper,margin=2cm,landscape]{geometry}\n'
+                '\\usepackage[a4paper,margin=2cm]{geometry}\n'
+                "\\usepackage{lscape}\n"
                 '\\usepackage{booktabs}\n'
                 '\\usepackage{tabu}\n'
                 '\\usepackage{longtable}\n'
@@ -84,7 +85,7 @@ class LaTexDoc(object):
             '                  & \\url{'+ str(check_set_file_path) + '} \\\\ \n'
             ' Standard weights & '+ str(std_wt_IDs) + '\\\\ \n'
             '                  & \\url{'+ str(std_set_file_path) + '} \\\\ \n'
-            '\n\\end{tabu}'
+            '\n\\end{tabu} \n'
         )
 
     def make_table_wts_nochecks(self, client_wt_IDs, std_wt_IDs, std_set_file_path):
@@ -94,19 +95,17 @@ class LaTexDoc(object):
             ' Check weights:   &    None                    \\\\ \n'
             ' Standard weights & '+ str(std_wt_IDs) + '\\\\ \n'
             '                  & \\url{'+ str(std_set_file_path) + '} \\\\ \n'
-            '\n\\end{tabu}'
+            '\n\\end{tabu} \n'
         )
 
     def make_table_massdata(self, data, headers, masscol=None):
         """Makes table of structured data containing one column of mass data to be formatted in 'Greg' formatting"""
-        # self.fp.write("\\begin{landscape}\n")
-
         if masscol == 3:  # Input data table
-            col_type_str = "ll S S S"
+            col_type_str = "ll S[round-mode=places,round-precision=9] S S"
             headerstr = " {+ weight group} & {- weight group} & {mass difference (g)} & " \
                         "{balance uncertainty (ug)} & {residual (ug)} \\\\"
         elif masscol == 4:  # MSL data table
-            col_type_str = "S ll S S S S l"
+            col_type_str = "S ll S[round-mode=places,round-precision=9] S S S l"
             headerstr = " {Nominal (g)} & {Weight ID} & {Set ID} & {Mass value (g)} & {Uncertainty (ug)} & " \
                         "{95\% CI} & {Cov} & {c.f. Reference value (g)} \\\\"
         else:
@@ -118,21 +117,20 @@ class LaTexDoc(object):
             "\\begin{longtabu} to \\textwidth {" + col_type_str + "}\n"
             "\\toprule"
         )
-        # headerstr = "\n "
-        # for h in headers:
-        #     headerstr += "{" + h + "} & "
-        # headerstr.strip('& ').replace("%", "\\ %")+'\\\\ \n'
         self.fp.write(headerstr)
         self.fp.write("\n\\midrule")
 
-        data_as_str = tabulate(data.data, tablefmt="latex_booktabs")
-        data_as_str = data_as_str.split("toprule")[-1]
-        data_as_str = data_as_str.strip("tabular}")
-        data_as_str = data_as_str.replace("Δ", "\t$\\Delta$").replace('+', ' + ')
+        data_as_str = "\n"
+        for row in data:
+            for entry in row:
+                data_as_str += str(entry) + " & "
+            data_as_str = data_as_str.strip('& ') + '\\\\ \n'
+        data_as_str = data_as_str.replace("Δ", "\t$\\Delta$").replace('+', ' + ').replace('None', " ")
         self.fp.write(data_as_str)
 
         self.fp.write(
-            "longtabu}"
+            "\n\\bottomrule"
+            "\n\\end{longtabu}"
             "\n\\end{small}\n"
         )
 
@@ -147,9 +145,10 @@ class LaTexDoc(object):
             checks = None
         std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("weight ID"))
 
+        self.fp.write("\\begin{landscape}\n")
         self.make_heading1('Weighing Scheme')
-        headers = ['Weight groups', 'Nominal mass(g)', 'Balance alias', '# runs']
-        self.fp.write(tabulate(scheme.data, headers=headers, tablefmt="latex_booktabs"))
+        headers = ['Weight groups', 'Nominal mass(g)', 'Balance', '# runs']
+        self.fp.write(tabulate(scheme, headers=headers, tablefmt="latex_booktabs"))
 
         self.make_normal_text("")
 
@@ -157,9 +156,11 @@ class LaTexDoc(object):
             self.make_table_wts(client_wt_IDs, checks['weight ID'], checks['Set file'], std_wts, std_file)
         else:
             self.make_table_wts_nochecks(client_wt_IDs, std_wts, std_file)
+        self.fp.write("\\end{landscape}\n")
 
     def add_mls(self, fmc_root):
         """Adds matrix least squares section to summary file"""
+        self.fp.write("\\begin{landscape}\n")
         self.make_heading1('Matrix Least Squares Analysis')
         timestamp = fmc_root['metadata'].metadata['Timestamp'].split()
         self.make_normal_text('Date: ' + timestamp[0] + '\tTime: ' + timestamp[1])
@@ -186,20 +187,25 @@ class LaTexDoc(object):
         self.make_normal_text(
             "Sum of residues squared ($\\mu^2$) = " + str(meta['Sum of residues squared ('+MU_STR+'g^2)'])
         )
+        self.fp.write("\\end{landscape}\n")
 
-    def make_table_run_meta(self, cw_run_meta):
+    def make_table_run_meta(self, cw_run_meta, cfg):
         """Makes table of ambient and other metadata from circular weighing run"""
+
+        # Get balance model number from balance alias:
+        bal_alias = cw_run_meta.get("Balance")
+        bal_model = cfg.equipment[bal_alias].model
 
         self.fp.write(
             '\\begin{tabular}{llllllll}\n'
             ' Time:  & '+ cw_run_meta.get("Mmt Timestamp").split()[1] + '&'
             ' Date:   & '+ cw_run_meta.get("Mmt Timestamp").split()[0]+ '&'
-            ' Balance  & '+ cw_run_meta.get("Balance") + '&'
+            ' Balance  & '+ bal_model + '&'
             ' Unit: & ' + cw_run_meta.get("Unit") + '\\\\ \n'
             ' Temp (°C): & ' + cw_run_meta.get("T"+IN_DEGREES_C) + '&'
             ' RH (\\%): & ' + cw_run_meta.get("RH (%)") +  '&' 
             " Ambient OK? & " + str(cw_run_meta.get("Ambient OK?")) + '\\\\ \n'     
-            '\\end{tabular}'
+            '\\end{tabular} \n'
         )
 
     def make_table_diffs_meta(self, cw_anal_meta):
@@ -219,8 +225,8 @@ class LaTexDoc(object):
             ' Residual std devs:  & '+ res_dict.strip("{").strip("}") + '\\\\ \n'
             ' Selected drift:  & ' + cw_anal_meta.get("Selected drift") + '\\\\ \n'
             ' Drift components (' + cw_anal_meta.get("Drift unit") + "): & " + drifts + '\\\\ \n'
-            '\n\\end{tabu}'
-            '\n\\end{small}'
+            '\\end{tabu} \n'
+            '\\end{small} \n'
         )
 
     def make_table_cwdata(self, wtpos, weighdata):
@@ -254,13 +260,12 @@ class LaTexDoc(object):
         for r in range(0, rows):
             row_str = " "
             for c in range(len(wtpos)):
-                row_str += '{:.2f}'.format(weighdata[r][c][0]) + ' & ' + '{:.6g}'.format(weighdata[r][c][1]) + ' & '
+                row_str += '{:.2f}'.format(weighdata[r][c][0]) + ' & ' + '{:.9g}'.format(weighdata[r][c][1]) + ' & '
             self.fp.write(row_str.strip('& ') + '\\\\ \n')
 
         self.fp.write(
-            '\n\\bottomrule \n'
-            '\n\\end{tabular}\n'
-            '\n '
+            '\\bottomrule \n'
+            '\\end{tabular}\n'
         )
 
     def make_table_cw_diffs(self, data):
@@ -271,7 +276,7 @@ class LaTexDoc(object):
         tab_str = tab_str.replace("\}", "}").replace("\{", "{").replace("{llrr}", "{l l S S}")
         self.fp.write(tab_str + "\n")
 
-    def add_weighing_dataset(self, cw_file, se, nom, incl_datasets):
+    def add_weighing_dataset(self, cw_file, se, nom, incl_datasets, cfg):
         """How to add a dataset from a single circular weighing"""
         if not os.path.isfile(cw_file):
             log.warning('No data yet collected for '+se)
@@ -296,7 +301,7 @@ class LaTexDoc(object):
                     weighdata = root.require_dataset(
                         root['Circular Weighings'][se].name + '/measurement_' + run_id)
                     # self.make_heading4('Metadata')
-                    self.make_table_run_meta(weighdata.metadata)
+                    self.make_table_run_meta(weighdata.metadata, cfg)
 
                     if ambient:
                         temps = weighdata.metadata.get("T"+IN_DEGREES_C).split(" to ")
@@ -310,15 +315,14 @@ class LaTexDoc(object):
                     self.fp.write('Note times are in minutes; weighing positions are in brackets.  \\\\ \n')
 
                     wtpos = []
-                    for i in range(1, len(wt_grps) + 1):
-                        a = weighdata.metadata.get("grp"+str(i)) # old way of recording groups
-                        if a:
+                    try:                # new way of recording groups
+                        d = weighdata.metadata.get("Weight group loading order")
+                        for key, value in d.items():
+                            wtpos.append([value, key.strip("Position ")])
+                    except KeyError:    # old way of recording groups
+                        for i in range(1, len(wt_grps) + 1):
+                            a = weighdata.metadata.get("grp"+str(i))
                             wtpos.append([a, i])
-                        else:
-                            d = weighdata.metadata.get("Weight group loading order") # new way of recording groups
-                            for key, value in d.items():
-                                wtpos.append([value, key.strip("Position ")])
-                                break
                     self.make_table_cwdata(wtpos, weighdata)
 
                     self.make_heading4('Column average differences  \\\\ \n')
@@ -332,7 +336,7 @@ class LaTexDoc(object):
 
                     self.make_table_diffs_meta(analysisdata.metadata)
 
-    def add_weighing_datasets(self, client, folder, scheme, incl_datasets):
+    def add_weighing_datasets(self, client, folder, scheme, cfg, incl_datasets=(), ):
         self.make_heading1("Circular Weighing Data")
         if len(scheme.shape) == 1:
             se = scheme[0]
@@ -347,7 +351,7 @@ class LaTexDoc(object):
                 if not os.path.isfile(cw_file):
                     log.warning('No data yet collected for ' + se)
                 else:
-                    self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
+                    self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
 
         self.make_heading2("Overall ambient conditions for included weighings")
         self.fp.write(
