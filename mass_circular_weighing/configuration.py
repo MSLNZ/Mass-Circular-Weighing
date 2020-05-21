@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 from msl.equipment import Config
@@ -63,11 +64,28 @@ class Configuration(object):
         return True
 
     def init_ref_mass_sets(self):
-        self.all_stds = load_stds_from_set_file(self.cfg.root.find('standards/'+self.std_set).text, 'std')
+        ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        p_std = self.cfg.root.find('standards/'+self.std_set).text
+        if os.path.isfile(p_std):
+            self.all_stds = load_stds_from_set_file(p_std, 'std')
+        elif os.path.isfile(os.path.join(ROOT_DIR,p_std)):
+            self.all_stds = load_stds_from_set_file(os.path.join(ROOT_DIR,p_std), 'std')
+        else:
+            log.error("Standard set file does not exist at specified path: {}".format(p_std))
+            return
         self.all_stds['Set name'] = self.std_set
+
         if self.check_set is not None:
-            self.all_checks = load_stds_from_set_file(self.cfg.root.find('standards/'+self.check_set).text, 'check')
-            self.all_stds['Set name'] = self.check_set
+            p_check = self.cfg.root.find('standards/'+self.check_set).text
+            if os.path.isfile(p_check):
+                self.all_checks = load_stds_from_set_file(p_check, 'check')
+            elif os.path.isfile(os.path.join(ROOT_DIR,p_check)):
+                self.all_checks = load_stds_from_set_file(os.path.join(ROOT_DIR,p_check), 'check')
+            else:
+                log.error("Check set file does not exist at specified path: {}".format(p_check))
+                return
+            self.all_checks['Set name'] = self.check_set
         else:
             self.all_checks = None
 

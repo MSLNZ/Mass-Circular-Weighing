@@ -2,7 +2,7 @@
   <msl>
 
     <!-- Specify client-specific information. -->
-    <save_folder>final_mass_calc</save_folder> <!-- parent folder -->
+    <save_folder>tests</save_folder> <!-- parent folder -->
     <job>Program Check</job>
     <client>10 kg to 1 mg weight set</client>
     <client_masses>
@@ -20,7 +20,7 @@
 
     <!-- Specify the limits for ambient conditions to begin weighing. -->
     <min_temp units="C">18.1</min_temp>
-    <max_temp units="C">30</max_temp>
+    <max_temp units="C">21.9</max_temp>
     <min_rh units="%">30</min_rh>
     <max_rh units="%">70</max_rh>
 
@@ -46,12 +46,12 @@
     <!-- Specify the Equipment-Register Databases to load equipment records from. -->
     <registers>
       <register team="M&amp;P" user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution">
-          <path>tests\samples\Balance register.xlsx</path>
+          <path>Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>
 
       <register team="M&amp;P">
-          <path>tests\samples\Equipment register.xlsx</path>
+          <path>Equipment register.xlsx</path>
           <sheet>Equipment</sheet>
       </register>
     </registers>
@@ -59,7 +59,7 @@
     <!-- Specify the Connections Databases to load connection records from. -->
     <connections>
       <connection>
-        <path>tests\samples\Equipment register.xlsx</path>
+        <path>Equipment register.xlsx</path>
         <sheet>LenovoX260</sheet>
       </connection>
     </connections>

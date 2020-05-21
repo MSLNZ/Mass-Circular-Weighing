@@ -28,6 +28,10 @@ def test_acceptance_criteria():
     assert ac['Max stdev from CircWeigh ('+MU_STR+'g)'] == 20.
     assert ac['Stdev for balance ('+MU_STR+'g)'] == 15.
 
+    with pytest.raises(AttributeError) as err:
+        cfg.init_ref_mass_sets()
+    assert 'NoneType' in str(err.value)
+
 
 if __name__ == '__main__':
     test_acceptance_criteria()
