@@ -36,6 +36,8 @@ class FinalMassCalc(object):
         json file containing structured array of weight IDs, mass values, and uncertainties,
         along with a record of the input data and other relevant information
         """
+        self.folder = folder
+        self.client = client
         self.filesavepath = os.path.join(folder, client + '_finalmasscalc.json')
 
         metadata = {
@@ -44,10 +46,11 @@ class FinalMassCalc(object):
             "Client": client
         }
 
-        self.finalmasscalc = JSONWriter(self.filesavepath, metadata=metadata)
+        self.finalmasscalc = JSONWriter(metadata=metadata)
+        self.structure_jsonfile()
 
         self.client_wt_IDs = client_wt_IDs
-        self.check_masses, = check_masses
+        self.check_masses = check_masses
         self.std_masses = std_masses
         self.inputdata = inputdata
         self.nbc = nbc
@@ -57,7 +60,7 @@ class FinalMassCalc(object):
         self.num_check_masses = None
         self.num_stds = None
         self.num_unknowns = None
-        self.allmassIDs = []
+        self.allmassIDs = None
 
         self.num_obs = None
         self.leastsq_meta = {}
@@ -109,14 +112,14 @@ class FinalMassCalc(object):
         log.info('Number of unknowns = '+str(self.num_unknowns))
         self.allmassIDs = np.append(np.append(self.client_wt_IDs, check_wt_IDs), self.std_masses['weight ID'])
         # note that stds are grouped last
-        self.leastsq_meta['Number of unknowns'] = self.num_unknowns
-        self.leastsq_meta['Degrees of freedom'] = self.num_obs - self.num_unknowns,
-
         self.num_obs = len(self.inputdata) + self.num_stds
         self.leastsq_meta['Number of observations'] = self.num_obs
+        self.leastsq_meta['Number of unknowns'] = self.num_unknowns
+        self.leastsq_meta['Degrees of freedom'] = self.num_obs - self.num_unknowns
+
 
     def parse_inputdata_to_matrices(self, ):
-        if not self.allmassIDs:
+        if self.allmassIDs is None:
             self.import_mass_lists()
         # Create design matrix and collect relevant data into differences and uncerts arrays
         designmatrix = np.zeros((self.num_obs, self.num_unknowns))
@@ -149,7 +152,7 @@ class FinalMassCalc(object):
         self.designmatrix = designmatrix
 
     def check_design_matrix(self,):
-        if not self.designmatrix:
+        if self.designmatrix is None:
             self.parse_inputdata_to_matrices()
         # double checks that all columns in the design matrix contain at least one non-zero value
         error_tally = 0
@@ -203,7 +206,7 @@ class FinalMassCalc(object):
 
         r0 = (self.differences - np.dot(x, self.b))*1e6               # residuals, converted from g to ug
         sum_residues_squared = np.dot(r0, r0)
-        self.leastsq_meta['Sum of residues squared (ug^2)'] = np.round(sum_residues_squared, 6),
+        self.leastsq_meta['Sum of residues squared (ug^2)'] = np.round(sum_residues_squared, 6)
         log.debug('Residuals:\n'+str(np.round(r0, 4)))       # also save as column with input data for checking
 
         inputdata = self.inputdata
@@ -220,7 +223,7 @@ class FinalMassCalc(object):
         self.inputdatares = inputdatares
 
     def check_residuals(self):
-        if not self.inputdatares:
+        if self.inputdatares is None:
             self.do_least_squares()
 
         # check that the calculated residuals are less than twice the balance uncertainties in ug
@@ -234,7 +237,7 @@ class FinalMassCalc(object):
             self.leastsq_meta['Residuals greater than 2 balance uncerts'] = flag
 
     def cal_rel_unc(self, ):
-        if not self.b:
+        if self.b is None:
             self.do_least_squares()
 
         # uncertainty due to no buoyancy correction
@@ -268,7 +271,7 @@ class FinalMassCalc(object):
 
 
     def make_summary_table(self, ):
-        if not self.std_uncert_b:
+        if self.std_uncert_b is None:
             self.cal_rel_unc()
 
         summarytable = np.empty((self.num_unknowns, 8), object)
@@ -281,14 +284,14 @@ class FinalMassCalc(object):
                 summarytable[i, 7] = ""
             elif i >= self.num_client_masses + self.num_check_masses:
                 summarytable[i, 2] = 'Standard'
-                summarytable[i, 7] = 'c.f. {} g; {} {} g'.format(
+                summarytable[i, 7] = 'c.f. {} g; {} {:.9f} g'.format(
                     self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses],
                     DELTA_STR,
                     self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses] - self.b[i],
                 )
             else:
                 summarytable[i, 2] = 'Check'
-                summarytable[i, 7] = 'c.f. {} g; {} {} g'.format(
+                summarytable[i, 7] = 'c.f. {} g; {} {:.9f} g'.format(
                     self.check_masses['mass values (g)'][i - self.num_client_masses],
                     DELTA_STR,
                     self.check_masses['mass values (g)'][i - self.num_client_masses] - self.b[i],
@@ -296,7 +299,7 @@ class FinalMassCalc(object):
 
             summarytable[i, 3] = np.round(self.b[i], 9)
             if self.b[i] >= 1:
-                nom = format(int(self.b[i]), ',')
+                nom = str(int(round(self.b[i], 0)))
             else:
                 nom = "{0:.1g}".format(self.b[i])
             if 'e-' in nom:
@@ -310,11 +313,11 @@ class FinalMassCalc(object):
         log.debug('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (ug), 95% CI\n' + str(
             summarytable))
 
-        return summarytable
+        self.summarytable = summarytable
 
 
     def add_data_to_root(self, ):
-        if not self.summarytable:
+        if self.summarytable is None:
             self.make_summary_table()
 
         leastsq_data = self.finalmasscalc.create_group('2: Matrix Least Squares Analysis', metadata=self.leastsq_meta)
@@ -329,13 +332,20 @@ class FinalMassCalc(object):
                                                    "c.f. Reference value (g)",
                                                    ]})
 
-    def save_to_json_file(self, folder, client, ):
+    def save_to_json_file(self, filesavepath=None, folder=None, client=None ):
+        if not filesavepath:
+            filesavepath = self.filesavepath
+        if not folder:
+            folder = self.folder
+        if not client:
+            client = self.client
+
         # make a backup of any previous version, then save root object to json file
-        make_backup(folder, client, self.filesavepath, )
+        make_backup(folder, client, filesavepath, )
 
-        self.finalmasscalc.save(mode='w')
+        self.finalmasscalc.save(filesavepath, mode='w')
 
-        log.info('Mass calculation saved to {!r}'.format(self.filesavepath))
+        log.info('Mass calculation saved to {!r}'.format(filesavepath))
 
 
 
