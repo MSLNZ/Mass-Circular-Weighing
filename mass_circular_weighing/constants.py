@@ -12,6 +12,7 @@ SUFFIX = {'µg': 1e-6, 'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
 DEGREE_SIGN = '°'           # \xb0
 IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 
+NBC = True                  #
 REL_UNC = 0.03              # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1
 
 local_backup = r'C:\CircularWeighingData'
