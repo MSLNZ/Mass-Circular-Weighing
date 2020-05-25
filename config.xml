@@ -18,6 +18,7 @@
     <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPR604KMC"/>
     <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
     <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
+    <equipment alias="AX1006" manufacturer="Mettler Toledo" model="AX1006"/>
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
     <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
@@ -56,12 +57,12 @@
       <register
               team="M&amp;P"
               user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, address">
-          <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Balance register.xlsx</path>
+          <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>
 
       <register team="M&amp;P">
-          <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Equipment register.xlsx</path>
+          <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
           <sheet>Equipment</sheet>
       </register>
     </registers>

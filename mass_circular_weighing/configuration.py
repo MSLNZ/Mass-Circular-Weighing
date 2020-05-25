@@ -7,6 +7,7 @@ from msl import io
 from .equip.mdebalance import Balance
 from .equip.mettler import MettlerToledo
 from .equip.awbalance import AWBal
+from .equip.aw_carousel import AWBalCarousel
 
 from .constants import MU_STR, SUFFIX
 from .log import log
@@ -27,7 +28,12 @@ class Configuration(object):
         self.db = self.cfg.database()           # loads database
         self.equipment = self.db.equipment      # loads subset of database with equipment being used
 
-        self.bal_class = {'mde': Balance, 'mw': MettlerToledo, 'aw': AWBal}
+        self.bal_class = {
+            'mde': Balance,
+            'mw': MettlerToledo,
+            'aw': AWBal,
+            'aw_c': AWBalCarousel,
+        }
 
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
 

@@ -82,7 +82,6 @@ class MettlerToledo(Balance):
                     if perf_counter()-t0 > self.intcaltimeout:
                         raise TimeoutError("Calibration took longer than expected")
                     else:
-                        print('Waiting for internal calibration to complete')
                         log.info('Waiting for internal calibration to complete')
 
         self._raise_error(m[0]+' '+m[1])
