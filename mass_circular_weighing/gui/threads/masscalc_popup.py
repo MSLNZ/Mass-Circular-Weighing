@@ -6,8 +6,9 @@ from msl.qt.threading import Thread, Worker
 from msl.io import read
 
 from ...log import log
-from ...constants import MU_STR
-from ...routines.final_mass_calc import final_mass_calc
+from ...constants import MU_STR, NBC
+from ...routines.final_mass_calc_class import FinalMassCalc
+from ...routines.report_results import export_results_summary
 
 
 def label(name):
@@ -24,6 +25,7 @@ def filter_IDs(ID_list, inputdata):
 
 
 def filter_stds(std_masses, inputdata):
+
     weightgroups = []
     for i in np.append(inputdata['+ weight group'], inputdata['- weight group']):
         if '+' in i:
@@ -141,7 +143,7 @@ class DiffsTable(QtWidgets.QTableWidget):
 
         return inputdata
 
-    @Slot(object, object)
+    @Slot(object, object, name='update_resids')
     def update_resids(self, fmc_result):
         resids = fmc_result['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
         num_stds = fmc_result["1: Mass Sets"]["Standard"].metadata.get("Number of masses")
@@ -178,7 +180,7 @@ class MassValuesTable(QtWidgets.QTableWidget):
             for j in range(len(self.header)):
                 self.setCellWidget(i, j, QtWidgets.QLabel())
 
-    @Slot(object, object)
+    @Slot(object, object, name='update_mvt')
     def update_table(self, data):
         lend = len(data)
         self.make_rows(lend)
@@ -190,11 +192,11 @@ class MassValuesTable(QtWidgets.QTableWidget):
 
 class CalcWorker(Worker):
 
-    def __init__(self, parent, table, fmc_info, mass_vals_table):
+    def __init__(self, parent, table, cfg, mass_vals_table):
         super(CalcWorker, self).__init__()
         self.parent = parent
         self.cw_data_table = table
-        self.fmc_info = fmc_info
+        self.cfg = cfg
         self.mass_vals_table = mass_vals_table
 
         self.fmc = None
@@ -202,39 +204,42 @@ class CalcWorker(Worker):
     def process(self):
         # collate and sort metadata
         inputdata = self.cw_data_table.get_checked_rows()
-        client_wt_IDs = filter_IDs(self.fmc_info['client_wt_IDs'], inputdata)
-        if self.fmc_info['check_masses'] is not None:
-            check_masses = filter_stds(self.fmc_info['check_masses'], inputdata)
+        client_wt_IDs = filter_IDs(self.cfg.client_wt_IDs.split(), inputdata)
+        if self.cfg.all_checks is not None:
+            check_masses = filter_stds(self.cfg.all_checks, inputdata)
         else:
             check_masses = None
-        std_masses = filter_stds(self.fmc_info['std_masses'], inputdata)
+        std_masses = filter_stds(self.cfg.all_stds, inputdata)
         # send relevant information to matrix least squares mass calculation algorithm
-        self.fmc = final_mass_calc(
-            self.fmc_info['Folder'],
-            self.fmc_info['Client'],
+        self.fmc = FinalMassCalc(
+            self.cfg.folder,
+            self.cfg.client,
             client_wt_IDs,
             check_masses,
             std_masses,
             inputdata,
-            nbc=self.fmc_info['nbc'],
-            corr=self.fmc_info['corr'],
+            NBC,
+            self.cfg.correlations,
         )
+        # do calculation
+        self.fmc.add_data_to_root()
+        self.fmc.save_to_json_file()
         # update both tables in popup with results
-        data = self.fmc['2: Matrix Least Squares Analysis']['Mass values from least squares solution']
+        data = self.fmc.finalmasscalc['2: Matrix Least Squares Analysis']['Mass values from least squares solution']
         self.parent.fmc_result.emit(self.mass_vals_table, data)
-        self.parent.fmc_resids.emit(self.cw_data_table, self.fmc)
+        self.parent.fmc_resids.emit(self.cw_data_table, self.fmc.finalmasscalc)
 
 
 class MassCalcThread(Thread):
 
-    fmc_result = Signal(object, object)
-    fmc_resids = Signal(object, object)
-    report_summary = Signal(object)
+    fmc_result = Signal(object, object, name='update_mvt')
+    fmc_resids = Signal(object, object, name='update_resids')
+    report_summary = Signal(object, name='export_report')
 
     def __init__(self, ):
         super(MassCalcThread, self).__init__(CalcWorker)
         self.inputdata_table = None
-        self.fmc_info = None
+        self.cfg = None
         self.mass_vals_table = None
 
         self.fmc_result.connect(MassValuesTable.update_table)
@@ -273,29 +278,27 @@ class MassCalcThread(Thread):
         geo = utils.screen_geometry()
         self.window.resize(geo.width(), geo.height() // 2)
 
-    def show(self, data, fmc_info):
+    def show(self, data, cfg):
         self.make_window(data)
-        self.fmc_info = fmc_info
-        self.fmc_info['client_wt_IDs'] = self.fmc_info['client_wt_IDs'].split()
+        self.cfg = cfg
         self.window.show()
 
     def start_finalmasscalc(self):
-        self.start(self, self.inputdata_table, self.fmc_info, self.mass_vals_table)
+        self.start(self, self.inputdata_table, self.cfg, self.mass_vals_table)
 
     def export_to_report(self):
-        # results_file_path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + '_finalmasscalc.json')
-        # root = read(results_file_path)
-        # print('\ncollated input dataset:')
-        # print(root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"])
 
         inc_datasets = self.inputdata_table.included_datasets
-        # for tuple in inc_datasets:
-        #     path = os.path.join(self.fmc_info['Folder'], self.fmc_info['Client'] + tuple[0])
 
-        self.report_summary.emit(inc_datasets)
+        if self.cfg.all_checks:
+            check_set = self.cfg.all_checks['Set file']
+        else:
+            check_set = None
 
-
-
-
-
+        export_results_summary(
+            self.cfg,
+            check_set,
+            self.cfg.all_stds['Set file'],
+            inc_datasets,
+        )
 

@@ -7,11 +7,11 @@ from ..log import log
 from .. import __version__
 from ..routines.run_circ_weigh import analyse_all_weighings_in_file
 from ..routines.collate_data import collate_all_weighings
-from ..routines.report_results import export_results_summary
 from ..gui.widgets.housekeeping import Housekeeping
 from ..gui.widgets.scheme_table import SchemeTable
 from .threads.circweigh_popup import WeighingThread
 from .threads.masscalc_popup import MassCalcThread
+
 
 all_my_threads = []
 
@@ -177,29 +177,7 @@ class MCWGui(QtWidgets.QWidget):
 
         data = collate_all_weighings(self.schemetable, self.housekeeping.cfg)
 
-        fmc_info = {'Folder': self.housekeeping.cfg.folder,
-                    'Client': self.housekeeping.cfg.client,
-                    'client_wt_IDs': self.housekeeping.cfg.client_wt_IDs,
-                    'check_masses': self.housekeeping.cfg.all_checks,
-                    'std_masses': self.housekeeping.cfg.all_stds,
-                    'nbc': True,
-                    'corr': self.housekeeping.cfg.correlations,
-        }
-        self.mass_thread.show(data, fmc_info)
-
-    @Slot(object)
-    def reporting(self, incl_datasets):
-        if self.housekeeping.cfg.all_checks:
-            check_set = self.housekeeping.cfg.all_checks['Set file']
-        else:
-            check_set = None
-        export_results_summary(
-            self.housekeeping.cfg,
-            check_set,
-            self.housekeeping.cfg.all_stds['Set file'],
-            incl_datasets,
-        )
-
+        self.mass_thread.show(data, self.housekeeping.cfg)
 
 
 def show_gui():

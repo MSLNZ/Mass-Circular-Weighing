@@ -288,28 +288,27 @@ class LaTexDoc(object):
 
             for dataset in root['Circular Weighings'][se].datasets():
                 dname = dataset.name.split('_')
-                ambient = True # TODO: make false when executing from GUI
 
                 if dname[0][-8:] == 'analysis':
                     run_id = 'run_' + dname[2]
-                    if (str(float(nom)), se, dname[2]) in incl_datasets:
-                        self.make_heading3(run_id.replace('_', ' '))
-                        ambient = True
-                    else:
-                        self.make_heading3(run_id.replace('_', ' ') + " (EXCLUDED)")
 
                     weighdata = root.require_dataset(
                         root['Circular Weighings'][se].name + '/measurement_' + run_id)
-                    # self.make_heading4('Metadata')
-                    self.make_table_run_meta(weighdata.metadata, cfg)
 
-                    if ambient:
-                        temps = weighdata.metadata.get("T"+IN_DEGREES_C).split(" to ")
+                    if (str(float(nom)), se, dname[2]) in incl_datasets:
+                        self.make_heading3(run_id.replace('_', ' '))
+
+                        temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
                         for t in temps:
                             self.collate_ambient['T' + IN_DEGREES_C].append(float(t))
                         rhs = weighdata.metadata.get("RH (%)").split(" to ")
                         for rh in rhs:
                             self.collate_ambient['RH (%)'].append(float(rh))
+
+                    else:
+                        self.make_heading3(run_id.replace('_', ' ') + " (EXCLUDED)")
+
+                    self.make_table_run_meta(weighdata.metadata, cfg)
 
                     self.make_heading4('Balance readings \\\\')
                     self.fp.write('Note times are in minutes; weighing positions are in brackets.  \\\\ \n')
@@ -336,7 +335,7 @@ class LaTexDoc(object):
 
                     self.make_table_diffs_meta(analysisdata.metadata)
 
-    def add_weighing_datasets(self, client, folder, scheme, cfg, incl_datasets=(), ):
+    def add_weighing_datasets(self, client, folder, scheme, cfg, incl_datasets, ):
         self.make_heading1("Circular Weighing Data")
         if len(scheme.shape) == 1:
             se = scheme[0]
@@ -354,12 +353,19 @@ class LaTexDoc(object):
                     self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
 
         self.make_heading2("Overall ambient conditions for included weighings")
-        self.fp.write(
-            "T"+IN_DEGREES_C+":\t" + str(min(self.collate_ambient["T"+IN_DEGREES_C])) + " to " + str(max(self.collate_ambient["T"+IN_DEGREES_C])) + "\\\\"
-        )
-        self.fp.write(
-            "RH (\\%):\t" + str(round(min(self.collate_ambient["RH (%)"]), 1)) + " to " + str(round(max(self.collate_ambient["RH (%)"]), 1))
-        )
+        if self.collate_ambient["T" + IN_DEGREES_C]:
+            self.fp.write(
+                "T"+IN_DEGREES_C+":\t" + str(min(self.collate_ambient["T"+IN_DEGREES_C])) + " to " + str(max(self.collate_ambient["T"+IN_DEGREES_C])) + "\\\\"
+            )
+        else:
+            self.fp.write("No temperature data collated. \\\\")
+
+        if self.collate_ambient["RH (%)"]:
+            self.fp.write(
+                "RH (\\%):\t" + str(round(min(self.collate_ambient["RH (%)"]), 1)) + " to " + str(round(max(self.collate_ambient["RH (%)"]), 1))
+            )
+        else:
+            self.fp.write("No humidity data collated. \\\\")
 
 
 

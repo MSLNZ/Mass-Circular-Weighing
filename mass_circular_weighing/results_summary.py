@@ -117,21 +117,6 @@ class WordDoc(object):
         self.make_title(job + " for " + client)
         self.make_normal_text("Data files saved in " + folder)
 
-    def make_table_norm(self, data):
-        # 'Insert a table, fill it with data, and make the first row
-        # 'bold and italic.
-        rows = len(data)
-        cols = len(data[0])
-        oTable = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, rows, cols)
-        # oTable.Range.ParagraphFormat.SpaceAfter = 6
-        for r in range(1, rows + 1):
-            for c in range(1, cols + 1):
-                print(r-1, c-1)
-                oTable.Cell(r, c).Range.Text = str(data[r-1, c-1])
-        # oTable.Rows.Item(1).Range.Font.Bold = True
-        oTable.Rows.Item(1).Range.Font.Italic = True
-        self.make_normal_text("", size=self.smallfont)
-
     def make_table_struct(self, headers, data):
         # 'Insert a table, fill it with data, and make the first row
         # 'bold and italic.
@@ -193,7 +178,6 @@ class WordDoc(object):
             oTable.Cell(1, c).Range.Text = str(headers[c-1])
             if len(data.shape) == 1:
                 if c == masscol:
-                    print()
                     oTable.Cell(2, c).Range.Text = greg_format(data[c - 1])
                     oTable.Cell(2, c).Range.ParagraphFormat.Alignment = 2
                 #     https://docs.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.wdparagraphalignment?view=word-pia
@@ -359,10 +343,10 @@ class WordDoc(object):
     def add_weighing_dataset(self, cw_file, se, nom, incl_datasets):
         """How to add a dataset from a single circular weighing"""
         if not os.path.isfile(cw_file):
-            print('No data yet collected for '+se)
+            log.info('No data yet collected for '+se)
         else:
             self.make_heading2(se)
-            print('Reading '+cw_file)
+            log.info('Reading '+cw_file)
             root = read(cw_file)
             wt_grps = se.split()
 
@@ -425,7 +409,7 @@ class WordDoc(object):
                 nom = scheme[row][1]
                 cw_file = os.path.join(folder, client + '_' + nom + '.json')
                 if not os.path.isfile(cw_file):
-                    print('No data yet collected for ' + se)
+                    log.info('No data yet collected for ' + se)
                 else:
                     self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
 
