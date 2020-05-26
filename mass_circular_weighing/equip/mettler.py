@@ -130,6 +130,7 @@ class MettlerToledo(Balance):
         while not self.want_abort:
             log.info('Waiting for stable reading for '+mass)
             readings = []
+            t0 = perf_counter()
 
             m = self._query("S").split()
             if self.check_reading(m):
@@ -139,8 +140,7 @@ class MettlerToledo(Balance):
                 else:
                     return self._raise_error(m[0] + ' ' + m[1])
 
-            t0 = perf_counter()
-            while perf_counter() - t0 < 30:
+            while perf_counter() - t0 < self.stable_wait:
                 while len(readings) < 3:
                     b = self.get_mass_instant()
                     if type(b) == float:
@@ -152,6 +152,9 @@ class MettlerToledo(Balance):
 
                 if max(readings) - min(readings) < 2*self.resolution:
                     return sum(readings)/3
+                else:
+                    readings = []
+                    continue
 
             self._raise_error('U')
 
@@ -198,4 +201,10 @@ ERRORCODES = {
     'S +':  'Balance in overload range.',
     'S -':  'Balance in underload range.',
     'U':    'Timed out while trying to obtain three close readings from get_mass_stable ',
+    'POS':  'Selected position invalid',
+    'ET':   'Error Transmission: At least one character of the command has a parity error. The command will be ignored.',
+    'FE 1': 'FATAL ERROR: Top Position, but light barrier (lift) open!',
+    'FE 2': 'FATAL ERROR: Light barriers not connected!',
+
+
 }

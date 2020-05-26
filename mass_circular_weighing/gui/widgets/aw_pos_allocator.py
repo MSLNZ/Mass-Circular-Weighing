@@ -6,6 +6,18 @@ from msl.qt import QtWidgets, Button
 class AllocatorDialog(QtWidgets.QDialog):
 
     def __init__(self, num_pos, wtgrps, parent=None):
+        """This Dialog widget allows the assignment of weight groups to weighing positions
+        for an automatic weight loading balance.
+
+        Parameters
+        ----------
+        num_pos : int
+            number of weighing positions available on the balance
+        wtgrps : list
+            list of weight groups as strings
+        parent
+            application instance or parent widget from which the Dialog is opened
+        """
         super().__init__(parent=parent)
         self.setWindowTitle('Allocate Weight Groups to Positions')
 

@@ -5,7 +5,7 @@ from msl.equipment import MSLTimeoutError
 from msl.qt import prompt, application
 
 from ..log import log
-from .mettler import MettlerToledo
+from .mettler import MettlerToledo, ERRORCODES
 
 from ..gui.threads.allocator_thread import AllocatorThread
 allocator = AllocatorThread()
@@ -30,11 +30,25 @@ class AWBalCarousel(MettlerToledo):
         self.num_pos = record.user_defined['pos']  # num_pos is the total number of available loading positions
         self._positions = None
 
+        self.lift_pos = None
+        self.rot_pos = None
+
         self.move_time = 0
+
+        self.is_centered = False
 
     @property
     def mode(self):
         return 'aw_c'
+
+    def tare_bal(self):
+        """Tares balance with load"""
+        self.lift_to('weighing')
+        m = self._query("Z").split()
+        if m[1] == 'S':
+            log.info('Balance tared with value '+m[2]+' '+m[3])
+            return
+        self._raise_error(m[0]+' '+m[1])
 
     @property
     def positions(self):
@@ -42,16 +56,19 @@ class AWBalCarousel(MettlerToledo):
         return self._positions
 
     def allocate_positions(self, wtgrps, ):
-        """
+        """Assign weight groups to weighing positions using the AllocatorDialog
 
         Parameters
         ----------
-        wtgrps
+        wtgrps : list
+            list of weight groups as strings
 
         Returns
         -------
-
+        self.positions : list
+            Returns a list of positions for the weight groups in the order the groups appear in the scheme entry.
         """
+
         if len(wtgrps) > self.num_pos:
             log.error('Too many weight groups for balance')
             return None
@@ -62,19 +79,49 @@ class AWBalCarousel(MettlerToledo):
 
         return self.positions
 
+    def get_status(self):
+        """Update current rotational and lift position of the turntable.
+        Possible string replies for AX10005:
+        <a> in top position. ready
+        <a> in panbraking position. ready
+        <a> in weighing position. ready
+        <a> in calibration position. ready
+        <a> is an integer that represents the turntable position above the weighing pan.
+
+        Returns
+        -------
+        tuple of rot_pos, lift_pos
+
+        """
+        status_str = self._query("STATUS")
+        if len(status_str.split()) == 5 and status_str.split()[-1] == "ready":
+            self.rot_pos = status_str.split()[0]
+            self.lift_pos = status_str.split()[2]
+            return self.rot_pos, self.lift_pos
+
     def move_to(self, pos):
-        # takes integer position
+        """Positions the weight at turntable position pos by the quickest route,
+        in the top position above the weighing pan.
+        The command performs lift operations if necessary.
+
+        Parameters
+        ----------
+        pos : int
+        """
+        # takes integer position.
+        if not 0 < pos <= self.num_pos:
+            self._raise_error('POS')
+
         if not self.want_abort:
-            # display  "Handler Turning to Position: " + Weight
+            log.info("Moving to position "+str(pos))
+            # display "Handler Turning to Position: " + Weight
+            self.connection.write("MOVE" + str(pos))  # Spaces are ignored by the handler
 
-            reply = self._query("MOVE" + str(pos))
-            print(reply)
-
-            if reply == "Some logical string":  # TODO: work out what this string is!
-                self.wait_for_ready()
-
+            reply = self.wait_for_reply()  # the message returned is either 'ready' or an error code
+            if reply == "ready":
+                return
             else:
-                self._raise_error(reply)
+                self._raise_error(get_key(reply))
 
     def time_move(self):
         if not self.want_abort:
@@ -89,66 +136,123 @@ class AWBalCarousel(MettlerToledo):
 
             print(times, max(times))
 
-            self.move_time = max(times) + 5
+            self.move_time = max(times) + 5  # want to add a wee buffer time here, say 5 s
 
     def lower_handler(self):
+        """
+        For the AX10005, the turntable moves downward:
+            – From the top to the panbraking position,
+            – from the braking to the weighing position,
+            – from the weighing to the calibration position.
+        """
         if not self.want_abort:
-            print("SINK")
+            log.info("Sinking mass")
             # can get handler to display text such as "Sinking position: " + Weight here if desired
-            reply = self._query("SINK")
-            print(reply)
+            self.connection.write("SINK")
 
-            if reply == "Some logical string":  # TODO: work out what this string is!
-                self.wait_for_ready()
+            reply = self.wait_for_reply()
+
+            if reply == "ERROR: In calibration position already. ready":
+                log.warning(
+                    "The turntable is in the calibration position and cannot be lowered further."
+                )
+                return
+
+            elif reply == "ready":
+                return
 
             else:
-                self._raise_error(reply)
+                self._raise_error(get_key(reply))
 
     def raise_handler(self):
+        """
+        For the AX10005, tThe turntable moves upward:
+            – From the calibration position to the weighing position,
+            – from the weighing position to the top position.
+        """
         if not self.want_abort:
-            print("LIFT")
-            # can get handler to display text such as "Sinking position: " + Weight here if desired
-            reply = self._query("LIFT")
-            print(reply)
+            log.info("Lifting mass")
+            # can get handler to display text such as "Lifting position: " + Weight here if desired
+            self.connection.write("LIFT")
 
-            if reply == "Some logical string":  # TODO: work out what this string is!
-                self.wait_for_ready()
+            reply = self.wait_for_reply()
+
+            if reply == "ERROR: In top position already. ready":
+                log.warning(
+                    "The turntable is in the top position and cannot be raised further."
+                )
+                return
+
+            elif reply == "ready":
+                return
 
             else:
-                self._raise_error(reply)
+                self._raise_error(get_key(reply))
+
+    def lift_to(self, lift_position):
+        """Lowers or raises handler to the lift position specified.
+
+        Parameters
+        ----------
+        lift_position : string
+            string for desired lift position. Allowed strings are: top, panbraking, weighing, calibration
+        Returns
+        -------
+        """
+        if self.record.model == "AX10005":
+            lower_options = {'top': 0, 'panbraking': 1, 'weighing': 2, 'calibration': 3}
+        else:
+            lower_options = {'top': 0, 'weighing': 1, 'calibration': 2}
+        raise_options = {'top': 2, 'weighing': 1, 'calibration': 0}
+        rot_pos, current = self.get_status()
+        lowers = lower_options[lift_position] - lower_options[current]
+        if lowers < 0:
+            raises = raise_options[lift_position] - raise_options[current]
+            for i in range(raises):
+                self.raise_handler()
+            self.get_status()
+        else:
+            for i in range(lowers):
+                self.lower_handler()
+            self.get_status()
+
+        assert self.lift_pos == lift_position
 
     def load_bal(self, mass, pos):
         while not self.want_abort:
+            # start clock
             t0 = perf_counter()
+
+            # do move
             self.move_to(pos)
-            t1 = perf_counter()
 
-            # wait for some time to make all moves same - want a sleep_until function which allows other events to occur
-            app = application()
-            time = perf_counter() - t0 # or t1?
-            while time < self.stable_wait:  # for AX1006, stable wait is 35 s
-                app.processEvents()
+            # wait for some time to make all moves same
+            wait_for_elapse(self.move_time, start_time=t0)
 
+            self.lift_to('weighing')
+            # the lift_to function might be a bit complicated, but we'll see...
+
+            # for AX1006, stable wait is 35 s
             # 'brake time' = 35 s
 
     def unload_bal(self, mass, pos):
-        """Prompts arduino to unload specified mass from pan"""
+        """Unloads mass from pan"""
         if not self.want_abort:
-            # send command to arduino to unload balance
-            unload_str = 'U '+str(pos)+'\n'
-            # self.arduino.write(unload_str.encode())  # send: unload = U, and position = int
-            # reply = self.arduino.readline().decode()
-            # print(reply)
-            # winsound.Beep(880, 300)
-            print('Unloaded '+mass+' (position '+str(pos)+')')
+            self.lift_to('top')
+
+    def centering(self):
+        # TODO: add a centering routine
+        pass
 
 
-    #TODO: add clean up to close connection
+    def wait_for_reply(self):
+        """Utility function for movement commands MOVE, SINK and LIFT.
+        Waits for string returned by these commands.
 
-
-
-
-    def wait_for_ready(self):
+        Returns
+        -------
+        The string from the handler
+        """
         app = application()
         t0 = perf_counter()
 
@@ -156,15 +260,39 @@ class AWBalCarousel(MettlerToledo):
             app.processEvents()
             try:
                 r = self.connection.read().split()
-                print(r)
-                if "ready" in r:
-                    return True
-                elif r:
-                    print(r)
+                if r:
+                    print(r)  # for debugging only
+                    return r
             except MSLTimeoutError:
                 if perf_counter() - t0 > self.intcaltimeout:
-                    raise TimeoutError("Task took longer than expected")
+                    raise TimeoutError("Movement took longer than expected")
                 else:
-                    print('Waiting for task to complete')
-                    log.info('Waiting for task to complete')
+                    log.info('Waiting for movement to end')
+
+
+def wait_for_elapse(elapse_time, start_time=perf_counter()):
+    """Wait for a specified time while allowing other events to be processed
+
+    Parameters
+    ----------
+    elapse_time : int
+        time to wait in seconds
+    start_time : float
+        perf_counter value at start time.
+        If not specified, the elapsed time begins when the function is called.
+    """
+    app = application()
+    time = perf_counter() - start_time
+    while time < elapse_time:
+        app.processEvents()
+        time = perf_counter() - start_time
+
+
+def get_key(val):
+    """Looks for the error in ERRORCODES, a dictionary of known error codes for Mettler balances"""
+    for key, value in ERRORCODES.items():
+        if val == value:
+            return key
+
+    return None
 

@@ -26,7 +26,7 @@ class AllocatorThread(Thread):
         self.signal_prompt.connect(self.allocator)
 
     def allocator(self, args, kwargs):
-        """Popup a prompt"""
+        """Popup the allocator Dialod widget"""
         w = AllocatorDialog(args[0], args[1])
         w.exec()
         self.reply = w.positions
