@@ -37,11 +37,25 @@ class AWBalCarousel(MettlerToledo):
 
         self.is_centered = False
 
+        self.handler = None
+
+    def identify_handler(self):
+        """Reports handler model and software version.
+        (from AX1006 manual)
+        string returned of form: H1006, serial number #xxxx, software V x.xx. ready
+
+        Returns
+        -------
+
+        """
+        h_str = self._query("IDENTIFY")
+        print(h_str)
+
     @property
     def mode(self):
         return 'aw_c'
 
-    def tare_bal(self):
+    def tare_bal(self):     # TODO: check if MettlerToledo tare_bal works
         """Tares balance with load"""
         self.lift_to('weighing')
         m = self._query("Z").split()
@@ -68,13 +82,13 @@ class AWBalCarousel(MettlerToledo):
         self.positions : list
             Returns a list of positions for the weight groups in the order the groups appear in the scheme entry.
         """
-
         if len(wtgrps) > self.num_pos:
             log.error('Too many weight groups for balance')
             return None
         allocator.show(self.num_pos, wtgrps)
         self._positions = allocator.wait_for_prompt_reply()
-        if not self.positions:
+        if self.positions is None:
+            log.error("Position assignment incomplete")
             self._want_abort = True
 
         return self.positions
@@ -87,6 +101,7 @@ class AWBalCarousel(MettlerToledo):
         <a> in weighing position. ready
         <a> in calibration position. ready
         <a> is an integer that represents the turntable position above the weighing pan.
+        The AX1006 has only 'top' and 'weighing' positions.
 
         Returns
         -------
@@ -124,6 +139,9 @@ class AWBalCarousel(MettlerToledo):
                 self._raise_error(get_key(reply))
 
     def time_move(self):
+        if self.positions is None:
+            log.warning("Weight groups must first be assigned to positions.")
+            return
         if not self.want_abort:
             times = []
             print("Moving to last position")
@@ -139,7 +157,8 @@ class AWBalCarousel(MettlerToledo):
             self.move_time = max(times) + 5  # want to add a wee buffer time here, say 5 s
 
     def lower_handler(self):
-        """
+        """Lowers the turntable one lift position.
+        For the AX1006, this command puts the turntable in the weighing position.
         For the AX10005, the turntable moves downward:
             – From the top to the panbraking position,
             – from the braking to the weighing position,
@@ -147,12 +166,18 @@ class AWBalCarousel(MettlerToledo):
         """
         if not self.want_abort:
             log.info("Sinking mass")
-            # can get handler to display text such as "Sinking position: " + Weight here if desired
+            # could get handler to display text such as "Sinking position: " + Weight here if desired
             self.connection.write("SINK")
 
             reply = self.wait_for_reply()
 
-            if reply == "ERROR: In calibration position already. ready":
+            if reply == "ERROR: In weighing position already. ready":  # AX1006 error
+                log.warning(
+                    "The turntable is in the weighing position and cannot be lowered further."
+                )
+                return
+
+            if reply == "ERROR: In calibration position already. ready":  # AX10005 error
                 log.warning(
                     "The turntable is in the calibration position and cannot be lowered further."
                 )
@@ -165,14 +190,15 @@ class AWBalCarousel(MettlerToledo):
                 self._raise_error(get_key(reply))
 
     def raise_handler(self):
-        """
-        For the AX10005, tThe turntable moves upward:
+        """Raises the turntable one lift position.
+        For the AX1006, this command puts the turntable in the top position.
+        For the AX10005, the turntable moves upward:
             – From the calibration position to the weighing position,
             – from the weighing position to the top position.
         """
         if not self.want_abort:
             log.info("Lifting mass")
-            # can get handler to display text such as "Lifting position: " + Weight here if desired
+            # could get handler to display text such as "Lifting position: " + Weight here if desired
             self.connection.write("LIFT")
 
             reply = self.wait_for_reply()
@@ -202,8 +228,9 @@ class AWBalCarousel(MettlerToledo):
         if self.record.model == "AX10005":
             lower_options = {'top': 0, 'panbraking': 1, 'weighing': 2, 'calibration': 3}
         else:
-            lower_options = {'top': 0, 'weighing': 1, 'calibration': 2}
+            lower_options = {'top': 0, 'weighing': 1}
         raise_options = {'top': 2, 'weighing': 1, 'calibration': 0}
+        # note: calibration and panbraking positions are not relevant for AX1006
         rot_pos, current = self.get_status()
         lowers = lower_options[lift_position] - lower_options[current]
         if lowers < 0:
@@ -230,7 +257,7 @@ class AWBalCarousel(MettlerToledo):
             wait_for_elapse(self.move_time, start_time=t0)
 
             self.lift_to('weighing')
-            # the lift_to function might be a bit complicated, but we'll see...
+            # the lift_to function might be an unnecessary complication, but we'll see...
 
             # for AX1006, stable wait is 35 s
             # 'brake time' = 35 s
@@ -243,7 +270,6 @@ class AWBalCarousel(MettlerToledo):
     def centering(self):
         # TODO: add a centering routine
         pass
-
 
     def wait_for_reply(self):
         """Utility function for movement commands MOVE, SINK and LIFT.
