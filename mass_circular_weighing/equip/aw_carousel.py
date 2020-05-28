@@ -286,8 +286,7 @@ class AWBalCarousel(MettlerToledo):
             self.move_to(pos)
             for i in range(repeats):
                 self.lift_to('weighing')
-                # may want to add a wait here while it brakes,
-                # or just lower to panbraking position first rather than weighing position?
+                # may want to add a wait here while it brakes if needed
                 self.lift_to('top')
 
         """VBA routine for AX balances
