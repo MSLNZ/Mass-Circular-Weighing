@@ -256,7 +256,7 @@ class AWBalCarousel(MettlerToledo):
             # do move
             self.move_to(pos)
 
-            # wait for some time to make all moves same
+            # wait for some time to make all moves same - and/or wait until the next 'weighing time'
             wait_for_elapse(self.move_time, start_time=t0)
 
             self.lift_to('weighing')
@@ -270,8 +270,82 @@ class AWBalCarousel(MettlerToledo):
         if not self.want_abort:
             self.lift_to('top')
 
-    def centering(self):
-        # TODO: add a centering routine
+    def centering(self, repeats):
+        # TODO: add a centering routine - check this with Greg
+        """Performs a centering routine
+
+        Parameters
+        ----------
+        repeats : int
+            number of times to raise/lower each weight
+        Returns
+        -------
+        bool to indicate successful completion
+        """
+        for pos in self.positions:
+            self.move_to(pos)
+            for i in range(repeats):
+                self.lift_to('weighing')
+                # may want to add a wait here while it brakes,
+                # or just lower to panbraking position first rather than weighing position?
+                self.lift_to('top')
+
+        """VBA routine for AX balances
+        Private Sub CommandButton1_Click()
+            Dim count As Integer
+            Dim IncludedWeight(4) As Boolean
+            Dim NoOfSinks As Integer
+            Dim start As Boolean
+            Dim Weight As Integer
+            Const WaitTime As Integer = 15
+            
+            Call BalanceCheck
+        
+            IncludedWeight(1) = frmoutput.opt1.value
+            IncludedWeight(2) = frmoutput.opt3.value
+            IncludedWeight(3) = frmoutput.opt5.value
+            IncludedWeight(4) = frmoutput.opt7.value
+        
+            NoOfSinks = Val(frmoutput.txtnum.value)
+            start = True
+            
+            For Weight = 1 To 4
+                If IncludedWeight(Weight) Then
+                    If Not start Then
+                        Call DoDelay("Waiting to stabilise", WaitTime)
+                    Else
+                        start = False
+                    End If
+                    
+                    Call RoughTurn(Weight)
+                    Call Lower(Weight)
+                    Call DoDelay("Braking", WaitTime)
+                    Call Raise(Weight)
+                End If
+            Next Weight
+            
+            Call DoDelay("Waiting to stabilise", WaitTime)
+            
+            For Weight = 1 To 4
+                If IncludedWeight(Weight) Then
+                    Call RoughTurn(Weight)
+                    count = 1
+                    Do While count <= NoOfSinks
+                        Call Lower(Weight)
+                        Call DoDelay("Braking", WaitTime)
+                        Call Raise(Weight)
+                        Call DoDelay("Waiting to Stabilise", WaitTime)
+                        count = count + 1
+                    Loop
+                End If
+            Next Weight
+            
+            RoughTurn (1)
+            Lower (1)
+            frmoutput.Close_AXCom_Port
+            Unload frmoutput
+        End Sub"""
+
         pass
 
     def wait_for_reply(self):
