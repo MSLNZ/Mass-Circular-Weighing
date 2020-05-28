@@ -28,6 +28,7 @@ class AWBalCarousel(MettlerToledo):
         super().__init__(record)
 
         self.num_pos = record.user_defined['pos']  # num_pos is the total number of available loading positions
+        # num_pos should be 4 for the carousel balances
         self._positions = None
 
         self.lift_pos = None
@@ -49,16 +50,18 @@ class AWBalCarousel(MettlerToledo):
 
         """
         h_str = self._query("IDENTIFY")
+        # TODO: confirm that the correct handler is connected
         print(h_str)
 
     @property
     def mode(self):
         return 'aw_c'
 
-    def tare_bal(self):     # TODO: check if MettlerToledo tare_bal works
+    def tare_bal(self):
         """Tares balance with load"""
         self.lift_to('weighing')
         m = self._query("Z").split()
+        # TODO: check if MettlerToledo tare_bal using 'T' works instead
         if m[1] == 'S':
             log.info('Balance tared with value '+m[2]+' '+m[3])
             return
