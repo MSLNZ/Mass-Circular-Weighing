@@ -5,7 +5,7 @@
     <save_folder>C:\Users\r.hawke\Documents\</save_folder> <!-- parent folder -->
     <job>job</job>
     <client>client</client>      <!-- Files will be created with this name inside the parent folder -->
-    <client_masses>1r 1b 1l 1f</client_masses>
+    <client_masses>5 5b</client_masses>
     <std_set>CUSTOM</std_set>       <!-- Use only names of sets as in <standards> below. -->
     <check_set>None</check_set>     <!-- Use only names of sets as in <standards> below, or None. -->
     <drift>auto select</drift>  <!-- Allowed options: auto select, linear drift, quadratic drift, cubic drift -->
@@ -26,7 +26,7 @@
 
     <!-- Specify the limits for ambient conditions to begin weighing. -->
     <min_temp units="C">18.1</min_temp>
-    <max_temp units="C">30</max_temp>
+    <max_temp units="C">21.9</max_temp>
     <min_rh units="%">30</min_rh>
     <max_rh units="%">70</max_rh>
 
@@ -70,7 +70,7 @@
     <!-- Specify the Connections Databases to load connection records from. -->
     <connections>
       <connection>
-        <path>C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\Equipment register.xlsx</path>
+        <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
         <sheet>LenovoX260</sheet>
       </connection>
     </connections>

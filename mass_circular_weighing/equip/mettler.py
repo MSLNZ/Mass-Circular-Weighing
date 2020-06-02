@@ -77,7 +77,7 @@ class MettlerToledo(Balance):
                         log.info('Balance self-calibration completed successfully')
                         return
                     elif c[1] == 'I':
-                        self._raise_error('C3 C')
+                        self._raise_error('CAL C')
                 except MSLTimeoutError:
                     if perf_counter()-t0 > self.intcaltimeout:
                         raise TimeoutError("Calibration took longer than expected")
@@ -191,7 +191,7 @@ ERRORCODES = {
     'ZI -': 'Lower limit of zero setting range exceeded',
     'C3 I': 'A calibration can not be performed at present as another operation is taking place.',
     'C3 L': 'Calibration operation not possible, e.g. as internal weight missing.',
-    'C3 C': 'The calibration was aborted as, e.g. stability not attained or the procedure was aborted with the C key.',
+    'CAL C': 'The calibration was aborted as, e.g. stability not attained or the procedure was aborted with the C key.',
     'T I':  'Taring not performed (balance is currently executing another command, '
             'e.g. zero setting, or timeout as stability was not reached).',
     'T +':  'Upper limit of taring range exceeded.',
@@ -205,6 +205,6 @@ ERRORCODES = {
     'ET':   'Error Transmission: At least one character of the command has a parity error. The command will be ignored.',
     'FE 1': 'FATAL ERROR: Top Position, but light barrier (lift) open!',
     'FE 2': 'FATAL ERROR: Light barriers not connected!',
-
+    'LT':   'Error in lift position when raising or lowering weight',
 
 }

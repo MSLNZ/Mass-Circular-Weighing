@@ -40,32 +40,26 @@ class AWBalCarousel(MettlerToledo):
 
         self.handler = None
 
-    def identify_handler(self):
-        """Reports handler model and software version.
-        (from AX1006 manual)
-        string returned of form: H1006, serial number #xxxx, software V x.xx. ready
-
-        Returns
-        -------
-
-        """
-        h_str = self._query("IDENTIFY")
-        # TODO: confirm that the correct handler is connected
-        print(h_str)
-
     @property
     def mode(self):
         return 'aw_c'
 
-    def tare_bal(self):
-        """Tares balance with load"""
-        self.lift_to('weighing')
-        m = self._query("Z").split()
-        # TODO: check if MettlerToledo tare_bal using 'T' works instead
-        if m[1] == 'S':
-            log.info('Balance tared with value '+m[2]+' '+m[3])
-            return
-        self._raise_error(m[0]+' '+m[1])
+    def identify_handler(self):
+        """Reports handler model and software version.
+        string returned of form: H1006, serial number #xxxx, software V x.xx. ready
+
+        Returns
+        -------
+        string from balance
+
+        """
+        h_str = self._query("IDENTIFY")
+        if self.record.model == "AX10005":
+            assert h_str.strip() == "H10005, serial number #0003, software V 1.03.  ready"
+        else:# TODO: confirm that the correct handler is connected for AX1006
+            print(h_str)
+
+        return h_str
 
     @property
     def positions(self):
@@ -115,6 +109,7 @@ class AWBalCarousel(MettlerToledo):
         if len(status_str.split()) == 5 and status_str.split()[-1] == "ready":
             self.rot_pos = status_str.split()[0]
             self.lift_pos = status_str.split()[2]
+            log.info("Handler in position {}, {} position".format(self.rot_pos, self.lift_pos))
             return self.rot_pos, self.lift_pos
 
     def move_to(self, pos):
@@ -137,6 +132,8 @@ class AWBalCarousel(MettlerToledo):
 
             reply = self.wait_for_reply()  # the message returned is either 'ready' or an error code
             if reply == "ready":
+                self.get_status()
+                wait_for_elapse(5)
                 return
             else:
                 self._raise_error(get_key(reply))
@@ -220,19 +217,19 @@ class AWBalCarousel(MettlerToledo):
 
     def lift_to(self, lift_position):
         """Lowers or raises handler to the lift position specified.
+        If lowering to panbraking or weighing positions, waits for self.stable_wait time at each stage.
 
         Parameters
         ----------
         lift_position : string
             string for desired lift position. Allowed strings are: top, panbraking, weighing, calibration
-        Returns
-        -------
+
         """
         if self.record.model == "AX10005":
             lower_options = {'top': 0, 'panbraking': 1, 'weighing': 2, 'calibration': 3}
         else:
             lower_options = {'top': 0, 'weighing': 1}
-        raise_options = {'top': 2, 'weighing': 1, 'calibration': 0}
+        raise_options = {'top': 2, 'panbraking': 1, 'weighing': 1, 'calibration': 0}
         # note: calibration and panbraking positions are not relevant for AX1006
         rot_pos, current = self.get_status()
         lowers = lower_options[lift_position] - lower_options[current]
@@ -240,13 +237,21 @@ class AWBalCarousel(MettlerToledo):
             raises = raise_options[lift_position] - raise_options[current]
             for i in range(raises):
                 self.raise_handler()
-            self.get_status()
         else:
             for i in range(lowers):
                 self.lower_handler()
-            self.get_status()
+                self.get_status()
+                if self.lift_pos == 'panbraking':
+                    wait_for_elapse(self.stable_wait)
+                elif self.lift_pos == 'weighing':
+                    wait_for_elapse(self.stable_wait)
+                # at present these waits are the same time, but we can allow different times here.
 
-        assert self.lift_pos == lift_position
+        self.get_status()
+        if not self.lift_pos == lift_position:
+            self.raise_handler()
+            self.raise_handler()
+            self._raise_error("LT")
 
     def load_bal(self, mass, pos):
         while not self.want_abort:
@@ -260,10 +265,8 @@ class AWBalCarousel(MettlerToledo):
             wait_for_elapse(self.move_time, start_time=t0)
 
             self.lift_to('weighing')
-            # the lift_to function might be an unnecessary complication, but we'll see...
-
-            # for AX1006, stable wait is 35 s
-            # 'brake time' = 35 s
+            # the lift_to function might be an unnecessary complication, but we'll see.
+            # It adds a bit more resilience in case things go wrong.
 
     def unload_bal(self, mass, pos):
         """Unloads mass from pan"""
@@ -271,7 +274,6 @@ class AWBalCarousel(MettlerToledo):
             self.lift_to('top')
 
     def centering(self, repeats):
-        # TODO: add a centering routine - check this with Greg
         """Performs a centering routine
 
         Parameters
@@ -286,7 +288,7 @@ class AWBalCarousel(MettlerToledo):
             self.move_to(pos)
             for i in range(repeats):
                 self.lift_to('weighing')
-                # may want to add a wait here while it brakes if needed
+                # the lift_to includes appropriate waits
                 self.lift_to('top')
 
         """VBA routine for AX balances
@@ -347,6 +349,67 @@ class AWBalCarousel(MettlerToledo):
 
         pass
 
+    def scale_adjust(self):
+        self.get_status()
+        if not self.lift_pos == 'weighing':
+            self.lift_to('weighing')
+
+        self.tare_bal()
+
+        m = self._query("C1").split()
+        print(m)
+
+        if m[1] == 'B':
+            app = application()
+            print('Balance self-calibration commencing')
+            log.info('Balance self-calibration commencing')
+            t0 = perf_counter()
+            while True:
+                app.processEvents()
+                try:
+                    c = self.connection.read().split()
+                    print(c)
+                    if c[0] == 'ready':
+                        continue
+                    elif c[0] == 'ES':
+                        continue
+                    elif c[1] == 'A':
+                        print('Balance self-calibration completed successfully')
+                        log.info('Balance self-calibration completed successfully')
+                        return
+                    elif c[1] == 'I':
+                        self._raise_error('CAL C')
+                    elif c[1] == "0.00000":
+                        self.get_status()
+                        self.connection.write("")
+                        if self.lift_pos == 'calibration':
+                            self.raise_handler()
+                            self.connection.write("")
+                        continue
+                    elif c[2] == "0.00000":
+                        self.get_status()
+                        self.connection.write("")
+                        if self.lift_pos == 'calibration':
+                            self.raise_handler()
+                            self.connection.write("")
+                        continue
+                    elif c[1] == "10.00000":
+                        self.lower_handler()
+                        self.connection.write("")
+                        continue
+                    elif c[2] == "10.00000":
+                        self.lower_handler()
+                        self.connection.write("")
+                        continue
+                except MSLTimeoutError:
+                    if perf_counter()-t0 > self.intcaltimeout:
+                        raise TimeoutError("Calibration took longer than expected")
+                    else:
+                        log.info('Waiting for internal calibration to complete')
+
+        self._raise_error(m[0]+' '+m[1])
+
+
     def wait_for_reply(self):
         """Utility function for movement commands MOVE, SINK and LIFT.
         Waits for string returned by these commands.
@@ -361,7 +424,7 @@ class AWBalCarousel(MettlerToledo):
         while True:  # wait for handler to finish task
             app.processEvents()
             try:
-                r = self.connection.read().split()
+                r = self.connection.read().strip()
                 if r:
                     print(r)  # for debugging only
                     return r
@@ -385,6 +448,7 @@ def wait_for_elapse(elapse_time, start_time=perf_counter()):
     """
     app = application()
     time = perf_counter() - start_time
+    log.info("Waiting for {} seconds...".format(elapse_time))
     while time < elapse_time:
         app.processEvents()
         time = perf_counter() - start_time
