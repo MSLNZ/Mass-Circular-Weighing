@@ -88,12 +88,13 @@ class MettlerToledo(Balance):
 
     def tare_bal(self):
         """Tares balance after checking with user that tare load is correct"""
-        prompt.ok_cancel('Check that the balance has correct tare load, then press enter to continue.')
-        m = self._query("T").split()
-        if m[1] == 'S':
-            log.info('Balance tared with value '+m[2]+' '+m[3])
-            return
-        self._raise_error(m[0]+' '+m[1])
+        ok = prompt.ok_cancel('Check that the balance has correct tare load, then press enter to continue.')
+        if ok:
+            m = self._query("T").split()
+            if m[1] == 'S':
+                log.info('Balance tared with value '+m[2]+' '+m[3])
+                return
+            self._raise_error(m[0]+' '+m[1])
 
     def get_mass_instant(self):
         """Reads instantaneous mass from balance. Includes a check that the balance has been read correctly.
@@ -172,10 +173,10 @@ class MettlerToledo(Balance):
                     return False
             return True
         except IndexError:
-            print(m)
+            return m
 
     def _raise_error(self, errorkey):
-        raise ValueError(ERRORCODES.get(errorkey,'Unknown serial communication error'))
+        raise ValueError(ERRORCODES.get(errorkey,'Unknown serial communication error: {}'.format(errorkey)))
 
 
 
@@ -206,5 +207,6 @@ ERRORCODES = {
     'FE 1': 'FATAL ERROR: Top Position, but light barrier (lift) open!',
     'FE 2': 'FATAL ERROR: Light barriers not connected!',
     'LT':   'Error in lift position when raising or lowering weight',
-
+    'UL':   'Incorrect mass loaded: underload',
+    'OL':   'Incorrect mass loaded: overload',
 }
