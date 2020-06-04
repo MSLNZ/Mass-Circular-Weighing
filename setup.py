@@ -139,6 +139,7 @@ install_requires = [
     'PyQt5',
     'comtypes',
     'xlwt',
+    'tabulate',
 ]
 
 
