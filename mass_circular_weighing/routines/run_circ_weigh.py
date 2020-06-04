@@ -12,6 +12,9 @@ from ..equip.labenviron_dll import LabEnviron64
 from ..log import log
 
 dll = LabEnviron64()
+print(dll.lib32_path)
+print(dll.get_t_rh_now('mass 2', 1))
+
 
 tab = '  '
 

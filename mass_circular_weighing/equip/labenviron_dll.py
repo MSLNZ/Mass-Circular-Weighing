@@ -1,5 +1,5 @@
 import os
-import ctypes # this script uses byref, c_int32, create_string_buffer, c_int16
+import ctypes  # this script uses byref, c_int32, create_string_buffer, c_int16
 from datetime import date, datetime
 
 from msl.loadlib import Server32, Client64, IS_PYTHON_64BIT
@@ -17,9 +17,7 @@ diff = datetime(1970, 1, 1) - datetime(1904, 1, 1)
 class Labview32(Server32):
     """Create a 32-bit server to interface with Emile's LabVIEW dll"""
     def __init__(self, host, port, quiet, **kwargs):
-        super(Labview32, self).__init__(
-            os.path.join(os.path.dirname(__file__).strip('/equip'), r'resources\LabEnviron_V1.3.dll'),
-            'cdll', host, port, quiet)
+        super(Labview32, self).__init__('LabEnviron_V1.3.dll', 'cdll', host, port, quiet)
 
     def get_size(self, omega_alias, probe, date_start, date_end):
         probe = ctypes.c_int32(probe)
@@ -97,19 +95,29 @@ class Labview32(Server32):
 class LabEnviron64(Client64):
     """Create a 64-bit client to interface with the python environment"""
     def __init__(self):
-        super(LabEnviron64, self).__init__(module32='labenviron_dll', append_sys_path=os.path.dirname(__file__))
+        super(LabEnviron64, self).__init__(
+            module32='labenviron_dll',
+            append_sys_path=os.path.dirname(__file__),
+            append_environ_path=os.path.join(os.path.dirname(__file__).strip('/equip'), r'resources'),
+            quiet=False)
+        # print(__file__)
+        # print(os.path.join(os.path.dirname(__file__).strip('/equip'), r'resources\LabEnviron_V1.3.dll'))
 
     def get_data(self, omega_alias, probe, date_start=None, date_end=None,):
         """gets data from one probe of a given omega logger over a specified time range"""
         size, status, error = self.request32('get_size', omega_alias, probe, date_start=date_start, date_end=date_end)
+        print(size, status, repr(error))
         if error:
             log.error(error)
+            print('size', error)
             return None, None
 
         x_data, y_data, status, error = self.request32('get_data', omega_alias, probe,
                                                        date_start=date_start, date_end=date_end, xy_size=size)
+        print(x_data, y_data, status, repr(error))
         if error:
             log.error(error)
+            print('data', error)
             return None, None
 
         return x_data, y_data
