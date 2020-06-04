@@ -154,6 +154,7 @@ class MettlerToledo(Balance):
                 if max(readings) - min(readings) < 2*self.resolution:
                     return sum(readings)/3
                 else:
+                    log.warning("First collected readings not self consistent")
                     readings = []
                     continue
 
@@ -207,6 +208,6 @@ ERRORCODES = {
     'FE 1': 'FATAL ERROR: Top Position, but light barrier (lift) open!',
     'FE 2': 'FATAL ERROR: Light barriers not connected!',
     'LT':   'Error in lift position when raising or lowering weight',
-    'UL':   'Incorrect mass loaded: underload',
-    'OL':   'Incorrect mass loaded: overload',
+    'UL':   'Incorrect mass loaded: underload error',
+    'OL':   'Incorrect mass loaded: overload error',
 }
