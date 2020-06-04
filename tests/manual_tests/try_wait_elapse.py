@@ -1,0 +1,3 @@
+from mass_circular_weighing.equip.aw_carousel import wait_for_elapse
+
+wait_for_elapse(10)
