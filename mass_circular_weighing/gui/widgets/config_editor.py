@@ -226,7 +226,7 @@ class ConfigEditor(QtWidgets.QDialog):
 
         layout = QtWidgets.QHBoxLayout()
         layout.addLayout(lhs, stretch=2)
-        layout.addLayout(clay, stretch=5)
+        layout.addLayout(clay, stretch=4)
         layout.addLayout(rhs, stretch=1)
 
         self.setLayout(layout)
