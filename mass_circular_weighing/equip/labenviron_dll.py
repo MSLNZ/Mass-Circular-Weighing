@@ -166,39 +166,3 @@ class LabEnviron64(Client64):
         except ValueError:
             return [tempdata_end[1][-1]], [rhdata_end[1][-1]]
 
-
-if __name__ == '__main__':
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
-    dll = LabEnviron64()
-
-    m1 = 'mass 1'
-    m2 = 'mass 2'
-    t1 = 'temperature 1'
-
-    # logger = t1
-    # sensor = 1
-
-    for logger in [m1, m2, t1]:
-        for sensor in [1, 2]:
-            print('Initial ambient conditions: ' + logger + ', sensor '+ str(sensor))
-            # date_start, t_start, rh_start = dll.get_t_rh_now(logger, sensor)
-            t_start, rh_start = dll.get_t_rh_during(logger, sensor, datetime(2020, 3, 17))
-            print(t_start, rh_start)
-
-
-    # from time import sleep
-    # sleep(66)
-    #
-    # print(dll.get_t_rh_during(logger, 1, date_start,))
-    #
-    # date_end = date.today()
-    # tempdata_end = dll.get_temp(logger, 0, date_start, date_end)
-    # rhdata_end = dll.get_rh(logger, 1, date_start, date_end)
-    #
-    # print(len(tempdata_end[0]))
-    # print(tempdata_end[0][:], tempdata_end[1][:])
-    #
-    # t1 = tempdata_end[0][:].index(date_start)
-    # print(tempdata_end[1][t1:])
-
