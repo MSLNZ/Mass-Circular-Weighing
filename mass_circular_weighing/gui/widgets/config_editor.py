@@ -54,9 +54,11 @@ class ConfigEditor(QtWidgets.QDialog):
 
         formlayout.addRow(label('Configuration file'), self.config_io)
         formlayout.addRow(label('Folder for saving data'), self.folder_io)
-        formlayout.addRow(label('Job'), self.job_io)
+        formlayout.addRow(label('Job code'), self.job_io)
         formlayout.addRow(label('Client'), self.client_io)
-        formlayout.addRow(label('List of client masses'), self.client_masses_io)
+        formlayout.addRow(label(
+            'List of client masses\n'
+            '(separate by spaces)'), self.client_masses_io)
 
         formGroup.setLayout(formlayout)
 
