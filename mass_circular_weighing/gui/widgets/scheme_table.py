@@ -1,5 +1,6 @@
 import xlrd, xlwt
 import os
+import re
 
 from msl.qt import QtWidgets, QtCore, io, prompt, Signal, Slot
 
@@ -132,7 +133,7 @@ class SchemeTable(QtWidgets.QTableWidget):
                 scheme_entry = self.cellWidget(i, 0).text()
                 for wtgrp in scheme_entry.split():
                     for mass in wtgrp.split('+'):
-                        if mass in cfg.client_wt_IDs:
+                        if mass in cfg.client_wt_IDs.split():
                             log.debug(mass + ' in client set')
                         elif mass in cfg.all_stds['weight ID']:
                             log.debug(mass + ' in std set')
