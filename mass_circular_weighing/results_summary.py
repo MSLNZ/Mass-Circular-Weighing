@@ -29,8 +29,7 @@ def list_to_csstr(idlst):
 
 def save_mls_excel(data, folder, client, sheet_name):
     header = data.metadata.get('metadata')['headers']
-
-    path = os.path.join(folder, client + '_SummaryTables.xls')
+    path = os.path.join(folder, client + '_' + sheet_name + '.xls')
     workbook = xlwt.Workbook()
     sheet = workbook.add_sheet(sheet_name)
 
@@ -231,7 +230,7 @@ class WordDoc(object):
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
         h2 = mvals.metadata.get('metadata')['headers']
         self.make_table_massdata(mvals, 4)
-        save_mls_excel(mvals, folder, client, sheet_name="Mass Values")
+        save_mls_excel(mvals, folder, client, sheet_name="Mass_Values")
         meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
         self.make_normal_text(
                 "Number of observations = " + str(meta['Number of observations']) +
