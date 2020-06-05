@@ -12,8 +12,8 @@ m2 = 'mass 2'
 t1 = 'temperature 1'
 
 
-for logger in [m2]:#, m2, t1]:
-    for sensor in [1]:#, 2]:
+for logger in [m1, m2, t1]:
+    for sensor in [1, 2]:
         print('Initial ambient conditions: ' + logger + ', sensor '+ str(sensor))
         # date_start, t_start, rh_start = dll.get_t_rh_now(logger, sensor)
         t_start, rh_start = dll.get_t_rh_during(logger, sensor, datetime(2020, 3, 17))
