@@ -128,11 +128,14 @@ class FinalMassCalc(object):
         log.debug('Input data: \n+ weight group, - weight group, mass difference (g), balance uncertainty (ug)'
                   '\n' + str(self.inputdata))
         for entry in self.inputdata:
-            # log.debug(str(entry[0])+str(entry[1])+str(entry[2])+str(entry[3]))
+            log.debug("{} {} {} {}".format(entry[0], entry[1], entry[2], entry[3]))
             grp1 = entry[0].split('+')
             for m in range(len(grp1)):
-                log.debug('mass ' + grp1[m] + ' is in position ' + str(np.where(self.allmassIDs == grp1[m])[0][0]))
-                designmatrix[rowcounter, np.where(self.allmassIDs == grp1[m])] = 1
+                try:
+                    log.debug('mass ' + grp1[m] + ' is in position ' + str(np.where(self.allmassIDs == grp1[m])[0][0]))
+                    designmatrix[rowcounter, np.where(self.allmassIDs == grp1[m])] = 1
+                except IndexError:
+                    log.error("Index error raised at mass {}".format(grp1[m]))
             grp2 = entry[1].split('+')
             for m in range(len(grp2)):
                 log.debug('mass ' + grp2[m] + ' is in position ' + str(np.where(self.allmassIDs == grp2[m])[0][0]))
