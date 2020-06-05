@@ -1,6 +1,5 @@
 import xlrd, xlwt
 import os
-import re
 
 from msl.qt import QtWidgets, QtCore, io, prompt, Signal, Slot
 
