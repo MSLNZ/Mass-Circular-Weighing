@@ -277,7 +277,16 @@ class LaTexDoc(object):
         self.fp.write(tab_str + "\n")
 
     def add_weighing_dataset(self, cw_file, se, nom, incl_datasets, cfg):
-        """How to add a dataset from a single circular weighing"""
+        """How to add a dataset from a single circular weighing
+
+        Parameters
+        ----------
+        cw_file : path
+        se : str
+        nom : str
+        incl_datasets : set
+        cfg : configuration instance
+        """
         if not os.path.isfile(cw_file):
             log.warning('No data yet collected for '+se)
         else:
@@ -331,7 +340,7 @@ class LaTexDoc(object):
 
                     self.make_table_cw_diffs(analysisdata)
 
-                    self.fp.write("\n   ") #make_normal_text(" ", 'tiny')
+                    self.fp.write("\n   ") # make_normal_text(" ", 'tiny')
 
                     self.make_table_diffs_meta(analysisdata.metadata)
 
@@ -341,11 +350,11 @@ class LaTexDoc(object):
             se = scheme[0]
             nom = scheme[1]
             cw_file = os.path.join(folder, client + '_' + nom + '.json')
-            self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
+            self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
         else:
-            for row in range(len(scheme.shape)):
-                se = scheme[row][0]
-                nom = scheme[row][1]
+            for row in scheme:
+                se = row[0]
+                nom = row[1]
                 cw_file = os.path.join(folder, client + '_' + nom + '.json')
                 if not os.path.isfile(cw_file):
                     log.warning('No data yet collected for ' + se)

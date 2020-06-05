@@ -41,12 +41,19 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
         return None
 
     # get balance model numbers instead of balance aliases
-    mod_scheme = np.ndarray(np.shape(scheme.data), dtype=type(scheme.data))
-    for row in range(len(mod_scheme)):
-        mod_scheme[row][0] = ' - '.join(scheme.data[row][0].split())
-        mod_scheme[row][1] = scheme.data[row][1]
-        mod_scheme[row][2] = cfg.equipment[scheme.data[row][2]].model
-        mod_scheme[row][3] = scheme.data[row][3]
+    if len(scheme.shape) == 1:    # catch for if only one entry in scheme
+        mod_scheme = np.ndarray((1, 4), dtype=type(scheme.data))
+        mod_scheme[0][0] = ' - '.join(scheme.data[0].split())
+        mod_scheme[0][1] = scheme.data[1]
+        mod_scheme[0][2] = cfg.equipment[scheme.data[2]].model
+        mod_scheme[0][3] = scheme.data[3]
+    else:
+        mod_scheme = np.ndarray(np.shape(scheme.data), dtype=type(scheme.data))
+        for row in range(len(mod_scheme)):
+            mod_scheme[row][0] = ' - '.join(scheme.data[row][0].split())
+            mod_scheme[row][1] = scheme.data[row][1]
+            mod_scheme[row][2] = cfg.equipment[scheme.data[row][2]].model
+            mod_scheme[row][3] = scheme.data[row][3]
 
     finalmasscalc_file = os.path.join(cfg.folder, cfg.client +'_finalmasscalc.json')
     fmc_root = read(finalmasscalc_file)

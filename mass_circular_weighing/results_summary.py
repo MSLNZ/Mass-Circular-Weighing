@@ -27,12 +27,12 @@ def list_to_csstr(idlst):
     return idstr.strip(" ").strip(",")
 
 
-def save_mls_excel(data, folder, client):
+def save_mls_excel(data, folder, client, sheet_name):
     header = data.metadata.get('metadata')['headers']
 
-    path = os.path.join(folder, client + '_AllDiffs.xls')
+    path = os.path.join(folder, client + '_SummaryTables.xls')
     workbook = xlwt.Workbook()
-    sheet = workbook.add_sheet('Differences')
+    sheet = workbook.add_sheet(sheet_name)
 
     for j, text in enumerate(header):
         sheet.write(0, j, text)
@@ -42,7 +42,7 @@ def save_mls_excel(data, folder, client):
             sheet.write(row + 1, col, data[row][col])
 
     workbook.save(path)
-    log.info('Collated differences saved to ' + str(path))
+    log.info('Data saved to {} in {}'.format(sheet_name, path))
 
 
 class WordDoc(object):
@@ -225,12 +225,13 @@ class WordDoc(object):
         self.make_heading2('Input data')
         input_data = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
         self.make_table_massdata(input_data, 3)
-        save_mls_excel(input_data, folder, client)
+        save_mls_excel(input_data, folder, client, sheet_name="Differences")
 
         self.make_heading2('Mass values from Least Squares solution')
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
         h2 = mvals.metadata.get('metadata')['headers']
         self.make_table_massdata(mvals, 4)
+        save_mls_excel(mvals, folder, client, sheet_name="Mass Values")
         meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
         self.make_normal_text(
                 "Number of observations = " + str(meta['Number of observations']) +
@@ -404,9 +405,9 @@ class WordDoc(object):
             cw_file = os.path.join(folder, client + '_' + nom + '.json')
             self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
         else:
-            for row in range(len(scheme.shape)):
-                se = scheme[row][0]
-                nom = scheme[row][1]
+            for row in scheme:
+                se = row[0]
+                nom = row[1]
                 cw_file = os.path.join(folder, client + '_' + nom + '.json')
                 if not os.path.isfile(cw_file):
                     log.info('No data yet collected for ' + se)
