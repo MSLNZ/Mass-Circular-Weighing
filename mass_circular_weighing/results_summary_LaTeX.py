@@ -1,4 +1,5 @@
 import os
+import xlwt
 from tabulate import tabulate
 
 from msl.io import read
@@ -17,6 +18,23 @@ def list_to_csstr(idlst):
     for id in idlst:
         idstr += id + ", "
     return idstr.strip(" ").strip(",")
+
+
+def save_mls_excel(data, folder, client, sheet_name):
+    header = data.metadata.get('metadata')['headers']
+    path = os.path.join(folder, client + '_' + sheet_name + '.xls')
+    workbook = xlwt.Workbook()
+    sheet = workbook.add_sheet(sheet_name)
+
+    for j, text in enumerate(header):
+        sheet.write(0, j, text)
+
+    for row in range(len(data)):
+        for col in range(len(data[row])):
+            sheet.write(row + 1, col, data[row][col])
+
+    workbook.save(path)
+    log.info('Data saved to {} in {}'.format(sheet_name, path))
 
 
 class LaTexDoc(object):
@@ -165,7 +183,7 @@ class LaTexDoc(object):
             self.make_table_wts_nochecks(client_wt_IDs, std_wts, std_file)
         self.fp.write("\\end{landscape}\n")
 
-    def add_mls(self, fmc_root):
+    def add_mls(self, fmc_root, folder, client):
         """Adds matrix least squares section to summary file"""
         self.fp.write("\\begin{landscape}\n")
         self.make_heading1('Matrix Least Squares Analysis')
@@ -176,11 +194,13 @@ class LaTexDoc(object):
         input_data = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
         h1 = input_data.metadata.get('metadata')['headers']
         self.make_table_massdata(input_data, h1, 2)
+        save_mls_excel(input_data, folder, client, sheet_name="Differences")
 
         self.make_heading2('Mass values from Least Squares solution')
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
         h2 = mvals.metadata.get('metadata')['headers']
         self.make_table_massdata(mvals, h2, 3)
+        save_mls_excel(mvals, folder, client, sheet_name="Mass_Values")
         meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
         self.make_normal_text(
                 "Number of observations = " + str(meta['Number of observations']) +
@@ -275,7 +295,6 @@ class LaTexDoc(object):
         """Makes table of differences e.g. position 0 - position 1, mass difference, residual.
         Uses original units from weighing."""
         headers = "{+ weight group} & {- weight group} & {mass difference} & {residual} \\\\"
-        # headers = ["{+ weight group}", "{- weight group}", "{mass difference}", "{residual}"]
         self.fp.write(
             '\n\\begin{tabular}{l l S S}'
             '\n\\toprule'
@@ -283,22 +302,74 @@ class LaTexDoc(object):
             '\n\\midrule'
         )
         for i in range(len(data)):
-            try:
-                row_str = "\n" + data["+ weight group"][i] + " & " + \
-                      data["- weight group"][i]+" & "+ \
-                      greg_format(data["mass difference"][i])+" & "+ \
-                      greg_format(data["residual"][i]) + " \\\\"
-            except ValueError:
-                row_str = "\n" + data["+ weight group"][i] + " & " + \
-                          data["- weight group"][i] + " & " + \
-                          greg_format(data["mass difference (g)"][i]) + " & " + \
-                          greg_format(data['residual (' + MU_STR + 'g)'][i]) + " \\\\"
+            row_str = "\n" + data["+ weight group"][i] + " & " + \
+                  data["- weight group"][i]+" & "+ \
+                  greg_format(data["mass difference"][i])+" & "+ \
+                  greg_format(data["residual"][i]) + " \\\\"
             self.fp.write(row_str)
         self.fp.write(
             '\n\\bottomrule'
             '\n\\end{tabular}'
             '\n'
         )
+
+    def make_table_collated_diffs(self, data):
+        """Makes table of differences e.g. position 0 - position 1, mass difference, residual.
+        Uses g for all mass values."""
+        headers = "{+ weight group} & {- weight group} & {mass difference (g)} & {residual (g)} \\\\"
+        self.fp.write(
+            '\n\\begin{tabular}{l l S S}'
+            '\n\\toprule'
+            '\n' + headers +
+            '\n\\midrule'
+        )
+        for i in range(len(data)):
+            row_str = "\n" + data["+ weight group"][i] + " & " + \
+                      data["- weight group"][i] + " & " + \
+                      greg_format(data["mass difference (g)"][i]) + " & " + \
+                      greg_format(data['residual (' + MU_STR + 'g)'][i] * 1e-6) + " \\\\"
+            self.fp.write(row_str)
+        self.fp.write(
+            '\n\\bottomrule'
+            '\n\\end{tabular}'
+            '\n'
+        )
+
+    def add_collated_data(self, cw_file, se):
+        """Adds the collated data calculated for an automatic weighing, if relevant.
+
+        Parameters
+        ----------
+        cw_file : path
+        se : str
+        """
+        if not os.path.isfile(cw_file):
+            log.warning('No data yet collected for '+se)
+        else:
+            log.debug('Reading '+cw_file)
+            root = read(cw_file)
+
+            try:
+                root['Circular Weighings'][se]
+            except KeyError:
+                log.warning('No data yet collected for '+se)
+                return
+
+            for dataset in root['Circular Weighings'][se].datasets():
+                if dataset.name[-8:] == "Collated":
+                    self.make_heading3("Collated data")
+                    self.make_table_collated_diffs(dataset)
+                    self.fp.write(
+                        '\n\\begin{small}'
+                        '\n\\begin{tabu}{lX}'
+                    )
+                    for key, value in dataset.metadata.items():
+                        self.fp.write("\n " + key + " & " + str(value) + ' \\\\')
+                    self.fp.write(
+                        '\n\\end{tabu}'
+                        '\n\\end{small}'
+                        '\n'
+                    )
 
     def add_weighing_dataset(self, cw_file, se, nom, incl_datasets, cfg):
         """How to add all datasets from each circular weighing for a given scheme entry
@@ -373,50 +444,8 @@ class LaTexDoc(object):
                         root['Circular Weighings'][se].name + '/analysis_' + run_id)
 
                     self.make_table_cw_diffs(analysisdata)
-
                     self.fp.write("\n   ") # make_normal_text(" ", 'tiny')
-
                     self.make_table_diffs_meta(analysisdata.metadata)
-
-    def add_collated_data(self, cw_file, se):
-        """Adds the collated data calculated for an automatic weighing, if relevant.
-
-        Parameters
-        ----------
-        cw_file : path
-        se : str
-        """
-        if not os.path.isfile(cw_file):
-            log.warning('No data yet collected for '+se)
-        else:
-            log.debug('Reading '+cw_file)
-            root = read(cw_file)
-
-            try:
-                root['Circular Weighings'][se]
-            except KeyError:
-                log.warning('No data yet collected for '+se)
-                return
-
-            for dataset in root['Circular Weighings'][se].datasets():
-                if dataset.name[-8:] == "Collated":
-                    self.make_heading3("Collated data")
-                    self.make_table_cw_diffs(dataset)
-                    # print(
-                    #     dataset.metadata,
-                    #     dataset.metadata['Included runs'],
-                    #     dataset.metadata.get('balance uncertainty ('+MU_STR+'g)'),
-                    #     dataset.metadata.get("Acceptance met?")
-                    # )
-                    # self.fp.write(
-                    #     '\n\\begin{small}'
-                    #     '\n\\begin{tabu}{lX}\n'
-                    #     ' Included runs:  & ' + str(dataset.metadata.get("Run #")) + '\\\\ \n'
-                    #     ' Balance uncertainty ('+MU_STR+'g):  & ' + dataset.metadata.get('balance uncertainty ('+MU_STR+'g)') + '\\\\ \n'
-                    #     ' Acceptance met?  & ' + str(dataset.metadata.get("Acceptance met?")) + '\\\\ \n'
-                    #     '\\end{tabu} \n'
-                    #     '\\end{small} \n'
-                    # )
 
     def add_weighing_datasets(self, client, folder, scheme, cfg, incl_datasets, ):
         self.make_heading1("Circular Weighing Data")

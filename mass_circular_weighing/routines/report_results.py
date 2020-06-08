@@ -63,12 +63,12 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     ld = LaTexDoc(latex_file)
     ld.init_report(cfg.job, cfg.client, cfg.folder)
     ld.add_weighing_scheme(mod_scheme, fmc_root, check_file, std_file, )
-    ld.add_mls(fmc_root)
+    ld.add_mls(fmc_root, cfg.folder, cfg.client)
     ld.add_weighing_datasets(cfg.client, cfg.folder, scheme, cfg, incl_datasets)
     ld.close_doc()
     log.info("LaTeX file saved to {}".format(latex_file))
 
-    # Make Word Output file
+    # Make Word Output file - not in use at present
     # wd = WordDoc()
     # wd.init_report(cfg.job, cfg.client, cfg.folder,)
     # wd.add_weighing_scheme(mod_scheme, fmc_root, check_file, std_file)

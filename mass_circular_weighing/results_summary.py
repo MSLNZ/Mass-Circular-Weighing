@@ -224,13 +224,13 @@ class WordDoc(object):
         self.make_heading2('Input data')
         input_data = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
         self.make_table_massdata(input_data, 3)
-        save_mls_excel(input_data, folder, client, sheet_name="Differences")
+        # save_mls_excel(input_data, folder, client, sheet_name="Differences")
 
         self.make_heading2('Mass values from Least Squares solution')
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
-        h2 = mvals.metadata.get('metadata')['headers']
+        # h2 = mvals.metadata.get('metadata')['headers']
         self.make_table_massdata(mvals, 4)
-        save_mls_excel(mvals, folder, client, sheet_name="Mass_Values")
+        # save_mls_excel(mvals, folder, client, sheet_name="Mass_Values")
         meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
         self.make_normal_text(
                 "Number of observations = " + str(meta['Number of observations']) +
@@ -334,7 +334,7 @@ class WordDoc(object):
             oTable.Cell(1, c).Range.Text = str(headers[c - 1])
             for r in range(2, rows + 1):
                 if c > 2:
-                    oTable.Cell(r, c).Range.Text = '{:.7f}'.format(data[r - 2][c - 1])
+                    oTable.Cell(r, c).Range.Text = greg_format(data[r - 2][c - 1])
                     oTable.Cell(r, c).Range.ParagraphFormat.Alignment = 2
                 else:
                     oTable.Cell(r, c).Range.Text = str(data[r - 2][c - 1])
@@ -343,6 +343,68 @@ class WordDoc(object):
 
         oTable.Range.Font.Size = self.smallfont
         oTable.Columns.Autofit()
+
+    def make_table_collated_diffs(self, data):
+        """Makes table of differences e.g. position 0 - position 1, mass difference, residual.
+        Uses g for all mass values."""
+        headers = ["+ weight group", "- weight group", "mass difference (g)", "residual (g)"]
+        rows = len(data) + 1
+        cols = len(headers)
+        oTable = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, rows, cols)
+        oTable.Range.ParagraphFormat.SpaceAfter = 0
+        for c in range(1, cols + 1):
+            oTable.Cell(1, c).Range.Text = str(headers[c - 1])
+        for r in range(2, rows + 1):
+            oTable.Cell(r, 1).Range.Text = data["+ weight group"][r-2]
+            oTable.Cell(r, 2).Range.Text = data["- weight group"][r-2]
+            oTable.Cell(r, 3).Range.Text = greg_format(data["mass difference (g)"][r-2])
+            oTable.Cell(r, 3).Range.ParagraphFormat.Alignment = 2
+            oTable.Cell(r, 4).Range.Text = greg_format(data['residual (' + MU_STR + 'g)'][r-2] * 1e-6)
+            oTable.Cell(r, 4).Range.ParagraphFormat.Alignment = 2
+
+        oTable.Rows.Item(1).Range.Font.Bold = True
+        oTable.Rows.Item(1).Range.Font.Italic = True
+
+        oTable.Range.Font.Size = self.smallfont
+        oTable.Columns.Autofit()
+
+    def add_collated_data(self, cw_file, se):
+        """Adds the collated data calculated for an automatic weighing, if relevant.
+
+        Parameters
+        ----------
+        cw_file : path
+        se : str
+        """
+        if not os.path.isfile(cw_file):
+            log.warning('No data yet collected for '+se)
+        else:
+            log.debug('Reading '+cw_file)
+            root = read(cw_file)
+
+            try:
+                root['Circular Weighings'][se]
+            except KeyError:
+                log.warning('No data yet collected for '+se)
+                return
+
+            for dataset in root['Circular Weighings'][se].datasets():
+                if dataset.name[-8:] == "Collated":
+                    self.make_heading3("Collated data")
+                    self.make_table_collated_diffs(dataset)
+                    self.make_normal_text(" ", self.smallfont)
+
+                    # add metadata as table
+                    meta = dataset.metadata
+                    table = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, len(meta), 2)
+                    table.Range.ParagraphFormat.SpaceAfter = 0
+                    i = 1
+                    for key, value in meta.items():
+                        table.Cell(i, 1).Range.Text = str(key)
+                        table.Cell(i, 2).Range.Text = str(value)
+                        i += 1
+                    table.Range.Font.Size = self.smallfont
+                    table.Columns.Autofit()
 
     def add_weighing_dataset(self, cw_file, se, nom, incl_datasets, cfg):
         """How to add a dataset from a single circular weighing"""
@@ -423,13 +485,21 @@ class WordDoc(object):
                     log.info('No data yet collected for ' + se)
                 else:
                     self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
+                    self.add_collated_data(cw_file, se)
 
         self.make_heading2("Overall ambient conditions for included weighings")
-        self.make_normal_text(
-            "T"+IN_DEGREES_C+":\t" + str(min(self.collate_ambient["T"+IN_DEGREES_C])) + " to " + str(max(self.collate_ambient["T"+IN_DEGREES_C]))
-        )
-        self.make_normal_text(
-            "RH (%):\t" + str(round(min(self.collate_ambient["RH (%)"]), 1)) + " to " + str(round(max(self.collate_ambient["RH (%)"]), 1))
-        )
+        if self.collate_ambient["T" + IN_DEGREES_C]:
+            self.make_normal_text(
+                "T"+IN_DEGREES_C+":\t" + str(min(self.collate_ambient["T"+IN_DEGREES_C])) + " to " + str(max(self.collate_ambient["T"+IN_DEGREES_C]))
+            )
+        else:
+            self.make_normal_text("No temperature data collated.")
+
+        if self.collate_ambient["RH (%)"]:
+            self.make_normal_text(
+                "RH (%):\t" + str(round(min(self.collate_ambient["RH (%)"]), 1)) + " to " + str(round(max(self.collate_ambient["RH (%)"]), 1))
+            )
+        else:
+            self.make_normal_text("No humidity data collated.")
 
 

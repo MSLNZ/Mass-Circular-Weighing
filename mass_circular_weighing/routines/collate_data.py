@@ -164,12 +164,13 @@ def collate_a_data_from_json(url, scheme_entry):
 
     # add collated data to the json file
     col_meta = {
-        "Nominal mass (g)":     collated["Nominal mass (g)"][0],
-        "Included runs":        runs.strip("+"),
+        "Nominal mass (g)": collated["Nominal mass (g)"][0],
+        "Included runs": runs.strip("+"),
         'balance uncertainty (' + MU_STR + 'g)': collated['Stdev'][0],
-        "Acceptance met?":      acceptable[:-1],
+        "Acceptance met?": acceptable[:-1],
     }
-    root.require_dataset(schemefolder.name + "/Collated", data=inputdata, metadata=col_meta)
+    a = root.require_dataset(schemefolder.name + "/Collated", data=inputdata)
+    a.add_metadata(**col_meta)
     root.save(root=root, file=url, mode='w', encoding='utf-8', ensure_ascii=False)
 
     return inputdata
