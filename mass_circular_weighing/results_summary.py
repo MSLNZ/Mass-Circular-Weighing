@@ -241,8 +241,12 @@ class WordDoc(object):
         )
         self.page_break()
 
-    def make_table_run_meta(self, cw_run_meta):
+    def make_table_run_meta(self, cw_run_meta, cfg):
         """Makes table of ambient and other metadata from circular weighing run"""
+        # Get balance model number from balance alias:
+        bal_alias = cw_run_meta.get("Balance")
+        bal_model = cfg.equipment[bal_alias].model
+
         runTable = self.oDoc.Tables.Add(self.oDoc.Bookmarks.Item("\endofdoc").Range, 2, 8) # 1 = autofit, 0 not
         runTable.Range.ParagraphFormat.SpaceAfter = 0
         runTable.Cell(1, 1).Range.Text = 'Time:'
@@ -250,7 +254,7 @@ class WordDoc(object):
         runTable.Cell(1, 3).Range.Text = 'Date:'
         runTable.Cell(1, 4).Range.Text = cw_run_meta.get("Mmt Timestamp").split()[0]
         runTable.Cell(1, 5).Range.Text = "Balance:"
-        runTable.Cell(1, 6).Range.Text = cw_run_meta.get("Balance")
+        runTable.Cell(1, 6).Range.Text = bal_model
         runTable.Cell(1, 7).Range.Text = 'Unit:'
         runTable.Cell(1, 8).Range.Text = cw_run_meta.get("Unit")
         runTable.Cell(2, 1).Range.Text = "Temp (°C):"
@@ -302,8 +306,8 @@ class WordDoc(object):
             oTable.Cell(1, 2*c+1).Range.Text = "(" + str(wtpos[c][1]) + ") " + str(wtpos[c][0])
             # oTable.Cell(1, 2*(c + 1)).Range.Text = str(wtpos[c][1])
             for r in range(2, rows+1):
-                oTable.Cell(r, 2 * c + 1).Range.Text = '{:.2f}'.format(weighdata[r-2][c][0])
-                oTable.Cell(r, 2 * (c + 1)).Range.Text = '{:.6g}'.format(weighdata[r-2][c][1])
+                oTable.Cell(r, 2 * c + 1).Range.Text = '{:.2f}'.format(weighdata[r-2][c][0])  # times
+                oTable.Cell(r, 2 * (c + 1)).Range.Text = str(weighdata[r-2][c][1])  # raw readings
         oTable.Rows.Item(1).Range.Font.Bold = True
         oTable.Rows.Item(1).Range.Font.Italic = True
 
@@ -340,15 +344,22 @@ class WordDoc(object):
         oTable.Range.Font.Size = self.smallfont
         oTable.Columns.Autofit()
 
-    def add_weighing_dataset(self, cw_file, se, nom, incl_datasets):
+    def add_weighing_dataset(self, cw_file, se, nom, incl_datasets, cfg):
         """How to add a dataset from a single circular weighing"""
         if not os.path.isfile(cw_file):
-            log.info('No data yet collected for '+se)
+            log.warning('No data yet collected for '+se)
         else:
             self.make_heading2(se)
-            log.info('Reading '+cw_file)
-            root = read(cw_file)
             wt_grps = se.split()
+
+            log.debug('Reading '+cw_file)
+            root = read(cw_file)
+
+            try:
+                root['Circular Weighings'][se]
+            except KeyError:
+                log.warning('No data yet collected for '+se)
+                return
 
             for dataset in root['Circular Weighings'][se].datasets():
                 dname = dataset.name.split('_')
@@ -360,12 +371,12 @@ class WordDoc(object):
                         self.make_heading3(run_id)
                         ambient = True
                     else:
-                        self.make_heading3(run_id + "(EXCLUDED)")
+                        self.make_heading3(run_id.replace('_', ' ') + " (EXCLUDED)")
 
                     weighdata = root.require_dataset(
                         root['Circular Weighings'][se].name + '/measurement_' + run_id)
                     # self.make_heading4('Metadata')
-                    self.make_table_run_meta(weighdata.metadata)
+                    self.make_table_run_meta(weighdata.metadata, cfg)
 
                     if ambient:
                         temps = weighdata.metadata.get("T"+IN_DEGREES_C).split(" to ")
@@ -396,13 +407,13 @@ class WordDoc(object):
                     self.make_normal_text(" ", self.smallfont)
                     self.make_table_diffs_meta(analysisdata.metadata)
 
-    def add_weighing_datasets(self, client, folder, scheme, incl_datasets):
+    def add_weighing_datasets(self, client, folder, scheme, incl_datasets, cfg):
         self.make_heading1("Circular Weighing Data")
         if len(scheme.shape) == 1:
             se = scheme[0]
             nom = scheme[1]
             cw_file = os.path.join(folder, client + '_' + nom + '.json')
-            self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
+            self.add_weighing_dataset(cw_file, se, nom, incl_datasets. cfg)
         else:
             for row in scheme:
                 se = row[0]
@@ -411,7 +422,7 @@ class WordDoc(object):
                 if not os.path.isfile(cw_file):
                     log.info('No data yet collected for ' + se)
                 else:
-                    self.add_weighing_dataset(cw_file, se, nom, incl_datasets)
+                    self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
 
         self.make_heading2("Overall ambient conditions for included weighings")
         self.make_normal_text(

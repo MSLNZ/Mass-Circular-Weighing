@@ -69,15 +69,15 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     log.info("LaTeX file saved to {}".format(latex_file))
 
     # Make Word Output file
-    wd = WordDoc()
-    wd.init_report(cfg.job, cfg.client, cfg.folder,)
-    wd.add_weighing_scheme(mod_scheme, fmc_root, check_file, std_file)
-    wd.add_mls(fmc_root, cfg.folder, cfg.client)
-    wd.add_weighing_datasets(cfg.client, cfg.folder, scheme, incl_datasets)
-    save_file = os.path.join(cfg.folder, cfg.client + '_Summary.docx')
-    wd.save_doc(save_file)
-    wd.close_doc()
-    log.info("Word file saved to {}".format(save_file))
+    # wd = WordDoc()
+    # wd.init_report(cfg.job, cfg.client, cfg.folder,)
+    # wd.add_weighing_scheme(mod_scheme, fmc_root, check_file, std_file)
+    # wd.add_mls(fmc_root, cfg.folder, cfg.client)
+    # wd.add_weighing_datasets(cfg.client, cfg.folder, scheme, incl_datasets, cfg)
+    # save_file = os.path.join(cfg.folder, cfg.client + '_Summary.docx')
+    # wd.save_doc(save_file)
+    # wd.close_doc()
+    # log.info("Word file saved to {}".format(save_file))
 
     log.info("File export complete")
 

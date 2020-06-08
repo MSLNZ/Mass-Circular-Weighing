@@ -7,6 +7,7 @@ from msl.io import read
 
 from ..constants import MU_STR, SUFFIX
 from ..log import log
+from .run_circ_weigh import check_for_existing_weighdata
 
 
 def collate_all_weighings(schemetable, cfg):
@@ -69,7 +70,8 @@ def collate_all_weighings(schemetable, cfg):
 
 def collate_a_data_from_json(url, scheme_entry):
     """Use this function for an automatic weighing where individual weighings are not likely to meet max stdev criterion,
-    but the ensemble average is.  NOTE that the average currently ignores the first of the weighings
+    but the ensemble average is.
+    NOTE that the average currently ignores the first of the weighings and any outside the EXCL criterion.
 
     Parameters
     ----------
@@ -90,8 +92,9 @@ def collate_a_data_from_json(url, scheme_entry):
     if not os.path.isfile(url):
         log.warning('File does not yet exist {!r}'.format(url))
         return None
-
-    root = read(url)
+    folder = url.strip(url.split("\\")[-1])
+    root = check_for_existing_weighdata(folder, url, scheme_entry)
+    schemefolder = root['Circular Weighings'][scheme_entry]
     wt_grps = scheme_entry.split()
     num_wt_grps = len(wt_grps)
     runs = ""
@@ -99,26 +102,33 @@ def collate_a_data_from_json(url, scheme_entry):
     for grp in wt_grps:
         collated[grp] = []
 
-    for dataset in root['Circular Weighings'][scheme_entry].datasets():
+    for dataset in schemefolder.datasets():
         dname = dataset.name.split('_')
         exclude = dataset.metadata.get('Exclude?')
 
-        if dname[0][-8:] == 'analysis' and not exclude:
-            run_id = 'run_' + dname[2]
-            meta = root.require_dataset(root['Circular Weighings'][scheme_entry].name + '/measurement_' + run_id)
-            runs += " " + str(dname[2])
-            collated['Stdev'].append(meta.metadata.get('Stdev for balance (' + MU_STR + 'g)'))
-            collated['Max stdev'].append(meta.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)'))
-            collated["Nominal mass (g)"].append(meta.metadata.get("Nominal mass (g)"))
+        if dname[0][-8:] == "Collated":
+            root.remove(schemefolder.name + "/Collated")
 
-            bal_unit = dataset.metadata.get('Mass unit')
-            for i in range(dataset.shape[0]):
-                key = dataset['+ weight group'][i]          # gets name of + weight group
-                collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])
-                                                            # adds mass difference in g to list for that weight group
+        elif str(dname[2]) == "1":
+            pass  # the first run is ignored as it is considered to be warming up the balance
+
+        else:
+            if dname[0][-8:] == 'analysis' and not exclude:
+                run_id = 'run_' + dname[2]
+                meta = root.require_dataset(root['Circular Weighings'][scheme_entry].name + '/measurement_' + run_id)
+                runs += "+" + str(dname[2])
+                collated['Stdev'].append(meta.metadata.get('Stdev for balance (' + MU_STR + 'g)'))
+                collated['Max stdev'].append(meta.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)'))
+                collated["Nominal mass (g)"].append(meta.metadata.get("Nominal mass (g)"))
+
+                bal_unit = dataset.metadata.get('Mass unit')
+                for i in range(dataset.shape[0]):
+                    key = dataset['+ weight group'][i]          # gets name of + weight group
+                    collated[key].append(dataset['mass difference'][i]*SUFFIX[bal_unit])
+                                                                # adds mass difference in g to list for that weight group
     for key, value in collated.items():
-        collated[key] = (np.average(value[1:]), np.std(value[1:], ddof=1), value)
-        # averages all but first circular weighing, std is that of sample not population, in g
+        collated[key] = (np.average(value[:]), np.std(value[:], ddof=1), value)
+        # averages all but first circular weighing which is ignored; std is that of sample not population, in g
 
     inputdata = np.empty(num_wt_grps-1,
                          dtype=[('Nominal (g)', float), ('Scheme entry', object), ('Run #', object),
@@ -149,8 +159,18 @@ def collate_a_data_from_json(url, scheme_entry):
     for row in range(num_wt_grps - 1):
         inputdata[row:]['Nominal (g)'] = collated["Nominal mass (g)"][0]
         inputdata[row:]['Scheme entry'] = scheme_entry
-        inputdata[row:]['Run #'] = runs.strip()
+        inputdata[row:]['Run #'] = runs.strip("+")
         inputdata[row:]['balance uncertainty ('+MU_STR+'g)'] = collated['Stdev'][0]
+
+    # add collated data to the json file
+    col_meta = {
+        "Nominal mass (g)":     collated["Nominal mass (g)"][0],
+        "Included runs":        runs.strip("+"),
+        'balance uncertainty (' + MU_STR + 'g)': collated['Stdev'][0],
+        "Acceptance met?":      acceptable[:-1],
+    }
+    root.require_dataset(schemefolder.name + "/Collated", data=inputdata, metadata=col_meta)
+    root.save(root=root, file=url, mode='w', encoding='utf-8', ensure_ascii=False)
 
     return inputdata
 
@@ -198,7 +218,7 @@ def collate_m_data_from_json(url, scheme_entry):
             i_len = inputdata.shape[0]
             d_len = dataset.shape[0]
             inputdata.resize(i_len + d_len - 1)
-            inputdata[i_len:]['+ weight group'] = dataset['+ weight group'][:-1]
+            inputdata[i_len:]['+ weight group'] = dataset['+ weight group'][:-1]    # the last entry is redundant
             inputdata[i_len:]['- weight group'] = dataset['- weight group'][:-1]
             inputdata[i_len:]['mass difference (g)'] = dataset['mass difference'][:-1]*SUFFIX[bal_unit]
             inputdata[i_len:]['residual ('+MU_STR+'g)'] = dataset['residual'][:-1] * SUFFIX[bal_unit] / SUFFIX['ug']
@@ -213,7 +233,7 @@ def collate_m_data_from_json(url, scheme_entry):
 
 
 def collate_data_from_list(weighings):
-    """ This function hasn't been tested with the updated program
+    """WARNING: This function hasn't been tested with the updated program
 
     Parameters
     ----------

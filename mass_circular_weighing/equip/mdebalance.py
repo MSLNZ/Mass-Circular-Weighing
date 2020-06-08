@@ -47,6 +47,7 @@ class Balance(object):
 
     @property
     def resolution(self):
+        "Balance resolution in grams"
         return self._resolution
 
     @property

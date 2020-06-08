@@ -130,9 +130,11 @@ class DiffsTable(QtWidgets.QTableWidget):
         for i in range(self.rowCount()):
             if self.cellWidget(i, self.columnCount()-1).isChecked():
                 # if checked, collate data
-                self.included_datasets.add(
-                    (self.cellWidget(i, 0).text(), self.cellWidget(i, 1).text(), self.cellWidget(i, 2).text())
-                )
+                runs = self.cellWidget(i, 2).text().split("+")
+                for run in runs:
+                    self.included_datasets.add(
+                        (self.cellWidget(i, 0).text(), self.cellWidget(i, 1).text(), run)
+                    )
                 #['+ weight group', '- weight group', 'mass difference (g)', 'residual ('+MU_STR+'g)', 'balance uncertainty ('+MU_STR+'g)', 'acceptance met', 'included'
                 dlen = inputdata.shape[0]
                 inputdata.resize(dlen + 1)
