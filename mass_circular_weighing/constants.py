@@ -7,7 +7,7 @@ SIGMA_STR = 'σ'                 # \u03C3 for sigma sign
 DELTA_STR = 'Δ'                 # \u0394 for capital delta sign
 SQUARED_STR = '²'
 
-SUFFIX = {'µg': 1e-6, 'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
+SUFFIX = {'ng': 1e-9, 'µg': 1e-6, 'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
 
 DEGREE_SIGN = '°'           # \xb0
 IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'

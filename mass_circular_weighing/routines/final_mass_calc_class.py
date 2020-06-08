@@ -6,7 +6,15 @@ from msl.io import JSONWriter, read
 
 from .. import __version__
 from ..log import log
-from ..constants import REL_UNC, DELTA_STR
+from ..constants import REL_UNC, DELTA_STR, SUFFIX
+
+
+def num_to_eng_format(num):
+    for key, val in SUFFIX.items():
+        renum = num/val
+        if abs(renum) < 1000:
+            eng_num = "{} {}".format(round(renum, 3), key)
+            return eng_num
 
 
 class FinalMassCalc(object):
@@ -287,17 +295,19 @@ class FinalMassCalc(object):
                 summarytable[i, 7] = ""
             elif i >= self.num_client_masses + self.num_check_masses:
                 summarytable[i, 2] = 'Standard'
-                summarytable[i, 7] = 'c.f. {} g; {} {:.9f} g'.format(
+                delta = self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses] - self.b[i]
+                summarytable[i, 7] = 'c.f. {} g; {} {}'.format(
                     self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses],
                     DELTA_STR,
-                    self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses] - self.b[i],
+                    num_to_eng_format(delta),
                 )
             else:
                 summarytable[i, 2] = 'Check'
-                summarytable[i, 7] = 'c.f. {} g; {} {:.9f} g'.format(
+                delta = self.check_masses['mass values (g)'][i - self.num_client_masses] - self.b[i]
+                summarytable[i, 7] = 'c.f. {} g; {} {}'.format(
                     self.check_masses['mass values (g)'][i - self.num_client_masses],
                     DELTA_STR,
-                    self.check_masses['mass values (g)'][i - self.num_client_masses] - self.b[i],
+                    num_to_eng_format(delta),
                 )
 
             summarytable[i, 3] = np.round(self.b[i], 9)
@@ -349,7 +359,6 @@ class FinalMassCalc(object):
         self.finalmasscalc.save(filesavepath, mode='w')
 
         log.info('Mass calculation saved to {!r}'.format(filesavepath))
-
 
 
 def make_backup(folder, client, filesavepath, ):
