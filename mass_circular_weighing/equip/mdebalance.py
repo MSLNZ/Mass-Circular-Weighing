@@ -118,6 +118,8 @@ class Balance(object):
             loaded = prompt_thread.wait_for_prompt_reply()
             if not loaded:
                 self._want_abort = True
+            return loaded
+        return False
 
     def unload_bal(self, mass, pos):
         """Prompts user to remove specified mass from balance"""

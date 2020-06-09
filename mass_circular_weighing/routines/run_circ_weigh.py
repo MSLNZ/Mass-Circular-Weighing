@@ -108,11 +108,15 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
     weighing = CircWeigh(se)
     # assign positions to weight groups
-    if bal.mode == 'aw':
+    if 'aw' in bal.mode:
         if not bal.positions:
-            positions = bal.allocate_positions(weighing.wtgrps)
+            positions = bal.initialise_balance(weighing.wtgrps)
+            # note that this allocation triggers the check_loading, centring
+            # and scale_adjust routines within the AWBalCarousel balance class
             print(positions)
-            # TODO: deal with what happens if the allocator is cancelled out of before setting weighing order
+            if bal.positions is None:
+                log.error("Balance initialisation not complete")
+                return None
         else:
             positions = bal.positions
     else:
@@ -152,7 +156,10 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                 if callback1 is not None:
                     callback1(cycle+1, positions[i], weighing.num_cycles, weighing.num_wtgrps)
                 mass = weighing.wtgrps[i]
-                bal.load_bal(mass, positions[i])
+                ok = bal.load_bal(mass, positions[i])
+                if 'aw' in bal.mode:
+                    if not ok:
+                        return None
                 reading = bal.get_mass_stable(mass)
                 if callback2 is not None:
                     callback2(reading, str(metadata['Unit']))

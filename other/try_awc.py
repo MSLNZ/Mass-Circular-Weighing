@@ -17,9 +17,9 @@ bal_alias = 'AX10005'
 bal, mode = cfg.get_bal_instance(bal_alias)
 #
 print(bal.unit)
-print(bal.mode)
-print(bal.stable_wait)
-bal.identify_handler()
+print('aw' in bal.mode)
+# print(bal.stable_wait)
+# bal.identify_handler()
 
 # bal.move_to(1)
 # bal.lift_to('top')
@@ -52,4 +52,4 @@ se = ['A', "B", 'C']#cfg.client_wt_IDs
 # bal.time_move()
 # print(bal.move_time)
 
-bal.connection.disconnect()
+# bal.connection.disconnect()

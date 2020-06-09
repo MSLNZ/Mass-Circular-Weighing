@@ -17,3 +17,5 @@ w.show()
 gui.exec()
 pos = w.positions
 print(pos)
+print(w.centrings)
+print(w.pos_to_centre)

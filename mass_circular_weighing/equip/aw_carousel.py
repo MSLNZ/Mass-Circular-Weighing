@@ -1,4 +1,6 @@
 '''Class for Mettler Toledo Balance with computer interface and carousel weight changer'''
+# note: all movement commands check first if self.want_abort is True, in which case no movement occurs.
+
 from time import perf_counter
 import numpy as np
 
@@ -73,8 +75,10 @@ class AWBalCarousel(MettlerToledo):
         """Returns a list of weight groups in the order the groups appear in the scheme entry."""
         return self._weight_groups
 
-    def allocate_positions(self, wtgrps, ):
-        """Assign weight groups to weighing positions using the AllocatorDialog
+    def initialise_balance(self, wtgrps):
+        """Assigns weight groups to weighing positions using the AllocatorDialog,
+        including specifying which of these positions require centring.
+        Performs the check_loading routine, then the centring routine, then does a scale adjustment.
 
         Parameters
         ----------
@@ -92,13 +96,176 @@ class AWBalCarousel(MettlerToledo):
 
         self._weight_groups = wtgrps
 
+        # allocate weight groups to positions, and specify which to centre
         allocator.show(self.num_pos, wtgrps)
         self._positions = allocator.wait_for_prompt_reply()
         if self.positions is None:
-            log.error("Position assignment incomplete")
+            log.error("Position assignment was not completed")
             self._want_abort = True
+            return None
+
+        # check sensible weights loaded
+        self.check_loading()
+        if not self._move_time:
+            log.error("Loading check was not completed")
+            return None
+
+        # centre weights as needed (ok if no weights to centre, just returns True)
+        pos_to_centre = allocator.pos_to_centre
+        repeats = allocator.centrings
+        self.centring(pos_to_centre, repeats)
+        if not self._is_centred:
+            log.error("Centring was not completed")
+            return None
+
+        # Use the last mass loaded to do a self calibration
+        self.scale_adjust()
+        if not self._is_adjusted:
+            log.warning("Balance self-calibration was not successful")
+            # Theoretically the calibration could proceed anyway
 
         return self.positions
+
+    def check_loading(self):
+        """Tests each position involved in the automatic circular weighing procedure.
+        Checks for sensible loading (raises error on overload or underload)
+        and times rotation between positions to get self._move_time
+        """
+        if self.positions is None:
+            log.warning("Weight groups must first be assigned to positions.")
+            return False
+
+        while not self.want_abort:
+            times = []
+            log.info("Moving to last position")
+            self.move_to(self.positions[-1])
+
+            for pos in self.positions:
+                log.info("Moving to position {}".format(pos))
+                t0 = perf_counter()
+                self.move_to(pos)
+                # note that move_to has a buffer time of 5 s by default (unless wait=False)
+                times.append(perf_counter() - t0)
+
+                self.lift_to('weighing')
+                self.get_mass_instant()
+                self.lift_to('top')
+
+            self._move_time = np.ceil(max(times))
+
+        return self._move_time
+
+    def centring(self, pos_to_centre, repeats):
+        """Performs a centring routine
+
+        Parameters
+        ----------
+        pos_to_centre : list
+            list of integers for the position numbers to centre
+        repeats : int
+            number of times to raise/lower each weight
+        Returns
+        -------
+        bool to indicate successful completion
+        """
+        if not pos_to_centre:
+            log.info("No weight groups selected for centring")
+            self._is_centred = True
+            return True
+
+        if not repeats:
+            log.warning("Repeats set to zero for centring")
+            return False
+
+        log.info("Commencing centring for {}".format(pos_to_centre))
+        while not self.want_abort:
+            for pos in pos_to_centre:
+                self.move_to(pos)
+                for i in range(repeats):
+                    log.info("Centring # {} for position {}".format(i + 1, pos))
+                    self.lift_to('weighing')
+                    # the lift_to includes appropriate waits
+                    self.lift_to('top')
+
+            log.info("Centring complete")
+            self._is_centred = True
+
+        return self._is_centred
+
+    def scale_adjust(self):
+        """Automatically adjust scale using internal 'external' weight.
+        A mass must be loaded over the weighing pan when this method is called, otherwise an error will be raised."""
+        # When initiated from run_circ_weigh, this method is called from initialise_balance after check_loading
+        # and centring.  This order of operations ensures a sensible mass is used for the scale_adjust.
+        if self.want_abort:
+            return None
+
+        self.get_status()
+        if not self.lift_pos == 'weighing':
+            self.lift_to('weighing')
+
+        self.get_mass_instant()  # double checks that the mass loaded is sensible!
+
+        self.tare_bal()
+
+        m = self._query("C1").split()
+        log.debug(m)
+
+        if m[1] == 'B':
+            app = application()
+            print('Balance self-calibration commencing')
+            log.info('Balance self-calibration commencing')
+            t0 = perf_counter()
+            while True:
+                app.processEvents()
+                if self.want_abort:
+                    log.warning('Balance self-calibration aborted')
+                    return None
+                try:
+                    c = self.connection.read().split()
+                    print(c)
+                    if c[0] == 'ready':
+                        continue
+                    elif c[0] == 'ES':
+                        continue
+                    elif c[1] == 'A':
+                        print('Balance self-calibration completed successfully')
+                        self._is_adjusted = True
+                        log.info('Balance self-calibration completed successfully')
+                        return
+                    elif c[1] == 'I':
+                        self._raise_error_loaded('CAL C')
+                    elif c[1] == "0.00000":
+                        self.get_status()
+                        self.connection.write("")
+                        if self.lift_pos == 'calibration':
+                            self.raise_handler()
+                            self.connection.write("")
+                        continue
+                    elif c[2] == "0.00000":
+                        self.get_status()
+                        self.connection.write("")
+                        if self.lift_pos == 'calibration':
+                            self.raise_handler()
+                            self.connection.write("")
+                        continue
+                    elif c[1] == "10.00000":
+                        self.lower_handler()
+                        self.connection.write("")
+                        continue
+                    elif c[2] == "10.00000":
+                        self.lower_handler()
+                        self.connection.write("")
+                        continue
+                except MSLTimeoutError:
+                    if perf_counter() - t0 > self.intcaltimeout:
+                        self.raise_handler()
+                        self.raise_handler()
+                        raise TimeoutError("Calibration took longer than expected")
+                    else:
+                        log.info('Waiting for internal calibration to complete')
+
+        self._raise_error_loaded(m[0] + ' ' + m[1])
 
     def get_status(self):
         """Update current rotational and lift position of the turntable.
@@ -141,45 +308,20 @@ class AWBalCarousel(MettlerToledo):
         if not 0 < pos <= self.num_pos:
             self._raise_error_loaded('POS')
 
-        if not self.want_abort:
-            log.info("Moving to position "+str(pos))
-            self.connection.write("MOVE" + str(pos))  # Spaces are ignored by the handler
+        if self.want_abort:
+            return False
 
-            reply = self.wait_for_reply()
-            # the message returned is either 'ready' or an error code
-            if reply == "ready":
-                self.get_status()
-                if wait:
-                    wait_for_elapse(5)
-            else:
-                self._raise_error_loaded(get_key(reply))
+        log.info("Moving to position "+str(pos))
+        self.connection.write("MOVE" + str(pos))  # Spaces are ignored by the handler
 
-    def check_loading(self):
-        """Tests each position involved in the automatic circular weighing procedure.
-        Checks for sensible loading (raises error on overload or underload)
-        and times rotation between positions to get self._move_time
-        """
-        if self.positions is None:
-            log.warning("Weight groups must first be assigned to positions.")
-            return
-
-        if not self.want_abort:
-            times = []
-            log.info("Moving to last position")
-            self.move_to(self.positions[-1])
-
-            for pos in self.positions:
-                log.info("Moving to position {}".format(pos))
-                t0 = perf_counter()
-                self.move_to(pos)
-                # note that move_to has a buffer time of 5 s by default (unless wait=False)
-                times.append(perf_counter() - t0)
-
-                self.lift_to('weighing')
-                self.get_mass_instant()
-                self.lift_to('top')
-
-            self._move_time = np.ceil(max(times))
+        reply = self.wait_for_reply()
+        # the message returned is either 'ready' or an error code
+        if reply == "ready":
+            self.get_status()
+            if wait:
+                wait_for_elapse(5)
+        else:
+            self._raise_error_loaded(get_key(reply))
 
     def lower_handler(self):
         """Lowers the turntable one lift position.
@@ -189,29 +331,31 @@ class AWBalCarousel(MettlerToledo):
             – from the braking to the weighing position,
             – from the weighing to the calibration position.
         """
-        if not self.want_abort:
-            log.info("Sinking mass")
-            self.connection.write("SINK")
+        if self.want_abort:
+            return False
 
-            reply = self.wait_for_reply()
+        log.info("Sinking mass")
+        self.connection.write("SINK")
 
-            if reply == "ERROR: In weighing position already. ready":  # AX1006 error
-                log.warning(
-                    "The turntable is in the weighing position and cannot be lowered further."
-                )
-                return
+        reply = self.wait_for_reply()
 
-            if reply == "ERROR: In calibration position already. ready":  # AX10005 error
-                log.warning(
-                    "The turntable is in the calibration position and cannot be lowered further."
-                )
-                return
+        if reply == "ERROR: In weighing position already. ready":  # AX1006 error
+            log.warning(
+                "The turntable is in the weighing position and cannot be lowered further."
+            )
+            return True
 
-            elif reply == "ready":
-                return
+        if reply == "ERROR: In calibration position already. ready":  # AX10005 error
+            log.warning(
+                "The turntable is in the calibration position and cannot be lowered further."
+            )
+            return True
 
-            else:
-                self._raise_error_loaded(get_key(reply))
+        elif reply == "ready":
+            return True
+
+        else:
+            self._raise_error_loaded(get_key(reply))
 
     def raise_handler(self):
         """Raises the turntable one lift position.
@@ -220,23 +364,25 @@ class AWBalCarousel(MettlerToledo):
             – From the calibration position to the weighing position,
             – from the weighing position to the top position.
         """
-        if not self.want_abort:
-            log.info("Lifting mass")
-            self.connection.write("LIFT")
+        if self.want_abort:
+            return False
 
-            reply = self.wait_for_reply()
+        log.info("Lifting mass")
+        self.connection.write("LIFT")
 
-            if reply == "ERROR: In top position already. ready":
-                log.warning(
-                    "The turntable is in the top position and cannot be raised further."
-                )
-                return
+        reply = self.wait_for_reply()
 
-            elif reply == "ready":
-                return
+        if reply == "ERROR: In top position already. ready":
+            log.warning(
+                "The turntable is in the top position and cannot be raised further."
+            )
+            return True
 
-            else:
-                self._raise_error_loaded(get_key(reply))
+        elif reply == "ready":
+            return True
+
+        else:
+            self._raise_error_loaded(get_key(reply))
 
     def lift_to(self, lift_position, wait=True):
         """Lowers or raises handler to the lift position specified.
@@ -293,111 +439,21 @@ class AWBalCarousel(MettlerToledo):
             t0 = perf_counter()
 
             # do move
-            self.move_to(pos, wait=False)
+            ok = self.move_to(pos, wait=False)
+            if not ok:
+                return False
 
             # wait for some time to make all moves same
             wait_for_elapse(self._move_time + 5, start_time=t0)
 
-            self.lift_to('weighing')
+            self.lift_to('weighing')  # this raises an error if it fails to get to the weighing position
+
+            return True
 
     def unload_bal(self, mass, pos):
         """Unloads mass from pan"""
         if not self.want_abort:
             self.lift_to('top')
-
-    def centring(self, pos_to_centre, repeats):
-        """Performs a centring routine
-
-        Parameters
-        ----------
-        pos_to_centre : list
-            list of integers for the position numbers to centre
-        repeats : int
-            number of times to raise/lower each weight
-        Returns
-        -------
-        bool to indicate successful completion
-        """
-        while not self._want_abort:
-            for pos in pos_to_centre:
-                self.move_to(pos)
-                for i in range(repeats):
-                    self.lift_to('weighing')
-                    # the lift_to includes appropriate waits
-                    self.lift_to('top')
-
-        self._is_centred = True
-        return self._is_centred
-
-    def scale_adjust(self):
-        """Automatically adjust scale using internal 'external' weight"""
-        # TODO: check that there is a mass loaded in the current position
-        # and/or move to the first position and make sure check_loading already performed
-        # self.move_to(self.positions[0])
-
-        self.get_status()
-        if not self.lift_pos == 'weighing':
-            self.lift_to('weighing')
-
-        self.get_mass_instant()  # to check that the mass loaded is sensible!
-
-        self.tare_bal()
-
-        m = self._query("C1").split()
-        print(m)
-
-        if m[1] == 'B':
-            app = application()
-            print('Balance self-calibration commencing')
-            log.info('Balance self-calibration commencing')
-            t0 = perf_counter()
-            while True:
-                app.processEvents()
-                try:
-                    c = self.connection.read().split()
-                    print(c)
-                    if c[0] == 'ready':
-                        continue
-                    elif c[0] == 'ES':
-                        continue
-                    elif c[1] == 'A':
-                        print('Balance self-calibration completed successfully')
-                        self._is_adjusted = True
-                        log.info('Balance self-calibration completed successfully')
-                        return
-                    elif c[1] == 'I':
-                        self._raise_error_loaded('CAL C')
-                    elif c[1] == "0.00000":
-                        self.get_status()
-                        self.connection.write("")
-                        if self.lift_pos == 'calibration':
-                            self.raise_handler()
-                            self.connection.write("")
-                        continue
-                    elif c[2] == "0.00000":
-                        self.get_status()
-                        self.connection.write("")
-                        if self.lift_pos == 'calibration':
-                            self.raise_handler()
-                            self.connection.write("")
-                        continue
-                    elif c[1] == "10.00000":
-                        self.lower_handler()
-                        self.connection.write("")
-                        continue
-                    elif c[2] == "10.00000":
-                        self.lower_handler()
-                        self.connection.write("")
-                        continue
-                except MSLTimeoutError:
-                    if perf_counter()-t0 > self.intcaltimeout:
-                        self.raise_handler()
-                        self.raise_handler()
-                        raise TimeoutError("Calibration took longer than expected")
-                    else:
-                        log.info('Waiting for internal calibration to complete')
-
-        self._raise_error_loaded(m[0]+' '+m[1])
 
     def get_mass_instant(self):
         """Reads instantaneous mass from balance.
