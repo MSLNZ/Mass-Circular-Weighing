@@ -17,5 +17,7 @@ w.show()
 gui.exec()
 pos = w.positions
 print(pos)
-print(w.centrings)
-print(w.pos_to_centre)
+if pos:
+    print(w.centrings)
+    print(w.pos_to_centre)
+    print(w.cal_pos, w.want_adjust)

@@ -26,7 +26,7 @@ class MettlerToledo(Balance):
         self.connection = self.record.connect()
         if reset:
             self.reset()
-        assert self.record.serial == self.get_serial(), \
+        assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
             "Serial mismatch: expected "+str(self.record.serial)+" but received "+str(self.get_serial())
             # prints error if false
 

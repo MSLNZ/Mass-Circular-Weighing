@@ -23,9 +23,12 @@ class AllocatorDialog(QtWidgets.QDialog):
         super().__init__(parent=parent)
         self.setWindowTitle('Allocate Weight Groups to Positions')
 
+        self.num_pos = num_pos
         self.wtgrps = wtgrps
         self.positions = []
         self.pos_to_centre = []
+        self.cal_pos = 1
+        self.want_adjust = True
 
         self.pos_list = QtWidgets.QListWidget()
         self.pos_list.addItems([f'Position {i+1}' for i in range(num_pos)])
@@ -56,25 +59,33 @@ class AllocatorDialog(QtWidgets.QDialog):
 
         lists.setLayout(hbox)
 
-        centrings = QtWidgets.QWidget()
-        self.num_centrings = QtWidgets.QSpinBox()
-        self.num_centrings.setValue(5)
-        frm = QtWidgets.QHBoxLayout()
-        frm.addWidget(label("Number of centrings:"))
-        frm.addWidget(self.num_centrings)
-        centrings.setLayout(frm)
-
-        shuffle = Button(text='Shuffle all down one position', left_click=self.roll)
+        shuffle = Button(text='Shuffle all weight groups down one position', left_click=self.roll)
         accept = Button(
-            text='Accept loading positions and begin loading check',
+            text='Accept all and begin balance initialisation',
             left_click=self.accept_loading_order
         )
 
+        # centring and self adjustment parameters
+        init_params = QtWidgets.QWidget()
+        self.num_centrings = QtWidgets.QSpinBox()
+        self.num_centrings.setValue(5)
+        self.cal_pos_box = QtWidgets.QSpinBox()
+        self.cal_pos_box.setRange(1, num_pos)
+        self.cal_pos_box.setValue(self.cal_pos)
+        self.adjust_ch = QtWidgets.QCheckBox()
+        self.adjust_ch.setChecked(self.want_adjust)
+        frm = QtWidgets.QFormLayout()
+        frm.setWidget(0, 2, QtWidgets.QLabel("Tick checkboxes for weight(s) to be centred."))
+        frm.addRow(QtWidgets.QLabel("Number of centrings:"), self.num_centrings)
+        frm.setWidget(2, 2, QtWidgets.QLabel(""))
+        frm.addRow(QtWidgets.QLabel("Do self calibration?"), self.adjust_ch)
+        frm.addRow(QtWidgets.QLabel("Calibration position:"), self.cal_pos_box)
+        init_params.setLayout(frm)
+
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(lists)
-        vbox.addWidget(label("Select checkboxes for weight(s) to be centred."))
-        vbox.addWidget(centrings)
         vbox.addWidget(shuffle)
+        vbox.addWidget(init_params)
         vbox.addWidget(accept)
 
         self.setLayout(vbox)
@@ -82,20 +93,27 @@ class AllocatorDialog(QtWidgets.QDialog):
     def get_all_items(self):
         return [self.wtgrp_list.item(i).text() for i in range(self.wtgrp_list.count())]
 
-    def get_centrings(self):
-        self.centrings = self.num_centrings.text()
-        return [
-            self.centre_list.itemWidget(self.centre_list.item(i)).checkState()
-            for i in range(self.centre_list.count())
-        ]
+    def get_centrings(self,):
+        pos_to_centre = []
+        for i in range(self.num_pos):
+            if self.centre_list.itemWidget(self.centre_list.item(i)).checkState():
+                pos_str = self.pos_list.item(i).text().strip("Position ")
+                pos_to_centre.append(int(pos_str))
+
+        return pos_to_centre
 
     def roll(self):
         loading = self.get_all_items()
         self.wtgrp_list.clear()
         self.wtgrp_list.addItems(np.roll(loading, 1))
 
-    def accept_loading_order(self):
+    def accept_loading_order(self,):
+        self.centrings = int(self.num_centrings.text())
+
         self.pos_to_centre = self.get_centrings()
+
+        self.cal_pos = int(self.cal_pos_box.text())
+        self.want_adjust = True if self.adjust_ch.checkState() else False
 
         loading = self.get_all_items()
         for grp in self.wtgrps:

@@ -5,9 +5,9 @@
     <save_folder>C:\Users\r.hawke\Documents\</save_folder> <!-- parent folder -->
     <job>job</job>
     <client>client</client>      <!-- Files will be created with this name inside the parent folder -->
-    <client_masses>5 5b</client_masses>
-    <std_set>CUSTOM</std_set>       <!-- Use only names of sets as in <standards> below. -->
-    <check_set>None</check_set>     <!-- Use only names of sets as in <standards> below, or None. -->
+    <client_masses>2 5</client_masses>
+    <std_set>MET19A</std_set>       <!-- Use only names of sets as in <standards> below. -->
+    <check_set>MET19B</check_set>     <!-- Use only names of sets as in <standards> below, or None. -->
     <drift>auto select</drift>  <!-- Allowed options: auto select, linear drift, quadratic drift, cubic drift -->
     <use_times>NO</use_times>       <!-- Allowed options: YES or NO -->
     <correlations>None</correlations>       <!-- Allowed options: None, or matrix of correlations-->
