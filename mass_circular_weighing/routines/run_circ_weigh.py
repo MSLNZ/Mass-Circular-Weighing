@@ -8,10 +8,9 @@ from msl.io import JSONWriter, read
 from .. import __version__
 from ..routines.circ_weigh_class import CircWeigh
 from ..constants import IN_DEGREES_C, SUFFIX, MU_STR, local_backup
-from ..equip.labenviron_dll import LabEnviron64
+from ..equip import LabEnviron64
 from ..log import log
 
-dll = LabEnviron64()
 
 tab = '  '
 
@@ -224,6 +223,7 @@ def check_ambient_pre(omega):
     """
     log.info('COLLECTING AMBIENT CONDITIONS from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
 
+    dll = LabEnviron64()
     date_start, t_start, rh_start = dll.get_t_rh_now(str(omega['Inst']), omega['Sensor'])
 
     if not t_start:
@@ -272,6 +272,7 @@ def check_ambient_post(omega, ambient_pre):
     """
     log.info('COLLECTING AMBIENT CONDITIONS from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
 
+    dll = LabEnviron64()
     t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), omega['Sensor'], ambient_pre['Start time'])
 
     ambient_post = {}
