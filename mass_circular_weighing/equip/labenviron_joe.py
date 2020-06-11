@@ -263,9 +263,9 @@ class LabEnviron64(Client64):
         -------
         :class:`datetime.datetime`
             The timestamp of the latest recorded value.
-        :class:`float`
+        :class:`float` or :data:`None`
             The temperature value.
-        :class:`float`
+        :class:`float` or :data:`None`
             The humidity value.
         """
         temperatures, humidities = self.get_t_rh_during(ithx_name, sensor, date.today())
