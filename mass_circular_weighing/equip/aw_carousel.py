@@ -28,7 +28,7 @@ class AWBalCarousel(MettlerToledo):
         reset : bool
             True if reset balance desired
         """
-        super().__init__(record)
+        super().__init__(record, reset)
 
         self.num_pos = record.user_defined['pos']  # num_pos is the total number of available loading positions
         # num_pos should be 4 for the carousel balances
@@ -167,10 +167,10 @@ class AWBalCarousel(MettlerToledo):
 
         if not self.want_abort:
             log.info("Beginning balance loading check")
-            self.move_to(self.positions[-1])
+            self.move_to(self.positions[0])
 
         times = []
-        for pos in self.positions:
+        for pos in np.roll(self.positions, -1):   # puts first position at end
             if self.want_abort:
                 return self._move_time
             t0 = perf_counter()
@@ -265,7 +265,6 @@ class AWBalCarousel(MettlerToledo):
                 try:
                     c = self.connection.read().split()
                     print(c)
-                    wait_for_elapse(1)
                     if c[0] == 'ready':
                         continue
                     elif c[0] == 'ES':
@@ -313,6 +312,9 @@ class AWBalCarousel(MettlerToledo):
                         self.lower_handler()
                         self.connection.write("")
                         continue
+                    else:
+                        wait_for_elapse(1)
+                        continue
                 except MSLTimeoutError:
                     if perf_counter() - t0 > self.intcaltimeout:
                         self.raise_handler()
@@ -337,12 +339,12 @@ class AWBalCarousel(MettlerToledo):
         -------
         tuple of rot_pos, lift_pos
         """
-        while True:
-            status_str = self._query("STATUS")
-            if status_str.strip("\r") == "ready":
-                continue
-            else:
-                break
+        # while True:
+        status_str = self._query("STATUS")
+        #     if status_str.strip("\r") == "ready":
+        #         continue
+        #     else:
+        #         break
 
         if len(status_str.split()) == 5 and status_str.split()[-1] == "ready":
             self.rot_pos = status_str.split()[0]
@@ -501,14 +503,13 @@ class AWBalCarousel(MettlerToledo):
             log.error("Move time not determined. Please run check loading routine")
             return
 
-        while not self.want_abort:
+        if not self.want_abort:
+            log.info("Loading balance with {} in position {}".format(mass, pos))
             # start clock
             t0 = perf_counter()
 
             # do move
-            ok = self.move_to(pos, wait=False)
-            if not ok:
-                return False
+            self.move_to(pos, wait=False)
 
             # wait for some time to make all moves same
             wait_for_elapse(self._move_time + 5, start_time=t0)
@@ -635,8 +636,10 @@ def wait_for_elapse(elapse_time, start_time=None):
     app = application()
     if start_time is None:
         start_time = perf_counter()
+        wait_time = elapse_time
     time = perf_counter() - start_time
-    log.info("Waiting for {} seconds...".format(elapse_time))
+    wait_time = elapse_time - time
+    log.info("Waiting for {} s...".format(round(wait_time, 1)))
     while time < elapse_time:
         app.processEvents()
         time = perf_counter() - start_time

@@ -104,6 +104,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     metadata['Mmt Timestamp'] = datetime.now().strftime('%d-%m-%Y %H:%M')
     metadata['Time unit'] = 'min'
     metadata['Ambient monitoring'] = omega
+    metadata['Weighing complete'] = False
 
     weighing = CircWeigh(se)
     # assign positions to weight groups
@@ -196,7 +197,6 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
     log.info('Circular weighing sequence aborted')
     if reading:
-        metadata['Weighing complete'] = False
         weighdata.add_metadata(**metadata)
         try:
             root.save(file=url, mode='w', ensure_ascii=False)
@@ -225,6 +225,7 @@ def check_ambient_pre(omega):
 
     dll = LabEnviron64()
     date_start, t_start, rh_start = dll.get_t_rh_now(str(omega['Inst']), omega['Sensor'])
+    dll.shutdown_server32()
 
     if not t_start:
         log.warning('Missing initial ambient temperature value')
@@ -274,6 +275,8 @@ def check_ambient_post(omega, ambient_pre):
 
     dll = LabEnviron64()
     t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), omega['Sensor'], ambient_pre['Start time'])
+    # using Joe's script returns t_data and rh_data as numpy ndarrays
+    dll.shutdown_server32()
 
     ambient_post = {}
     if not t_data[0]:
@@ -281,7 +284,7 @@ def check_ambient_post(omega, ambient_pre):
         log.warning('Ambient temperature change during weighing not recorded')
         ambient_post = {'Ambient OK?': None}
     else:
-        t_data.append(ambient_pre['T_pre'+IN_DEGREES_C])
+        t_data = np.append(t_data, ambient_pre['T_pre'+IN_DEGREES_C])
         ambient_post['T' + IN_DEGREES_C] = str(round(min(t_data), 3)) + ' to ' + str(round(max(t_data), 3))
 
     if not rh_data[0]:
@@ -289,10 +292,10 @@ def check_ambient_post(omega, ambient_pre):
         log.warning('Ambient humidity change during weighing not recorded')
         ambient_post = {'Ambient OK?': None}
     else:
-        rh_data.append(ambient_pre['RH_pre (%)'])
+        rh_data = np.append(rh_data, ambient_pre['RH_pre (%)'])
         ambient_post['RH (%)'] = str(round(min(rh_data), 1)) + ' to ' + str(round(max(rh_data), 1))
 
-    if t_data and rh_data:
+    if t_data[0] and rh_data[0]:
         if (max(t_data) - min(t_data)) ** 2 > omega['MAX_T_CHANGE']**2:
             ambient_post['Ambient OK?'] = False
             log.warning('Ambient temperature change during weighing exceeds quality criteria')

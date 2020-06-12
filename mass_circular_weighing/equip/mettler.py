@@ -26,6 +26,10 @@ class MettlerToledo(Balance):
         self.connection = self.record.connect()
         if reset:
             self.reset()
+        while True:
+            r = self._query("")
+            if r.strip("\r") == "ES":
+                break
         assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
             "Serial mismatch: expected "+str(self.record.serial)+" but received "+str(self.get_serial())
             # prints error if false
@@ -128,7 +132,7 @@ class MettlerToledo(Balance):
         float
             mass in unit set for balance
         """
-        while not self.want_abort:
+        if not self.want_abort:
             log.info('Waiting for stable reading for '+mass)
             readings = []
             t0 = perf_counter()
