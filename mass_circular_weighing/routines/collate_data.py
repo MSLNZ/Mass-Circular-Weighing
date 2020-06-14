@@ -45,7 +45,7 @@ def collate_all_weighings(schemetable, cfg):
 
             bal_alias = schemetable.cellWidget(row, 2).currentText()
             mode = cfg.equipment[bal_alias].user_defined['weighing_mode']
-            if mode == 'aw':
+            if 'aw' in mode:
                 newdata = collate_a_data_from_json(url, schemetable.cellWidget(row, 0).text())
             else:
                 newdata = collate_m_data_from_json(url, schemetable.cellWidget(row, 0).text())

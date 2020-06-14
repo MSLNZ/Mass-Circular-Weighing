@@ -454,6 +454,7 @@ class LaTexDoc(object):
             nom = scheme[1]
             cw_file = os.path.join(folder, client + '_' + nom + '.json')
             self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
+            self.add_collated_data(cw_file, se)
         else:
             for row in scheme:
                 se = row[0]
