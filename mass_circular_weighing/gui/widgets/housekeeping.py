@@ -127,8 +127,12 @@ class Housekeeping(QtWidgets.QWidget):
         log.debug('Correlations between standards? ' + self.cfg.correlations)
 
         bal_list = []
-        for item in self.cfg.equipment:  # TODO: check that this only adds balances!
-            bal_list.append(item)
+        # NOTE: This script only adds Mettler Toledo or Sartorius balances to the drop-down list
+        for alias, equip in self.cfg.equipment.items():
+            if "mettler" in equip.manufacturer.lower():
+                bal_list.append(alias)
+            if "sartorius" in equip.manufacturer.lower():
+                bal_list.append(alias)
         self.balance_list.emit(bal_list)
 
         if os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')):
