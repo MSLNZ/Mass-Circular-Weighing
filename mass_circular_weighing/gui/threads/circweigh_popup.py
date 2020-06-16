@@ -34,7 +34,7 @@ class WeighingWorker(Worker):
         #     omega_instance = cfg.get_omega_instance(self.info['Omega logger'])
         # else:
         #     omega_instance = None
-        omega_instance = self.cfg.get_omega_instance(self.se_row_data['bal_alias'])
+        omega_instance = self.cfg.get_ambientlogger_info(self.se_row_data['bal_alias'])
 
         # collect metadata
         metadata = {
@@ -63,8 +63,8 @@ class WeighingWorker(Worker):
             run_id = 'run_' + str(round(self.se_row_data['First run no.']+run, 0))
 
             weighing_root = do_circ_weighing(self.bal, se, self.se_row_data['root'], self.se_row_data['url'], run_id,
-                                        callback1=self.callback_cp, callback2=self.callback_read, omega=omega_instance,
-                                        **metadata,)
+                                             callback1=self.callback_cp, callback2=self.callback_read, ambient_logger=omega_instance,
+                                             **metadata, )
             if weighing_root:
                 weighanalysis = analyse_weighing(
                     self.se_row_data['root'], self.se_row_data['url'], se, run_id, self.bal.mode, EXCL=self.cfg.EXCL,

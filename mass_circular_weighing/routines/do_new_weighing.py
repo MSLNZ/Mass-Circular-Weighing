@@ -12,7 +12,7 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
     ac = cfg.acceptance_criteria(bal_alias, nominal_mass)
 
     # get OMEGA instance for ambient monitoring
-    omega_instance = cfg.get_omega_instance(bal_alias)
+    omega_instance = cfg.get_ambientlogger_info(bal_alias)
 
     # collect metadata
     metadata = {
@@ -26,7 +26,7 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
     root = check_for_existing_weighdata(folder, url, scheme_entry)
     run_id = get_next_run_id(root, scheme_entry)
 
-    weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, omega=omega_instance, **metadata)
+    weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, ambient_logger=omega_instance, **metadata)
     if not weighing_root:
         return False
 

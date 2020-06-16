@@ -4,12 +4,13 @@ import numpy as np
 from msl.equipment import Config
 from msl import io
 
-from .equip.mdebalance import Balance
-from .equip.mettler import MettlerToledo
+from .equip import Balance
+from .equip import MettlerToledo
 from .equip.awbalance import AWBal
-from .equip.aw_carousel import AWBalCarousel
+from .equip import AWBalCarousel
+from .equip import Vaisala
 
-from .constants import MU_STR, SUFFIX
+from .constants import MU_STR
 from .log import log
 
 
@@ -96,7 +97,8 @@ class Configuration(object):
             self.all_checks = None
 
     def get_bal_instance(self, alias, strict=True, **kwargs):
-        """Selects balance class and returns balance instance
+        """Selects balance class and returns balance instance.
+        Also adds the ambient monitor instance and/or details to the balance instance
 
         Parameters
         ----------
@@ -109,32 +111,45 @@ class Configuration(object):
         -------
         Balance instance, mode
         """
-
         mode = self.equipment[alias].user_defined['weighing_mode']
+        print(mode)
+        print(self.equipment[alias], **kwargs)
         bal = self.bal_class[mode](self.equipment[alias], **kwargs)
+        print(bal)
+
+        bal._ambient_details = self.get_ambientlogger_info(bal_alias=alias)
+
+        if 'vaisala' in bal.ambient_details['Type'].lower():
+            vai_record = self.equipment.get(bal.ambient_details['Alias'])
+            if not vai_record:
+                raise ValueError('No equipment record for {}'.format(bal.ambient_details['Alias']))
+            bal._ambient_instance = Vaisala(vai_record)
+            bal._ambient_details["Manufacturer"] = vai_record.manufacturer
+            bal._ambient_details["Model"] = vai_record.model
+            bal._ambient_details["Serial"] = vai_record.serial
+
+        elif "omega" in bal.ambient_details['Type'].lower():
+            bal._ambient_instance = "OMEGA"
 
         return bal, mode
 
-    def get_omega_instance(self, alias):
-        """Gets instance of OMEGA logger for ambient measurements
+    def get_ambientlogger_info(self, bal_alias):
+        """Gets information about Vaisala or OMEGA logger for ambient measurements
 
         Parameters
         ----------
-        alias : str
-            alias for balance in config file where entry is present in Ambient monitoring column in balance register.
-            If balance uses an OMEGA logger, entry must be either mass 1, mass 2 or temperature 1
+        bal_alias : str
+            alias for balance in config.xml file where entry is present in Ambient monitoring column in balance register.
+                If balance uses a Vaisala, entry must be the alias for the Vaisala as in the config.xml file
+                If balance uses an OMEGA logger, entry must be of format ithx_name, sensor (see LabEnviron64)
+                (e.g. 'mass 1, sensor 1' or 'mass 2, sensor 1', or 'temperature 1, sensor 2' etc)
 
         Returns
         -------
         dict
-            dict of ambient logger instance and limits on ambient conditions
+            dict of ambient logger info and limits on ambient conditions
         """
-        omega_details = self.equipment[alias].user_defined['ambient_monitoring'].split(", sensor ")
-
-        omega = {
-            'Inst': omega_details[0],
-            'Sensor': int(omega_details[1]),
-
+        ambient_details = {
             'MIN_T': float(self.cfg.root.find('min_temp').text),
             'MAX_T': float(self.cfg.root.find('max_temp').text),
             'MAX_T_CHANGE': float(self.cfg.root.find('max_temp_change').text),
@@ -144,7 +159,23 @@ class Configuration(object):
             'MAX_RH_CHANGE': float(self.cfg.root.find('max_rh_change').text),
         }
 
-        return omega
+        ambient_logger = self.equipment[bal_alias].user_defined['ambient_monitoring']
+
+        if 'vaisala' in ambient_logger.lower():
+            ambient_details["Type"] = "Vaisala"
+            ambient_details['Alias'] = ambient_logger
+
+        elif 'sensor' in ambient_logger.lower():
+            ambient_details["Type"] = "OMEGA"
+            omega_details = ambient_logger.split(", sensor ")
+            ambient_details['Alias'] = omega_details[0]      # the ithx_name
+            ambient_details['Sensor'] = int(omega_details[1])
+
+        else:
+            log.error("Ambient monitoring device not recognised")
+            return None
+
+        return ambient_details
 
     def acceptance_criteria(self, alias, nominal_mass):
         """Calculates acceptance criteria for a circular weighing

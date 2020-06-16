@@ -69,15 +69,17 @@ def get_next_run_id(root, scheme_entry):
     return run_id
 
 
-def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, omega=None,
+def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, ambient_logger=None,
                      local_backup_folder=local_backup, **metadata):
     """Routine to run a circular weighing by collecting data from a balance.
-    Note that this routine currently requires an OMEGA logger to be specified for monitoring of the ambient conditions.
+    Note that this routine currently requires a Vaisala or an OMEGA logger to be specified in the registers
+    for monitoring of the ambient conditions; the ambient logger info/instance is within the balance instance
 
     Parameters
     ----------
     bal : :class:`Balance`
         balance instance, initialised using mass_circular_weighing.configuration using a balance alias
+
     se : str
         scheme entry
     root : :class:`root`
@@ -89,8 +91,6 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         used by gui
     callback2
         used by gui
-    omega : :class:`dict`
-        dict of OMEGA alias and limits on ambient conditions
     local_backup_folder : path
     metadata : :class:`dict`
 
@@ -103,7 +103,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     metadata['Program Version'] = __version__
     metadata['Mmt Timestamp'] = datetime.now().strftime('%d-%m-%Y %H:%M')
     metadata['Time unit'] = 'min'
-    metadata['Ambient monitoring'] = omega
+    metadata['Ambient monitoring'] = bal.ambient_details
     metadata['Weighing complete'] = False
 
     weighing = CircWeigh(se)
@@ -136,8 +136,8 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
              '\n' + positionstr.strip('\n'))
 
     ambient_pre = None
-    if omega: #TODO: allow other forms of ambient monitoring
-        ambient_pre = check_ambient_pre(omega)
+    # if ambient_logger: #TODO: allow other forms of ambient monitoring
+    ambient_pre = check_ambient_pre(bal.ambient_instance, bal.ambient_details)
     if not ambient_pre:
         log.info('Measurement not started due to unsuitable ambient conditions')
         return False
@@ -180,7 +180,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         break
 
     while not bal.want_abort:
-        ambient_post = check_ambient_post(omega, ambient_pre)
+        ambient_post = check_ambient_post(ambient_pre, bal.ambient_instance, bal.ambient_details)
         for key, value in ambient_post.items():
             metadata[key] = value
 
@@ -207,13 +207,14 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     return None
 
 
-def check_ambient_pre(omega):
+def check_ambient_pre(ambient_instance, ambient_details):
     """Check ambient conditions meet quality criteria for commencing weighing
 
     Parameters
     ----------
-    omega : :class:`dict`
-        dict of OMEGA alias and limits on ambient conditions
+    ambient_instance : str "OMEGA" or Vaisala instance
+    ambient_details : :class:`dict`
+        dict of ambient monitor alias and limits on ambient conditions
 
     Returns
     -------
@@ -221,11 +222,23 @@ def check_ambient_pre(omega):
         dict of ambient conditions at start of weighing:
         {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
     """
-    log.info('COLLECTING AMBIENT CONDITIONS from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
+    if ambient_details["Type"] == "OMEGA":
+        log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger '+ambient_details['Alias'] + ' sensor ' + str(ambient_details['Sensor']))
 
-    dll = LabEnviron64()
-    date_start, t_start, rh_start = dll.get_t_rh_now(str(omega['Inst']), omega['Sensor'])
-    dll.shutdown_server32()
+        dll = LabEnviron64()
+        date_start, t_start, rh_start = dll.get_t_rh_now(str(ambient_details['Alias']), ambient_details['Sensor'])
+        dll.shutdown_server32()
+
+    elif ambient_details["Type"] == "Vaisala":
+        log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger ' + ambient_details['Alias'])
+
+        ambient_instance.open_comms()
+        date_start, t_start, rh_start, p_start = ambient_instance.get_readings()
+        ambient_instance.close_comms()
+
+    else:
+        log.error("Unrecognised ambient monitoring sensor")
+        return False
 
     if not t_start:
         log.warning('Missing initial ambient temperature value')
@@ -235,17 +248,20 @@ def check_ambient_pre(omega):
         return False
 
     ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: np.round(t_start, 2), 'RH_pre (%)': np.round(rh_start, 1), }
-    log.info('Ambient conditions:' +
+    if ambient_details["Type"] == "Vaisala":
+        ambient_pre["P_pre (hPa)"] = p_start
+
+    log.info('Ambient conditions: ' +
              'Temperature'+IN_DEGREES_C+': '+str(ambient_pre['T_pre'+IN_DEGREES_C])+
              '; Humidity (%): '+str(ambient_pre['RH_pre (%)']))
 
-    if omega['MIN_T'] < ambient_pre['T_pre'+IN_DEGREES_C] < omega['MAX_T']:
+    if ambient_details['MIN_T'] < ambient_pre['T_pre'+IN_DEGREES_C] < ambient_details['MAX_T']:
         log.info('Ambient temperature OK for weighing')
     else:
         log.warning('Ambient temperature does not meet limits')
         return False
 
-    if omega['MIN_RH'] < ambient_pre['RH_pre (%)'] < omega['MAX_RH']:
+    if ambient_details['MIN_RH'] < ambient_pre['RH_pre (%)'] < ambient_details['MAX_RH']:
         log.info('Ambient humidity OK for weighing')
     else:
         log.warning('Ambient humidity does not meet limits')
@@ -254,16 +270,17 @@ def check_ambient_pre(omega):
     return ambient_pre
 
 
-def check_ambient_post(omega, ambient_pre):
+def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
     """Check ambient conditions met quality criteria during weighing
 
     Parameters
     ----------
-    omega : :class:`dict`
-        dict of OMEGA alias and limits on ambient conditions
     ambient_pre : :class:`dict`
         dict of ambient conditions at start of weighing:
         {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
+    ambient_instance : str "OMEGA" or Vaisala instance
+    ambient_details : :class:`dict`
+        dict of ambient monitor alias and limits on ambient conditions
 
     Returns
     -------
@@ -271,12 +288,26 @@ def check_ambient_post(omega, ambient_pre):
         dict of ambient conditions at end of weighing, and evaluation of overall conditions during measurement.
         dict has key-value pairs {'T_post'+IN_DEGREES_C: list of floats, 'RH_post (%)': list of floats, 'Ambient OK?': bool}
     """
-    log.info('COLLECTING AMBIENT CONDITIONS from omega '+omega['Inst'] + ' sensor ' + str(omega['Sensor']))
+    if ambient_details["Type"] == "OMEGA":
+        log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger '+ambient_details['Alias'] + ' sensor ' + str(ambient_details['Sensor']))
 
-    dll = LabEnviron64()
-    t_data, rh_data = dll.get_t_rh_during(str(omega['Inst']), omega['Sensor'], ambient_pre['Start time'])
-    # using Joe's script returns t_data and rh_data as numpy ndarrays
-    dll.shutdown_server32()
+        dll = LabEnviron64()
+        t_data, rh_data = dll.get_t_rh_during(str(ambient_details['Alias']), ambient_details['Sensor'], ambient_pre['Start time'])
+        # using Joe's script returns t_data and rh_data as numpy ndarrays
+        dll.shutdown_server32()
+
+    elif ambient_details["Type"] == "Vaisala":
+        log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger ' + ambient_details['Alias'])
+
+        ambient_instance.open_comms()
+        date_post, t, rh, p_data = ambient_instance.get_readings()
+        ambient_instance.close_comms()
+        t_data = [t]
+        rh_data = [rh]
+
+    else:
+        log.error("Unrecognised ambient monitoring sensor")
+        return False
 
     ambient_post = {}
     if not t_data[0]:
@@ -296,15 +327,18 @@ def check_ambient_post(omega, ambient_pre):
         ambient_post['RH (%)'] = str(round(min(rh_data), 1)) + ' to ' + str(round(max(rh_data), 1))
 
     if t_data[0] and rh_data[0]:
-        if (max(t_data) - min(t_data)) ** 2 > omega['MAX_T_CHANGE']**2:
+        if (max(t_data) - min(t_data)) ** 2 > ambient_details['MAX_T_CHANGE']**2:
             ambient_post['Ambient OK?'] = False
             log.warning('Ambient temperature change during weighing exceeds quality criteria')
-        elif (max(rh_data) - min(rh_data)) ** 2 > omega['MAX_RH_CHANGE']**2:
+        elif (max(rh_data) - min(rh_data)) ** 2 > ambient_details['MAX_RH_CHANGE']**2:
             ambient_post['Ambient OK?'] = False
             log.warning('Ambient humidity change during weighing exceeds quality criteria')
         else:
             log.info('Ambient conditions OK during weighing')
             ambient_post['Ambient OK?'] = True
+
+    if ambient_details["Type"] == "Vaisala":
+        ambient_post["P_post (hPa)"] = p_data
 
     log.info('Ambient conditions:\n' + str(ambient_post))
 

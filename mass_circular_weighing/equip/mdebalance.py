@@ -10,6 +10,7 @@ prompt_thread = PromptThread()
 
 
 class Balance(object):
+    _suffix = SUFFIX
     def __init__(self, record):
         """Initialise a balance which does not have a computer interface
 
@@ -20,7 +21,8 @@ class Balance(object):
             Requires an MSL.equipment config.xml file
         """
         self.record = record
-        self._suffix = SUFFIX
+        self._ambient_instance = None
+        self._ambient_details = None
         self._want_abort = False
 
         self._unit = record.user_defined['unit']
@@ -40,6 +42,26 @@ class Balance(object):
     @property
     def mode(self):
         return 'mde'
+
+    @property
+    def ambient_instance(self):
+        """Connection information for the ambient_instance logging associated with the balance.
+
+        Returns
+        -------
+        string "OMEGA" or class Vaisala
+        """
+        return self._ambient_instance
+
+    @property
+    def ambient_details(self):
+        """Metadata associated with ambient monitoring
+
+        Returns
+        -------
+        dict of Vaisala or OMEGA alias and limits on ambient conditions
+        """
+        return self._ambient_details
 
     @property
     def unit(self):
