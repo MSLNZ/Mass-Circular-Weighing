@@ -58,13 +58,19 @@ class AWBalCarousel(MettlerToledo):
         Returns
         -------
         string from balance
-
         """
-        h_str = self._query("IDENTIFY")
+        h_str = self._query("IDENTIFY").strip("\r")
+        h_list = h_str.split(", ")
         if self.record.model == "AX10005":
-            assert h_str.strip().strip('\r') == "H10005, serial number #0003, software V 1.03.  ready"
-        else:# TODO: confirm that the correct handler is connected for AX1006
-            print(h_str)
+            assert h_list[0] == "H10005"
+            assert h_list[1] == "serial number #0003"
+            assert h_list[-1][-5:] == "ready"
+        elif self.record.model == "AX1006":
+            assert h_list[0] == "H1006"
+            assert h_list[1] == "serial number #0040"
+            assert h_list[-1][-5:] == "ready"
+        else:
+            log.error("Unknown balance connected; reply received: {}".format(h_str))
 
         return h_str
 
@@ -228,9 +234,14 @@ class AWBalCarousel(MettlerToledo):
 
     def scale_adjust(self, cal_pos=None):
         """Automatically adjust scale using internal 'external' weight.
-        A mass must be loaded in the calibration position when this method is called, otherwise an error will be raised."""
+        A mass must be loaded in the calibration position when this method is called, otherwise an error will be raised.
+
+        Parameters
+        ----------
+        cal_pos : int, optional
+        """
         # When initiated from run_circ_weigh, this method is called from initialise_balance after check_loading
-        # and centring.  This order of operations ensures a sensible mass is used for the scale_adjust.
+        # and centring.
         if self.want_abort:
             return None
 
@@ -239,11 +250,13 @@ class AWBalCarousel(MettlerToledo):
 
         log.info("Balance self-calibration routine initiated")
 
-        self.move_to(cal_pos)
+        if not self.rot_pos == str(cal_pos):
+            self.move_to(cal_pos)
+        if not self.lift_pos == "weighing":
+            self.lift_to('weighing')
 
-        self.lift_to('weighing')
-
-        print(self.get_mass_instant())  # double checks that the mass loaded is sensible!
+        log.info("Current mass reading: {}".format(self.get_mass_instant()))
+        # double checks that the mass loaded is sensible!
 
         wait_for_elapse(3)
         self.zero_bal()
@@ -254,7 +267,6 @@ class AWBalCarousel(MettlerToledo):
 
         if m[1] == 'B':
             app = application()
-            print('Balance self-calibration commencing')
             log.info('Balance self-calibration commencing')
             t0 = perf_counter()
             while True:
@@ -264,15 +276,14 @@ class AWBalCarousel(MettlerToledo):
                     return None
                 try:
                     c = self.connection.read().split()
-                    print(c)
+                    log.debug(c)
                     if c[0] == 'ready':
                         continue
                     elif c[0] == 'ES':
                         continue
                     elif c[0] == "0.00000":
-                        print(self.get_status())
+                        log.debug(self.get_status())
                         if self.lift_pos == 'calibration':
-                            # self.raise_handler()
                             self.lift_to("weighing")
                         self.connection.write("")
                         continue
@@ -289,10 +300,8 @@ class AWBalCarousel(MettlerToledo):
                     elif c[1] == 'I':
                         self._raise_error_loaded('CAL C')
                     elif c[1] == "0.00000":
-                        print(self.get_status())
-                        # self.connection.write("")
+                        log.debug(self.get_status())
                         if self.lift_pos == 'calibration':
-                            # self.raise_handler()
                             self.lift_to("weighing")
                         self.connection.write("")
                         continue
@@ -301,10 +310,8 @@ class AWBalCarousel(MettlerToledo):
                         self.connection.write("")
                         continue
                     elif c[2] == "0.00000":
-                        print(self.get_status())
-                        # self.connection.write("")
+                        log.debug(self.get_status())
                         if self.lift_pos == 'calibration':
-                            # self.raise_handler()
                             self.lift_to("weighing")
                         self.connection.write("")
                         continue
@@ -351,7 +358,7 @@ class AWBalCarousel(MettlerToledo):
             self.lift_pos = status_str.split()[2]
             # log.debug("Handler in position {}, {} position".format(self.rot_pos, self.lift_pos))
         else:
-            print(status_str)
+            print(status_str)  # because something has gone wrong...
             self.lift_pos = None
             self.rot_pos = None
 
@@ -471,7 +478,6 @@ class AWBalCarousel(MettlerToledo):
         if lowers < 0:
             raises = raise_options[lift_position] - raise_options[current]
             for i in range(raises):
-                print("raises", raises)
                 self.raise_handler()
         else:
             for i in range(lowers):
@@ -606,7 +612,7 @@ class AWBalCarousel(MettlerToledo):
             try:
                 r = self.connection.read().strip().strip('\r')
                 if r:
-                    print(r)  # for debugging only
+                    log.debug(r)  # for debugging only
                     return r
             except MSLTimeoutError:
                 if perf_counter() - t0 > self.intcaltimeout:
