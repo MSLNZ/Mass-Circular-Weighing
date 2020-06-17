@@ -2,12 +2,9 @@ import os
 import numpy as np
 
 from msl.equipment import Config
-from msl import io
+from msl.io import read_table
 
-from .equip import Balance
-from .equip import MettlerToledo
-from .equip.awbalance import AWBal
-from .equip import AWBalCarousel
+from .equip import Balance, MettlerToledo, AWBalCarousel, AWBalLinear
 from .equip import Vaisala
 
 from .constants import MU_STR
@@ -32,8 +29,8 @@ class Configuration(object):
         self.bal_class = {
             'mde': Balance,
             'mw': MettlerToledo,
-            'aw': AWBal,
             'aw_c': AWBalCarousel,
+            'aw_l': AWBalLinear,
         }
 
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
@@ -117,6 +114,10 @@ class Configuration(object):
         bal = self.bal_class[mode](self.equipment[alias], **kwargs)
         print(bal)
 
+        if mode == "aw_l":
+            print("getting equipment record for weight changer handler")
+            bal.handler = self.get_handler_record(bal_alias=alias)
+
         bal._ambient_details = self.get_ambientlogger_info(bal_alias=alias)
 
         if 'vaisala' in bal.ambient_details['Type'].lower():
@@ -132,6 +133,23 @@ class Configuration(object):
             bal._ambient_instance = "OMEGA"
 
         return bal, mode
+
+    def get_handler_record(self, bal_alias):
+        """Gets the EquipmentRecord for the balance handler (e.g. an Arduino)
+
+        Parameters
+        ----------
+        bal_alias
+
+        Returns
+        -------
+        EquipmentRecord
+        """
+
+        handler_alias = self.equipment[bal_alias].user_defined['handler alias']
+        record = self.equipment.get(handler_alias)
+
+        return record
 
     def get_ambientlogger_info(self, bal_alias):
         """Gets information about Vaisala or OMEGA logger for ambient measurements
@@ -203,7 +221,7 @@ class Configuration(object):
         path = self.cfg.root.find('acceptance_criteria/path').text
         sheet = self.cfg.root.find('acceptance_criteria/sheet').text
 
-        dataset = io.read_table(path, sheet=sheet)
+        dataset = read_table(path, sheet=sheet)
         header = dataset.metadata.get('header')
         data = dataset.data
 

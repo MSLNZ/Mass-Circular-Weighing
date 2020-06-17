@@ -22,7 +22,7 @@ cols = [
 cfg_path = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\Demo_Set\J00712_config.xml'
 cfg = Configuration(cfg_path)
 bal_alias = "AT106"
-omega = cfg.get_omega_instance(bal_alias)
+omega = cfg.get_ambientlogger_info(bal_alias)
 
 folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\Demo_Set\AT106 Weighings'
 files = [

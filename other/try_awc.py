@@ -22,7 +22,7 @@ print(bal.stable_wait)
 bal.identify_handler()
 
 bal.get_status()
-print("Handler in position {}, {} position".format(bal.rot_pos, bal.lift_pos))
+print("Handler in position {}, {} position".format(bal.hori_pos, bal.lift_pos))
 
 
 

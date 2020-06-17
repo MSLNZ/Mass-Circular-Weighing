@@ -104,7 +104,7 @@ class LabEnviron64(Client64):
         # print(os.path.join(os.path.dirname(__file__).strip('/equip'), r'resources\LabEnviron_V1.3.dll'))
 
     def get_data(self, omega_alias, probe, date_start=None, date_end=None,):
-        """gets data from one probe of a given omega logger over a specified time range"""
+        """gets data from one probe of a given ambient_logger logger over a specified time range"""
         size, status, error = self.request32('get_size', omega_alias, probe, date_start=date_start, date_end=date_end)
         # print(size, status, repr(error))
         if error:
