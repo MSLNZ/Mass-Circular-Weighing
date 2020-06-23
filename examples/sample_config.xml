@@ -32,10 +32,15 @@
     <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPR604"/>
     <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
     <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
+    <equipment alias="AX1006" manufacturer="Mettler Toledo" model="AX1006"/>
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
     <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
     <equipment alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
+
+    <!-- Specify Vaisala ambient monitoring equipment available for weighings. -->
+    <equipment alias="AX10005-Vaisala-K1510011" manufacturer="Vaisala" model="PTU303" serial="K1510011"/>
+    <equipment alias="AX1006-Vaisala-M2430306" manufacturer="Vaisala" model="PTU303" serial="M2430306"/>
 
     <!-- Specify the limits for ambient conditions to begin weighing. -->
     <min_temp units="C">18.1</min_temp>

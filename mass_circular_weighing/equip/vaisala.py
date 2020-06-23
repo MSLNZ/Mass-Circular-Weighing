@@ -30,64 +30,69 @@ class Vaisala(object):
         self.connection.write("?")
         while True:
             ok = self.connection.read()
-            print(ok)
-            if not ok:
+            if "module 2" in ok.lower():
                 break
 
     def set_format(self):
-        # WARNING: This function is upsetting the settings at the moment
-        self.connection.write("FORM 4.3 P "" "" 3.3 T "" "" 3.3 RH "" "" SN \r \n \r\n")
-        t0 = perf_counter()
-        while perf_counter() - t0 < 30:
-            ok = self.connection.read()
-            if not ok:
-                break
-
-        return ok
-        #     print(self.connection.read())
-        #     return True
-        # else:
-        #     print(ok)
-        #     return False
-
-    def get_readings(self):
-        i = 0
-        while i < 5:
-            reading = self.connection.query("SEND")
-            ok = self.check_readings(reading)
-            if ok:
-                readings = reading.split()
-                return datetime.now(), float(readings[1]), float(readings[2]), float(readings[0])
-            i += 1
-        log.error("Unable to get sensible readings from Vaisala after 5 attempts")
-        return datetime.now(), None, None, None
-
-    def check_readings(self, reading):
-        """Checks reading for serial read error
-
-        Parameters
-        ----------
-        reading : str
+        """Sets format to 4.3 P " " 3.3 T " " 3.3 RH " " SN " " #r #n
+        (same as when reset by Visual Studio program)
 
         Returns
         -------
-        Bool of values in string ok or not
+        Bool for successful format setting
         """
-        r_list = reading.split()
-        if not 400 <= float(r_list[0]) <= 1200:
-            log.warning("Pressure reading invalid. Received {}".format(r_list[0]))
-            return False
-        if not 10 <= float(r_list[1]) <= 30:
-            log.warning("Temperature reading invalid. Received {}".format(r_list[1]))
-            return False
-        if not 0 <= float(r_list[2]) <= 100:
-            log.warning("Humidity reading invalid. Received {}".format(r_list[1]))
-            return False
-        if not r_list[-1] == self.record.serial:
-            log.warning("Serial number missing or incorrect in reading string."
-                        " Received {}".format(r_list[-1]))
-            return False
-        return True
+        self.connection.write('form 4.3 P " " 3.3 T " " 3.3 RH " " SN " " #r #n')
+
+        ok = self.connection.read()
+
+        form = self._query("FORM")
+        log.debug("Format of output set to {}".format(form))
+
+        if "ok" in ok.lower():
+            return True
+
+        return ok
+
+    def get_readings(self):
+        """Read pressure, temperature and humidity from Vaisala.
+        With format above, and when reset by Visual Studio program,
+        reading appears as 1025.410  19.19  57.83 K1510011 (for example)
+
+        Returns
+        -------
+        datetime.now(), temp, rh, press or datetime.now(), None, None, None
+        """
+        i = 0
+        while i < 5:
+            ok = True
+            reading = self.connection.query("SEND")
+
+            r_list = reading.split()
+            press = float(r_list[0])
+            temp = float(r_list[1])
+            rh = float(r_list[2])
+            SN = r_list[-1]
+
+            if not 400 <= press <= 1200:
+                log.warning("Pressure reading invalid. Received {}".format(press))
+                ok = False
+            if not 10 <= temp <= 30:
+                log.warning("Temperature reading invalid. Received {}".format(temp))
+                ok = False
+            if not 0 <= rh <= 100:
+                log.warning("Humidity reading invalid. Received {}".format(rh))
+                ok = False
+            if not SN == self.record.serial:
+                log.warning("Serial number missing or incorrect in reading string."
+                            " Received {}".format(r_list[-1]))
+                ok = False
+            if ok:
+                return datetime.now(), temp, rh, press
+            self.set_format()  # try resetting the format to see if that's the problem
+            i += 1
+
+        log.error("Unable to get sensible readings from Vaisala after 5 attempts")
+        return datetime.now(), None, None, None
 
     def close_comms(self):
         self.connection.disconnect()

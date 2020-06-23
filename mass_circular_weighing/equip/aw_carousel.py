@@ -195,7 +195,8 @@ class AWBalCarousel(MettlerToledo):
             times.append(perf_counter() - t0)
 
             self.lift_to('weighing', hori_pos=pos)
-            self.get_mass_instant()
+            m = self.get_mass_instant()
+            log.info("Mass value: {} {}".format(m, self.unit))
             self.lift_to('top', hori_pos=pos)
 
         self._move_time = np.ceil(max(times))
