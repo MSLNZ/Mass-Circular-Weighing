@@ -390,6 +390,8 @@ class AWBalCarousel(MettlerToledo):
         pos : int
         wait : bool (optional)
         """
+        if self.num_pos is None:
+            return False  # TODO raise error
         if not 0 < pos <= self.num_pos:
             self._raise_error_loaded('POS')
 
@@ -399,7 +401,7 @@ class AWBalCarousel(MettlerToledo):
         log.info("Moving to position "+str(pos))
         self.connection.write("MOVE" + str(pos))  # Spaces are ignored by the handler
 
-        reply = self.wait_for_reply()
+        reply = self.wait_for_reply(cxn=self.connection)
         # the message returned is either 'ready' or an error code
         if reply == "ready":
             self.get_status()
@@ -432,7 +434,7 @@ class AWBalCarousel(MettlerToledo):
         log.info("Sinking mass")
         self.connection.write("SINK")
 
-        reply = self.wait_for_reply()
+        reply = self.wait_for_reply(cxn=self.connection)
 
         if reply == "ERROR: In weighing position already. ready":  # AX1006 error
             log.warning(
@@ -465,7 +467,7 @@ class AWBalCarousel(MettlerToledo):
         log.info("Lifting mass")
         self.connection.write("LIFT")
 
-        reply = self.wait_for_reply()
+        reply = self.wait_for_reply(cxn=self.connection)
 
         if reply == "ERROR: In top position already. ready":
             log.warning(
@@ -631,7 +633,7 @@ class AWBalCarousel(MettlerToledo):
 
             self._raise_error_loaded('U')
 
-    def wait_for_reply(self):
+    def wait_for_reply(self, cxn=None):
         """Utility function for movement commands MOVE, SINK and LIFT.
         Waits for string returned by these commands.
 
@@ -639,13 +641,16 @@ class AWBalCarousel(MettlerToledo):
         -------
         The string from the handler
         """
+        if cxn is None:
+            cxn = self.connection
+
         app = application()
         t0 = perf_counter()
 
         while True:  # wait for handler to finish task
             app.processEvents()
             try:
-                r = self.connection.read().strip().strip('\r')
+                r = cxn.read().strip().strip('\r')
                 if r:
                     log.debug(r)  # for debugging only
                     return r
