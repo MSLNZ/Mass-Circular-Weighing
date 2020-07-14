@@ -318,7 +318,7 @@ class ConfigEditor(QtWidgets.QDialog):
 
         bal_reg = utils.xml_element(
             'register',
-            team="M&amp;P", user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, address"
+            team="M&amp;P", user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, handler"
         )
         data = self.get_path_sheet_excl(self.bal_reg_form)
         for key, value in data.items():

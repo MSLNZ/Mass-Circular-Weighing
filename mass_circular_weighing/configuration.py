@@ -115,8 +115,8 @@ class Configuration(object):
         print(bal)
 
         if mode == "aw_l":
-            print("getting equipment record for weight changer handler")
             bal.handler = self.get_handler_record(bal_alias=alias)
+            bal.identify_handler()
 
         bal._ambient_details = self.get_ambientlogger_info(bal_alias=alias)
 
@@ -146,7 +146,7 @@ class Configuration(object):
         EquipmentRecord
         """
 
-        handler_alias = self.equipment[bal_alias].user_defined['handler alias']
+        handler_alias = self.equipment[bal_alias].user_defined['handler']
         record = self.equipment.get(handler_alias)
 
         return record
@@ -236,7 +236,7 @@ class Configuration(object):
         for row in data:
             if model == row[index_map['model']] \
                 and man == row[index_map['manufacturer']] \
-                    and float(serial) == row[index_map['serial']]:
+                    and str(serial) == str(row[index_map['serial']]):
                 store.append(row)
 
         if not store:

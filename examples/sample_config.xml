@@ -8,7 +8,7 @@
     <!-- The MSL job code for the calibration -->
     <client>client</client>
     <!-- The name of the client. Files will be created with this name inside the parent folder during the calibration process -->
-    <client_masses>1 2 5 10 20 50 100 200 500 1000 2000 5000 10000</client_masses>
+    <client_masses>1 2 5 10 20 50 100 200 200d 500 1000 2000 5000 10000</client_masses>
     <!-- A list of client masses separated only by spaces, in any order -->
     <std_set>MET19A</std_set>
     <!-- The reference set used as standards in the weighing scheme.
@@ -34,9 +34,13 @@
     <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
     <equipment alias="AX1006" manufacturer="Mettler Toledo" model="AX1006"/>
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
+    <equipment alias="XPE505C" manufacturer="Mettler Toledo" model="XPE505C"/>
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
     <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
     <equipment alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
+
+    <!-- Specify Arduino information -->
+    <equipment alias="Arduino-XPE505C" manufacturer="Arduino" model="MEGA2560" serial="95730333238351F0A011"/>
 
     <!-- Specify Vaisala ambient monitoring equipment available for weighings. -->
     <equipment alias="AX10005-Vaisala-K1510011" manufacturer="Vaisala" model="PTU303" serial="K1510011"/>
@@ -78,14 +82,14 @@
     <registers>
       <register
               team="M&amp;P"
-              user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, address">
+              user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, handler">
           <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>
 
       <register team="M&amp;P">
-          <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
-          <sheet>Equipment</sheet>
+          <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
+          <sheet>AuxiliaryEquip</sheet>
       </register>
     </registers>
 

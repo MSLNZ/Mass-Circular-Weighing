@@ -1,6 +1,8 @@
 '''Class for Mettler Toledo Balance with computer interface and linear weight changer'''
 # note: all movement commands check first if self.want_abort is True, in which case no movement occurs.
 
+from time import sleep
+
 from . import AWBalCarousel
 from ..log import log
 
@@ -27,13 +29,7 @@ class AWBalLinear(AWBalCarousel):
 
         # This balance class inherits many class variables from AWBalCarousel,
         # including self.handler, which can be used to store the Arduino info
-        address = record.user_defined['address']
         self.arduino = None
-        '''Return when using arduino:
-        serial.Serial(port=address, baudrate=115200)
-        self.init_arduino()
-        '''
-        self.identify_handler()
 
     @property
     def mode(self):
@@ -41,7 +37,6 @@ class AWBalLinear(AWBalCarousel):
 
     def query_arduino(self, command):
         """Open serial port, query Arduino, then close serial port.
-        Does any required encoding or decoding...
 
         Parameters
         ----------
@@ -51,12 +46,10 @@ class AWBalLinear(AWBalCarousel):
         -------
         str reply to queried command
         """
-        self.arduino = self.handler.connect()
         self.arduino.serial.flush()
-        reply = self.arduino.query(command.encode()).decode()
-        # TODO: a wait_for_reply equivalent for slow movement (if longer than MSL Timeout
-        self.arduino.disconnect()
-
+        self.arduino.write(command)
+        reply = self.wait_for_reply(cxn=self.arduino)
+        print("query reply:", reply)
         return reply
 
     def parse_reply(self, reply):
@@ -71,17 +64,29 @@ class AWBalLinear(AWBalCarousel):
         -------
         Bool of whether the status has been updated (and therefore the string was parsed) or not
         """
-        status, loc = reply.split()
-        print(status, loc)
-        if "idle" in status.lower():
-            self.hori_pos = loc[:-1]
-            self.lift_pos = loc[-1]
+        status = reply.split()
+        print("parsing", status)
+        if "idle" in status[0].lower():
+            self.hori_pos = status[1][:-1]
+            self.lift_pos = status[1][-1]
             return True
         else:
             self.hori_pos = None
             self.lift_pos = None
             print(reply)
+            for i in range(8):
+                print(self.arduino.read())
+
             raise ValueError("Error at Arduino: {}".format(reply))
+
+    def check_serial(self):
+        import serial.tools.list_ports
+
+        for pinfo in serial.tools.list_ports.comports():
+            if pinfo.serial_number == self.handler.serial:
+                print(pinfo.device)
+                return serial.Serial(pinfo.device)
+        raise IOError("Could not find an arduino - is it plugged in?")
 
     def identify_handler(self):
         """Initialises and identifies the weight changer Arduino
@@ -90,7 +95,18 @@ class AWBalLinear(AWBalCarousel):
         -------
         Bool to indicate ready status of weight changer
         """
-        status = self.query_arduino("START")
+        self.arduino = self.handler.connect()
+        log.info("Connecting to Arduino.........")
+        sleep(20)  # need to allow time for the Arduino to initialise
+        self.query_arduino("START")
+        sleep(1)
+        print(self.arduino.read())
+        sleep(1)
+        # print("handler", self.handler.serial)
+        # print(self.arduino.serial)
+
+        status = self.query_arduino("STATUS")
+
         if "ready" in status[:5].lower():
             return True
         else:
@@ -105,7 +121,7 @@ class AWBalLinear(AWBalCarousel):
         ----------
         cal_pos : int or None
         """
-        self.lift_to('top')
+        self.lift_to('top', hori_pos=cal_pos)
 
     def get_status(self):
         """Update current horizontal and lift position of the carrier.
@@ -140,9 +156,11 @@ class AWBalLinear(AWBalCarousel):
 
         log.info("Moving to position " + str(pos))
 
-        move_str = 'MOVE TO '+str(pos)+'U\n'   # Leaves handler in the unloaded position after move
+        move_str = 'MOVE TO '+str(pos)+'U'   # Leaves handler in the unloaded position after move
         print(move_str)
-        reply = self.query_arduino(move_str)
+        self.arduino.write(move_str)
+        sleep(1)
+        reply = self.wait_for_reply(cxn=self.arduino)
         if self.parse_reply(reply):
             log.info("Handler in position {}, {} position".format(self.hori_pos, self.lift_pos))
             assert self.hori_pos == str(pos)
@@ -172,8 +190,11 @@ class AWBalLinear(AWBalCarousel):
                 return False
 
         log.info("Sinking mass")
-        lower_str = 'MOVE TO '+str(self.hori_pos)+'L\n'
-        reply = self.query_arduino(lower_str)
+        move_str = 'MOVE TO '+str(self.hori_pos)+'L'
+        print(move_str)
+        self.arduino.write(move_str)
+        sleep(1)
+        reply = self.wait_for_reply(cxn=self.arduino)
         if self.parse_reply(reply):
             log.info("Handler in position {}, {} position".format(self.hori_pos, self.lift_pos))
             if not self.lift_pos == "L":
@@ -202,8 +223,11 @@ class AWBalLinear(AWBalCarousel):
                 return False
 
         log.info("Lifting mass")
-        move_str = 'MOVE TO ' + str(pos) + 'U\n'
-        reply = self.query_arduino(move_str)
+        move_str = 'MOVE TO ' + str(pos) + 'U'
+        print(move_str)
+        self.arduino.write(move_str)
+        sleep(1)
+        reply = self.wait_for_reply(cxn=self.arduino)
         if self.parse_reply(reply):
             log.info("Handler in position {}, {} position".format(self.hori_pos, self.lift_pos))
             if not self.lift_pos == "U":
@@ -222,17 +246,22 @@ class AWBalLinear(AWBalCarousel):
         wait : Bool, optional
             If True, waits for stable wait time after lowering to weighing position
         """
+        if hori_pos is None:
+            self.get_status()
+            hori_pos=self.hori_pos
+
         if lift_position == 'top':
             self.raise_handler(pos=hori_pos)
 
         elif lift_position == 'weighing':
-            self.lower_handler(pos=hori_pos)
-            if wait:
+            ok = self.lower_handler(pos=hori_pos)
+            if ok and wait:
                 self.wait_for_elapse(self.stable_wait)
 
         else:
             log.error("Lift position {} not recognised for this handler".format(lift_position))
             return False
 
-
+    def close_connection(self):
+        self.arduino.disconnect()
 
