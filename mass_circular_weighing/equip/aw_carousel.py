@@ -111,6 +111,12 @@ class AWBalCarousel(MettlerToledo):
             self._want_abort = True
             return None
 
+        if self.want_adjust:
+            if self.cal_pos not in self.positions:
+                log.error("No mass in position selected for self calibration")
+                self._want_abort = True
+                return None
+
         if self.handler is None:
             ok = self.identify_handler()
             if not ok:
@@ -130,13 +136,13 @@ class AWBalCarousel(MettlerToledo):
 
         # Do a self calibration using the calibration position
         if self.want_adjust:
-            if self.cal_pos not in self.positions:
-                log.error("No mass in position selected for self calibration")
-                return None
-            self.scale_adjust(cal_pos=self.cal_pos)
+            ok = self.scale_adjust(cal_pos=self.cal_pos)
             if not self._is_adjusted:
-                log.error("Balance self-calibration was not successful")
-                return None
+                if ok is None:
+                    # ("Self calibration aborted by bal.want_abort")
+                    return None
+                else:
+                    log.warning("Balance self-calibration was not successful.\nContinuing to weighings.")
         else:
             log.info("Balance self-calibration was not selected")
 
@@ -260,6 +266,7 @@ class AWBalCarousel(MettlerToledo):
 
         log.info("Current mass reading: {}".format(self.get_mass_instant()))
         # double checks that the mass loaded is sensible!
+        self.wait_for_elapse(60)
 
     def scale_adjust(self, cal_pos=None):
         """Automatically adjust scale using internal 'external' weight.
@@ -272,13 +279,13 @@ class AWBalCarousel(MettlerToledo):
         # When initiated from run_circ_weigh, this method is called from initialise_balance after check_loading
         # and centring.
         if self.want_abort:
+            log.warning('Balance self-calibration aborted before commencing')
             return None
 
         log.info("Balance self-calibration routine initiated")
 
         self.prep_for_scale_adjust(cal_pos)
 
-        self.wait_for_elapse(3)
         self.zero_bal()
         self.wait_for_elapse(3)
 
@@ -316,9 +323,11 @@ class AWBalCarousel(MettlerToledo):
                         self._is_adjusted = True
                         log.info('Balance self-calibration completed successfully')
                         self.lift_to("top", hori_pos=cal_pos)
-                        return
+                        return True
                     elif c[1] == 'I':
-                        self._raise_error_loaded('CAL C')
+                        log.error('The calibration was aborted as, e.g. stability not attained or the procedure was aborted with the C key.')
+                        return False
+                        # self._raise_error_loaded('CAL C')
                     elif c[1] == "0.00000":
                         log.debug(self.get_status())
                         if self.lift_pos == 'calibration':
@@ -350,6 +359,7 @@ class AWBalCarousel(MettlerToledo):
                     else:
                         log.info('Waiting for internal calibration to complete')
 
+        # in the unlikely event something weird happens and the balance returns something unexpected:
         self._raise_error_loaded(m[0] + ' ' + m[1])
 
     def get_status(self):

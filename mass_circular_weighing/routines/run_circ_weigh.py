@@ -114,7 +114,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
             # note that this allocation triggers the check_loading, centring
             # and scale_adjust routines within the AWBalCarousel balance class
             print(positions)
-            if bal.positions is None:
+            if positions is None:
                 log.error("Balance initialisation not complete")
                 return None
         else:
