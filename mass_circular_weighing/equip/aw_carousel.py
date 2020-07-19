@@ -257,6 +257,10 @@ class AWBalCarousel(MettlerToledo):
         ----------
         cal_pos : int or None
         """
+        if self.positions is None:
+            log.warning("Weight groups must first be assigned to positions.")
+            return False
+
         if cal_pos is None:
             cal_pos = self.cal_pos
         if not self.hori_pos == str(cal_pos):
@@ -267,6 +271,8 @@ class AWBalCarousel(MettlerToledo):
         log.info("Current mass reading: {}".format(self.get_mass_instant()))
         # double checks that the mass loaded is sensible!
         self.wait_for_elapse(60)
+
+        return True
 
     def scale_adjust(self, cal_pos=None):
         """Automatically adjust scale using internal 'external' weight.
@@ -282,9 +288,10 @@ class AWBalCarousel(MettlerToledo):
             log.warning('Balance self-calibration aborted before commencing')
             return None
 
-        log.info("Balance self-calibration routine initiated")
-
-        self.prep_for_scale_adjust(cal_pos)
+        log.info("Preparing for balance self-calibration")
+        ok = self.prep_for_scale_adjust(cal_pos)
+        if not ok:
+            return None
 
         self.zero_bal()
         self.wait_for_elapse(3)

@@ -124,6 +124,8 @@ class AWBalLinear(AWBalCarousel):
         self.lift_to('top', hori_pos=cal_pos)
         self.wait_for_elapse(10)
 
+        return True
+
     def get_status(self):
         """Update current horizontal and lift position of the carrier.
         Expects string reply of format "IDLE {horizontal pos}{lift pos}"
