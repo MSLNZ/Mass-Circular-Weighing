@@ -172,10 +172,7 @@ class WeighingThread(Thread):
 
     def close_comms(self, *args):
         self.bal._want_abort = True
-        try:
-            self.bal.connection.disconnect()
-        except AttributeError:
-            pass
+        self.bal.close_connection()
         self.weighing_done.emit(self.se_row_data['row'])
 
     def check_for_existing(self):

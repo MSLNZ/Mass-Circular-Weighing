@@ -180,3 +180,6 @@ class Balance(object):
             sleep(self.stable_wait)
             reading = self.get_mass_instant()
             return reading
+
+    def close_connection(self):
+        pass

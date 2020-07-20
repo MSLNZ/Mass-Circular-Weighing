@@ -86,7 +86,7 @@ class AWBalLinear(AWBalCarousel):
             if pinfo.serial_number == self.handler.serial:
                 print(pinfo.device)
                 return serial.Serial(pinfo.device)
-        raise IOError("Could not find an arduino - is it plugged in?")
+        raise IOError("Could not find an Arduino - is it plugged in?")
 
     def identify_handler(self):
         """Initialises and identifies the weight changer Arduino
@@ -97,11 +97,11 @@ class AWBalLinear(AWBalCarousel):
         """
         self.arduino = self.handler.connect()
         log.info("Connecting to Arduino.........")
-        sleep(20)  # need to allow time for the Arduino to initialise
-        self.query_arduino("START")
-        sleep(1)
-        print(self.arduino.read())
-        sleep(1)
+        self.wait_for_elapse(20)  # need to allow time for the Arduino to initialise
+        print(self.query_arduino("START"))
+        # sleep(1)
+        # print(self.arduino.read())
+        # sleep(1)
         # print("handler", self.handler.serial)
         # print(self.arduino.serial)
 
@@ -201,6 +201,8 @@ class AWBalLinear(AWBalCarousel):
         if self.parse_reply(reply):
             log.info("Handler in position {}, {} position".format(self.hori_pos, self.lift_pos))
             if not self.lift_pos == "L":
+                for i in range(8):
+                    print(self.arduino.read())
                 raise ValueError("Loading failure")
             return True
 
@@ -234,6 +236,8 @@ class AWBalLinear(AWBalCarousel):
         if self.parse_reply(reply):
             log.info("Handler in position {}, {} position".format(self.hori_pos, self.lift_pos))
             if not self.lift_pos == "U":
+                for i in range(8):
+                    print(self.arduino.read())
                 raise ValueError("Unloading failure")
             return True
 
@@ -266,5 +270,7 @@ class AWBalLinear(AWBalCarousel):
             return False
 
     def close_connection(self):
+        self.connection.disconnect()
+        print(self.arduino.query("END"))
         self.arduino.disconnect()
 
