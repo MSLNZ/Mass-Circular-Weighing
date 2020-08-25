@@ -4,7 +4,8 @@ from msl.qt import QtWidgets, Button, Signal, Slot
 from msl.equipment import Config, utils
 
 from ...log import log
-from ...constants import IN_DEGREES_C, config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
+from ...constants import \
+    IN_DEGREES_C, config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
 from .browse import Browse, label
 
 
@@ -15,10 +16,14 @@ class ConfigEditor(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent=parent)
 
-        self.config_io = Browse(config_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file')
+        self.config_io = Browse(
+            config_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.xml'
+        )
         self.config_io.textbox.textChanged.connect(self.load_from_config)
 
-        self.folder_io = Browse(save_folder_default, QtWidgets.QStyle.SP_DialogOpenButton, find='folder')
+        self.folder_io = Browse(
+            save_folder_default, QtWidgets.QStyle.SP_DialogOpenButton, find='folder'
+        )
         self.job_io = QtWidgets.QLineEdit(job_default)
         self.client_io = QtWidgets.QLineEdit(client_default)
         self.client_masses_io = QtWidgets.QTextEdit(client_wt_IDs_default)
@@ -85,7 +90,9 @@ class ConfigEditor(QtWidgets.QDialog):
         self.mass_set_table.setRowCount(numrows)
         for i in range(numrows):
             self.mass_set_table.setCellWidget(i, 0, QtWidgets.QLineEdit())
-            self.mass_set_table.setCellWidget(i, 1, Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file'))
+            self.mass_set_table.setCellWidget(
+                i, 1, Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.set')
+            )
             if root:
                 self.mass_set_table.cellWidget(i, 0).setText(str(root.find('standards')[i].tag))
                 self.mass_set_table.cellWidget(i, 1).textbox.setText(str(root.find('standards')[i].text))
@@ -158,12 +165,15 @@ class ConfigEditor(QtWidgets.QDialog):
     def make_reg_box(self, form):
         form.removeRow(0)
         form.removeRow(1)
-        form.addRow(label('Path'), Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file'))
+        form.addRow(label('Path'), Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.xls*'))
         form.addRow(label('Sheet'), QtWidgets.QLineEdit())
 
     def make_acceptance_box(self):
         self.acceptance_form = QtWidgets.QFormLayout()
-        self.acceptance_form.addRow(label('Path'), Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file'))
+        self.acceptance_form.addRow(
+            label('Path'),
+            Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.xls*')
+        )
         self.acceptance_form.addRow(label('Sheet'), QtWidgets.QLineEdit())
         self.acceptance_form.addRow(label('Exclusion limit'), QtWidgets.QDoubleSpinBox())
 
@@ -318,7 +328,8 @@ class ConfigEditor(QtWidgets.QDialog):
 
         bal_reg = utils.xml_element(
             'register',
-            team="M&amp;P", user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, handler"
+            team="M&amp;P",
+            user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, handler"
         )
         data = self.get_path_sheet_excl(self.bal_reg_form)
         for key, value in data.items():

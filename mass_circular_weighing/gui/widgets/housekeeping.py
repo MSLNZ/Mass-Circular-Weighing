@@ -18,7 +18,7 @@ class Housekeeping(QtWidgets.QWidget):
     def __init__(self):
         super(Housekeeping, self).__init__()
 
-        self.config_io = Browse(config_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file')
+        self.config_io = Browse(config_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.xml')
         self.config_io.textbox.textChanged.connect(self.load_from_config)
         self.edit_config_but = Button(text='Edit config file', left_click=self.edit_config)
 

@@ -1,4 +1,4 @@
-from msl.qt import QtWidgets, Button, prompt
+from msl.qt import QtWidgets, Button, prompt, io
 
 from ...constants import sample_data_folder, mass_folder, H_drive
 
@@ -11,7 +11,7 @@ def label(name):
 
 class Browse(QtWidgets.QWidget):
 
-    def __init__(self, default, icon, find='folder'):
+    def __init__(self, default, icon, find='folder', pattern=None):
         """A browse widget which combines a textbox linked with a file or folder browse pop-up.
         Default is a browser that looks for a folder.
 
@@ -21,10 +21,17 @@ class Browse(QtWidgets.QWidget):
         icon
         find : str
             this argument specifies which type of browse is created: file or folder.
+        pattern : None or str, optional
+            specify the type of file to accept via drag-drop
         """
         super(Browse, self).__init__()
 
         self.textbox = QtWidgets.QLineEdit(default)
+
+        self.pattern = pattern
+        self.path = None
+        self.setAcceptDrops(True)
+
         if find == 'folder':
             self.button = Button(icon=icon, left_click=self.display_folder)
         elif find == 'file':
@@ -56,3 +63,21 @@ class Browse(QtWidgets.QWidget):
 
     def sampledata_selected(self):
         self.textbox.setText(sample_data_folder)
+
+    def dragEnterEvent(self, event):
+        paths = io.get_drag_enter_paths(event, pattern=self.pattern)
+        if paths:
+            print(paths)
+            p = paths[0]
+            if len(paths) > 1:
+                p = prompt.item('Please select one only:', items=paths)
+            event.accept()
+            self.path = p
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        event.accept()
+
+    def dropEvent(self, event):
+        self.textbox.setText(self.path)
