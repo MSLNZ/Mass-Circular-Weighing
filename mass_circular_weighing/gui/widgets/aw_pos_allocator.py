@@ -68,7 +68,7 @@ class AllocatorDialog(QtWidgets.QDialog):
         # centring and self adjustment parameters
         init_params = QtWidgets.QWidget()
         self.num_centrings = QtWidgets.QSpinBox()
-        self.num_centrings.setValue(5)
+        self.num_centrings.setValue(4)
         self.cal_pos_box = QtWidgets.QSpinBox()
         self.cal_pos_box.setRange(1, num_pos)
         self.cal_pos_box.setValue(self.cal_pos)
