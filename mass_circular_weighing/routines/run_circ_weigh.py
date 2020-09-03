@@ -300,7 +300,7 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
         log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger ' + ambient_details['Alias'])
 
         ambient_instance.open_comms()
-        date_post, t, rh, p_data = ambient_instance.get_readings()
+        date_post, t, rh, p_post = ambient_instance.get_readings()
         ambient_instance.close_comms()
         t_data = [t]
         rh_data = [rh]
@@ -338,7 +338,10 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
             ambient_post['Ambient OK?'] = True
 
     if ambient_details["Type"] == "Vaisala":
-        ambient_post["P_post (hPa)"] = p_data
+        try:
+            ambient_post["Pressure (hPa)"] = [ambient_pre["P_pre (hPa)"], p_post]
+        except KeyError:
+            ambient_post["Pressure (hPa)"] = p_post
 
     log.info('Ambient conditions:\n' + str(ambient_post))
 

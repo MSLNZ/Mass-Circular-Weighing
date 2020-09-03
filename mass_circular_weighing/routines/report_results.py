@@ -6,7 +6,7 @@ from msl.io import read, read_table_excel
 from ..log import log
 from ..results_summary import WordDoc
 from ..results_summary_LaTeX import LaTexDoc
-
+from ..results_summary_Excel import ExcelSummaryWorkbook
 
 def export_results_summary(cfg, check_file, std_file, incl_datasets):
     """Export results summaries to Word, Excel and LaTeX
@@ -30,12 +30,13 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     """
 
     # gather relevant files
-    if os.path.isfile(os.path.join(cfg.folder, cfg.client + '_Scheme.xls')):
-        scheme_path = os.path.join(cfg.folder, cfg.client + '_Scheme.xls')
-        scheme = read_table_excel(scheme_path)
-    elif os.path.isfile(os.path.join(cfg.folder, cfg.client + '_Scheme.xlsx')):
+    if os.path.isfile(os.path.join(cfg.folder, cfg.client + '_Scheme.xlsx')):
         scheme_path = os.path.join(cfg.folder, cfg.client + '_Scheme.xlsx')
         scheme = read_table_excel(scheme_path)
+    elif os.path.isfile(os.path.join(cfg.folder, cfg.client + '_Scheme.xls')):
+        scheme_path = os.path.join(cfg.folder, cfg.client + '_Scheme.xls')
+        scheme = read_table_excel(scheme_path)
+        log.warning("Rebecca needs to fix this")
     else:
         log.error('Please save scheme and then continue')
         return None
@@ -67,6 +68,15 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     ld.add_weighing_datasets(cfg.client, cfg.folder, scheme, cfg, incl_datasets)
     ld.close_doc()
     log.info("LaTeX file saved to {}".format(latex_file))
+
+    # make Excel summary file
+    xl_output_file = os.path.join(cfg.folder, cfg.client + '_Summary.xlsx')
+    xl = ExcelSummaryWorkbook()
+    xl.load_scheme_file(scheme_path, fmc_root, check_file, std_file, cfg.job, cfg.client, cfg.folder)
+    xl.add_mls(fmc_root)
+    xl.add_all_cwdata(cfg, incl_datasets)
+    xl.add_overall_ambient()
+    xl.save_workbook(xl_output_file)
 
     # Make Word Output file - not in use at present
     # wd = WordDoc()

@@ -1,4 +1,4 @@
-import xlrd, xlwt
+import xlrd, openpyxl
 import os
 
 from msl.qt import QtWidgets, QtCore, io, prompt, Signal, Slot
@@ -148,24 +148,25 @@ class SchemeTable(QtWidgets.QTableWidget):
         log.info('Checked all scheme entries')
 
     def save_scheme(self, folder, filename):
+        # updated to output as xlsx
         if not os.path.exists(folder):
             os.makedirs(folder)
 
         path = folder + "\\" + filename
 
-        workbook = xlwt.Workbook()
-        sheet = workbook.add_sheet('Scheme')
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Scheme"
         header = ['Weight groups', 'Nominal mass (g)', 'Balance alias', '# runs']
-        for j, text in enumerate(header):
-            sheet.write(0, j, text)
+        sheet.append(header)
 
         for row in range(self.rowCount()):
             # scheme_entry_row = [scheme_entry, nominal, bal_alias, num_runs]
             try:
-                sheet.write(row+1, 0, self.cellWidget(row, 0).text())
-                sheet.write(row+1, 1, self.cellWidget(row, 1).text())
-                sheet.write(row+1, 2, self.cellWidget(row, 2).currentText())
-                sheet.write(row+1, 3, self.cellWidget(row, 3).text())
+                sheet.cell(row=row+2, column=1, value=self.cellWidget(row, 0).text())
+                sheet.cell(row=row+2, column=2, value=self.cellWidget(row, 1).text())
+                sheet.cell(row=row+2, column=3, value=self.cellWidget(row, 2).currentText())
+                sheet.cell(row=row+2, column=4, value=self.cellWidget(row, 3).text())
 
             except AttributeError:
                 pass  #  log.error('Incomplete data in selected row')
