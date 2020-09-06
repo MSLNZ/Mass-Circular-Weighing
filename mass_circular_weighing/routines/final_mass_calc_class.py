@@ -296,7 +296,7 @@ class FinalMassCalc(object):
             elif i >= self.num_client_masses + self.num_check_masses:
                 summarytable[i, 2] = 'Standard'
                 delta = self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses] - self.b[i]
-                summarytable[i, 7] = 'c.f. {} g; {} {}'.format(
+                summarytable[i, 7] = '{} g; {} {}'.format(
                     self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses],
                     DELTA_STR,
                     num_to_eng_format(delta),
@@ -304,7 +304,7 @@ class FinalMassCalc(object):
             else:
                 summarytable[i, 2] = 'Check'
                 delta = self.check_masses['mass values (g)'][i - self.num_client_masses] - self.b[i]
-                summarytable[i, 7] = 'c.f. {} g; {} {}'.format(
+                summarytable[i, 7] = '{} g; {} {}'.format(
                     self.check_masses['mass values (g)'][i - self.num_client_masses],
                     DELTA_STR,
                     num_to_eng_format(delta),
@@ -342,7 +342,7 @@ class FinalMassCalc(object):
                                     metadata={'headers':
                                                   ['Nominal (g)', 'Weight ID', 'Set ID',
                                                    'Mass value (g)', 'Uncertainty (ug)', '95% CI', 'Cov',
-                                                   "c.f. Reference value (g)",
+                                                   "Reference value (g)",
                                                    ]})
 
     def save_to_json_file(self, filesavepath=None, folder=None, client=None ):
