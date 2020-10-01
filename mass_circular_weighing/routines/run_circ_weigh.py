@@ -225,9 +225,9 @@ def check_ambient_pre(ambient_instance, ambient_details):
     if ambient_details["Type"] == "OMEGA":
         log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger '+ambient_details['Alias'] + ' sensor ' + str(ambient_details['Sensor']))
 
-        dll = LabEnviron64()
-        date_start, t_start, rh_start = dll.get_t_rh_now(str(ambient_details['Alias']), ambient_details['Sensor'])
-        dll.shutdown_server32()
+        LabView_dll = LabEnviron64()
+        date_start, t_start, rh_start = LabView_dll.get_t_rh_now(str(ambient_details['Alias']), ambient_details['Sensor'])
+        LabView_dll.shutdown_server32()
 
     elif ambient_details["Type"] == "Vaisala":
         log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger ' + ambient_details['Alias'])
@@ -291,10 +291,10 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
     if ambient_details["Type"] == "OMEGA":
         log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger '+ambient_details['Alias'] + ' sensor ' + str(ambient_details['Sensor']))
 
-        dll = LabEnviron64()
-        t_data, rh_data = dll.get_t_rh_during(str(ambient_details['Alias']), ambient_details['Sensor'], ambient_pre['Start time'])
+        LabView_dll = LabEnviron64()
+        t_data, rh_data = LabView_dll.get_t_rh_during(str(ambient_details['Alias']), ambient_details['Sensor'], ambient_pre['Start time'])
         # using Joe's script returns t_data and rh_data as numpy ndarrays
-        dll.shutdown_server32()
+        LabView_dll.shutdown_server32()
 
     elif ambient_details["Type"] == "Vaisala":
         log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger ' + ambient_details['Alias'])
