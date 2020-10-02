@@ -1,3 +1,6 @@
+"""
+The main circular weighing routine and analysis routines and their associated helper functions
+"""
 import os
 from time import perf_counter
 from datetime import datetime
@@ -69,17 +72,17 @@ def get_next_run_id(root, scheme_entry):
     return run_id
 
 
-def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None, ambient_logger=None,
+def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                      local_backup_folder=local_backup, **metadata):
     """Routine to run a circular weighing by collecting data from a balance.
-    Note that this routine currently requires a Vaisala or an OMEGA logger to be specified in the registers
-    for monitoring of the ambient conditions; the ambient logger info/instance is within the balance instance
+    This routine currently requires a Vaisala or an OMEGA logger to be specified in the registers
+    for monitoring of the ambient conditions
 
     Parameters
     ----------
     bal : :class:`Balance`
         balance instance, initialised using mass_circular_weighing.configuration using a balance alias
-
+        the ambient logger info/instance is contained within the balance instance
     se : str
         scheme entry
     root : :class:`root`
@@ -111,9 +114,9 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     if 'aw' in bal.mode:
         if not bal.positions:
             positions = bal.initialise_balance(weighing.wtgrps)
-            # note that this allocation triggers the check_loading, centring
-            # and scale_adjust routines within the AWBalCarousel balance class
-            print(positions)
+            # pops up a window to allocate positions, then begins the check_loading, centring and scale_adjust routines
+            # within the AWBalCarousel and AWBalLinear classes
+            log.debug(str(positions))
             if positions is None:
                 log.error("Balance initialisation not complete")
                 return None
@@ -135,8 +138,6 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
              '\nWeight groups are positioned as follows:' +
              '\n' + positionstr.strip('\n'))
 
-    ambient_pre = None
-    # if ambient_logger: #TODO: allow other forms of ambient monitoring
     ambient_pre = check_ambient_pre(bal.ambient_instance, bal.ambient_details)
     if not ambient_pre:
         log.info('Measurement not started due to unsuitable ambient conditions')
@@ -208,7 +209,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
 
 def check_ambient_pre(ambient_instance, ambient_details):
-    """Check ambient conditions meet quality criteria for commencing weighing
+    """Check ambient conditions meet quality criteria (in config.xml file) for commencing weighing
 
     Parameters
     ----------
@@ -293,7 +294,7 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
 
         LabView_dll = LabEnviron64()
         t_data, rh_data = LabView_dll.get_t_rh_during(str(ambient_details['Alias']), ambient_details['Sensor'], ambient_pre['Start time'])
-        # using Joe's script returns t_data and rh_data as numpy ndarrays
+        # methods in labenviron_joe.py return t_data and rh_data as numpy ndarrays
         LabView_dll.shutdown_server32()
 
     elif ambient_details["Type"] == "Vaisala":
