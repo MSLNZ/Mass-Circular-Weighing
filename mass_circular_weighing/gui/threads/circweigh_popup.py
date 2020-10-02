@@ -1,3 +1,8 @@
+"""
+A pop-up window to begin the Circular Weighing routine and display progress.
+Note: the pop-up runs in a thread so it can be opened from the main gui. It has buttons to tare/zero the balance,
+to initialise the balance's self-calibration program, and to begin the circular weighing routine
+"""
 import winsound
 import numpy as np
 
@@ -18,10 +23,9 @@ class WeighingWorker(Worker):
         self.callback_cp = call_cp          # callback to display current cycle and position
         self.callback_read = call_read      # callback to display reading
         self.se_row_data = se_row_data
-        self.good_runs = self.se_row_data['Good runs']
-        self.bal = bal
-        self.mode = bal.mode
-        self.cfg = cfg
+        self.good_runs = self.se_row_data['Good runs']  # target number of acceptable runs
+        self.bal = bal                      # balance instance (includes ambient monitoring info)
+        self.cfg = cfg                      # Configuration instance
 
     def process(self):
         # collating and sorting metadata
@@ -29,14 +33,6 @@ class WeighingWorker(Worker):
 
         ac = self.cfg.acceptance_criteria(self.se_row_data['bal_alias'], float(self.se_row_data['nominal']))
 
-        # TODO: get OMEGA or Vaisala instance
-        # if self.info['Omega logger']:
-        #     omega_instance = cfg.get_omega_instance(self.info['Omega logger'])
-        # else:
-        #     omega_instance = None
-        omega_instance = self.cfg.get_ambientlogger_info(self.se_row_data['bal_alias'])
-
-        # collect metadata
         metadata = {
             'Client': self.cfg.client, 'Balance': self.se_row_data['bal_alias'],
             'Unit': self.bal.unit, 'Nominal mass (g)': float(self.se_row_data['nominal']),
@@ -46,11 +42,13 @@ class WeighingWorker(Worker):
 
         log.debug(str(self.cfg))
 
+        # initialise run numbers
         run = 0
         bad_runs = 0
         while run < float(self.se_row_data['num_runs'])+MAX_BAD_RUNS+1 and bad_runs < MAX_BAD_RUNS:
-
+            # display progress on pop-up window
             self.callback_run(self.good_runs, bad_runs, self.se_row_data['num_runs'])
+            # determine if enough runs have been completed successfully
             if self.good_runs > float(self.se_row_data['num_runs']) - 1:
                 log.info('Finished weighings for ' + se)
                 winsound.Beep(880, 200)
@@ -59,12 +57,12 @@ class WeighingWorker(Worker):
                 winsound.Beep(659, 200)
                 winsound.Beep(587, 300)
                 return
-
+            # get next run id
             run_id = 'run_' + str(round(self.se_row_data['First run no.']+run, 0))
-
+            # do a circular weighing, while updating progress on pop-up window
             weighing_root = do_circ_weighing(self.bal, se, self.se_row_data['root'], self.se_row_data['url'], run_id,
-                                             callback1=self.callback_cp, callback2=self.callback_read, ambient_logger=omega_instance,
-                                             **metadata, )
+                                             callback1=self.callback_cp, callback2=self.callback_read,
+                                             **metadata)
             if weighing_root:
                 weighanalysis = analyse_weighing(
                     self.se_row_data['root'], self.se_row_data['url'], se, run_id, self.bal.mode, EXCL=self.cfg.EXCL,
@@ -73,8 +71,8 @@ class WeighingWorker(Worker):
                 ok = weighanalysis.metadata.get('Acceptance met?')
                 if ok:
                     self.good_runs += 1
-                elif self.mode == 'aw' and not weighanalysis.metadata.get['Exclude?']:
-                    print('outside acceptance but allowed')
+                elif 'aw' in self.bal.mode and not weighanalysis.metadata.get['Exclude?']:
+                    log.warning('Weighing acceptable as part of set of automatic weighings only')
                     self.good_runs += 1
                 else:
                     bad_runs += 1
@@ -114,7 +112,6 @@ class WeighingThread(Thread):
         self.reading = label('0')
 
         status = QtWidgets.QGroupBox()
-        # status = QtWidgets.QWidget()
         status_layout = QtWidgets.QFormLayout()
         status_layout.addRow(label('Scheme Entry'), self.scheme_entry)
         status_layout.addRow(label('Nominal mass (g)'), self.nominal_mass)
