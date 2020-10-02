@@ -1,7 +1,9 @@
-import numpy as np
+"""
+A script to run a new weighing or analyse an old weighing without using the gui
+"""
 
-from ..configuration import Configuration
-from .run_circ_weigh import *
+from mass_circular_weighing.configuration import Configuration
+from mass_circular_weighing.routines.run_circ_weigh import *
 #from mass_circular_weighing.routines.collate_data import collate_a_data_from_json
 #from mass_circular_weighing.routines.final_mass_calc import final_mass_calc
 
@@ -26,7 +28,7 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
     root = check_for_existing_weighdata(folder, url, scheme_entry)
     run_id = get_next_run_id(root, scheme_entry)
 
-    weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, ambient_logger=omega_instance, **metadata)
+    weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, **metadata)
     if not weighing_root:
         return False
 
@@ -54,22 +56,21 @@ if __name__ == "__main__":
     # "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example
     # "1 1s 0.5+0.5s" #
     nominal_mass = 20000  # nominal mass in g
-    bal_alias = 'LUCY' # codename for balance
-    omega_alias = 'Omega'
+    bal_alias = 'MDE-demo' # codename for balance
 
-    # scheme_entry = "100kH 50kH+50kHd 100kHdd"
+    scheme_entry = "100kH 50kH+50kHd 100kHdd"
 
     filename = cfg.client + '_' + str(nominal_mass) # + '_' + run_id
 
-    # for i in range(1):
-    #     do_new_weighing(cfg, cfg.client, bal_alias, cfg.folder, filename, scheme_entry, nominal_mass,
-    #                     timed=cfg.timed, drift=cfg.drift)
+    for i in range(1):
+        do_new_weighing(cfg, cfg.client, bal_alias, cfg.folder, filename, scheme_entry, nominal_mass,
+                        timed=cfg.timed, drift=cfg.drift)
 
     # analyse_old_weighing(cfg, filename, scheme_entry, 'run_1')
 
     # balance, mode = cfg.get_bal_instance(bal_alias)
     #for scheme_entry in scheme_entries:
-    analyse_all_weighings_in_file(cfg, filename, scheme_entries[3])
+    # analyse_all_weighings_in_file(cfg, filename, scheme_entries[3])
 
     #inputdata = collate_a_data_from_json(cfg.folder, filename, scheme_entry)  # gets data in g
 
