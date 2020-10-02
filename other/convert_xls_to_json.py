@@ -1,3 +1,7 @@
+"""
+A helper script to convert weighing data from the Excel-with-VBA circular weighing program into json format
+for including in the final mass calculation.  Ambient conditions are captured as part of the conversion.
+"""
 import os
 import numpy as np
 

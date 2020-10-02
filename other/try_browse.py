@@ -1,3 +1,6 @@
+"""
+A helper script for the development of the Browse popup window
+"""
 import sys
 
 from msl.qt import application, QtWidgets, Button, excepthook, Logger

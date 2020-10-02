@@ -1,3 +1,6 @@
+"""
+A helper script for testing integration of the Mettler balances with automatic weight changers
+"""
 import sys
 
 from msl.qt import application, excepthook

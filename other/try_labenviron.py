@@ -1,3 +1,7 @@
+"""
+A helper script for testing the connection to Emile's LabVIEW server for ambient monitoring.
+Note that calibrated values are returned by default.
+"""
 import logging
 from datetime import datetime
 
