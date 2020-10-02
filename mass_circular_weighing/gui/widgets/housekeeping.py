@@ -1,3 +1,6 @@
+"""
+An interactive display of the metadata needed for a mass calibration, as stored in the config.xml file
+"""
 import os
 
 from msl.qt import QtWidgets, Button, Signal

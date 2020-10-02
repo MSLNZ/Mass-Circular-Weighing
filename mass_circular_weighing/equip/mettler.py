@@ -1,4 +1,6 @@
-'''Class for Mettler Toledo Balance with computer interface'''
+"""
+Class for a Mettler Toledo balance with a computer interface
+"""
 from time import perf_counter
 
 from msl.equipment import MSLTimeoutError

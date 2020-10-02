@@ -1,4 +1,8 @@
-import xlrd, openpyxl
+"""
+A tabular display of the weighing scheme, which can import (by drag-n-drop) and export (to xlsx) Excel files.
+"""
+import xlrd
+import openpyxl
 import os
 
 from msl.qt import QtWidgets, QtCore, io, prompt, Signal, Slot

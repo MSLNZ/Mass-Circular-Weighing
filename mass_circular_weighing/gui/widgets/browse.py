@@ -1,3 +1,6 @@
+"""
+A custom widget for browsing for files and folders
+"""
 from msl.qt import QtWidgets, Button, prompt, io
 
 from ...constants import sample_data_folder, mass_folder, H_drive
@@ -20,9 +23,9 @@ class Browse(QtWidgets.QWidget):
         default
         icon
         find : str
-            this argument specifies which type of browse is created: file or folder.
+            this argument specifies which type of browse widget is created: file or folder.
         pattern : None or str, optional
-            specify the type of file to accept via drag-drop
+            restrict the type of file to accept via drag-drop
         """
         super(Browse, self).__init__()
 

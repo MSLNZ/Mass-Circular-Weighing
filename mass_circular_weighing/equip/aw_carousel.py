@@ -1,6 +1,7 @@
-'''Class for Mettler Toledo Balance with computer interface and carousel weight changer'''
-# note: all movement commands check first if self.want_abort is True, in which case no movement occurs.
-
+"""
+Class for a Mettler Toledo balance with computer interface and carousel weight changer
+Note: all movement commands check first if self.want_abort is True, in which case no movement occurs.
+"""
 from time import perf_counter
 import numpy as np
 

@@ -1,3 +1,6 @@
+"""
+An editing window for the config.xml file which contains metadata needed for a mass calibration
+"""
 import os
 
 from msl.qt import QtWidgets, Button, Signal, Slot

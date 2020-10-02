@@ -1,7 +1,8 @@
+"""
+Class for a Vaisala device which reads temperature, relative humidity, and pressure
+e.g. of type PTU303
+"""
 from datetime import datetime
-from time import perf_counter
-
-from msl.equipment import MSLTimeoutError, MSLConnectionError
 
 from ..log import log
 

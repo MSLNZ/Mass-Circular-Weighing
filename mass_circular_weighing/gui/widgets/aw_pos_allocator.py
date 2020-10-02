@@ -1,8 +1,10 @@
+"""
+The Allocator window allows the operator to specify positions for each weight group, which positions to centre (if any),
+and the position to be used for balance self-calibration (if desired).
+"""
 import numpy as np
 
-from msl.qt import QtWidgets, Button, QtCore
-
-from .browse import label
+from msl.qt import QtWidgets, Button
 
 
 class AllocatorDialog(QtWidgets.QDialog):

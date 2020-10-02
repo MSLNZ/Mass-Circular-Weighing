@@ -1,3 +1,6 @@
+"""
+A thread to pop-up the Allocator Window from the Circular Weighing pop-up window
+"""
 from msl.qt import Thread, Worker, Signal, QtCore, QtWidgets
 
 from ..widgets.aw_pos_allocator import AllocatorDialog

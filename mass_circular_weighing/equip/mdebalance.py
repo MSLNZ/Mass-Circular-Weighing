@@ -1,4 +1,7 @@
-# Generic class for a balance without a computer interface
+"""
+Class for any balance without a computer interface.
+Each Balance class instance also holds connection information for the associated ambient monitoring device.
+"""
 import winsound
 from time import perf_counter
 

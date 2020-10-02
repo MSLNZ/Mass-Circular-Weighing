@@ -1,3 +1,6 @@
+"""
+A thread to pop-up a prompt from another window
+"""
 from msl.qt import Thread, Worker, prompt, Signal, QtCore, QtWidgets
 
 

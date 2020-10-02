@@ -1,3 +1,9 @@
+"""
+Configure the weighing program according to the config.xml file provided.
+Gets connection information for all balances in the config.xml file, including weight handlers,
+as well as ambient logger details and acceptance criteria for each balance.
+Loads and stores mass set file information.
+"""
 import os
 import numpy as np
 

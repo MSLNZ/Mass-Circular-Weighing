@@ -1,11 +1,12 @@
+"""
+A pop-up widget to initialise the Final Mass Calculation and to display the input and output data.
+Note: the pop-up window runs in a thread from the main gui window; it includes a button to export the data to MS Excel
+"""
 import numpy as np
-import os
 
 from msl.qt import Qt, QtWidgets, Button, excepthook, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
-from msl.io import read
 
-from ...log import log
 from ...constants import MU_STR, NBC
 from ...routines.final_mass_calc_class import FinalMassCalc
 from ...routines.report_results import export_results_summary
