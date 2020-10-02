@@ -139,8 +139,9 @@ install_requires = [
     'PyQt5',
     'comtypes',
     'xlwt',
+    'xlrd',  # could potentially remove this if rewrite methods in scheme_table.py
     'openpyxl',
-    'tabulate',
+    'tabulate',  # only required for LaTeX output
 ]
 
 
