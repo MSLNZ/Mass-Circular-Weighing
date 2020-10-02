@@ -1,6 +1,8 @@
 # Generic class for a balance without a computer interface
 import winsound
-from time import sleep
+from time import perf_counter
+
+from msl.qt import application
 
 from ..constants import SUFFIX, FONTSIZE
 from ..log import log
@@ -177,9 +179,32 @@ class Balance(object):
     def get_mass_stable(self, mass):
         while not self.want_abort:
             log.info('Waiting for stable reading for '+mass)
-            sleep(self.stable_wait)
+            self.wait_for_elapse(self.stable_wait)
             reading = self.get_mass_instant()
             return reading
 
     def close_connection(self):
         pass
+
+    @staticmethod
+    def wait_for_elapse(elapse_time, start_time=None):
+        """Wait for a specified time while allowing other events to be processed
+
+        Parameters
+        ----------
+        elapse_time : int
+            time to wait in seconds
+        start_time : float
+            perf_counter value at start time.
+            If not specified, the timer begins when the function is called.
+        """
+        app = application()
+        if start_time is None:
+            start_time = perf_counter()
+        time = perf_counter() - start_time
+        wait_time = elapse_time - time
+        log.info("Waiting for {} s...".format(round(wait_time, 1)))
+        while time < elapse_time:
+            app.processEvents()
+            time = perf_counter() - start_time
+        log.debug('Wait over, ready for next task')

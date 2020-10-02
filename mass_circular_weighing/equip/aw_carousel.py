@@ -685,29 +685,6 @@ class AWBalCarousel(MettlerToledo):
         self._raise_error(errorkey)
 
     @staticmethod
-    def wait_for_elapse(elapse_time, start_time=None):
-        """Wait for a specified time while allowing other events to be processed
-
-        Parameters
-        ----------
-        elapse_time : int
-            time to wait in seconds
-        start_time : float
-            perf_counter value at start time.
-            If not specified, the timer begins when the function is called.
-        """
-        app = application()
-        if start_time is None:
-            start_time = perf_counter()
-        time = perf_counter() - start_time
-        wait_time = elapse_time - time
-        log.info("Waiting for {} s...".format(round(wait_time, 1)))
-        while time < elapse_time:
-            app.processEvents()
-            time = perf_counter() - start_time
-        log.debug('Wait over, ready for next task')
-
-    @staticmethod
     def get_key(val):
         """Looks for the error in ERRORCODES, a dictionary of known error codes for Mettler balances"""
         for key, value in ERRORCODES.items():
