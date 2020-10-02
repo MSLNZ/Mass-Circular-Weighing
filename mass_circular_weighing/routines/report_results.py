@@ -1,12 +1,16 @@
+"""
+Prepares an easily-checked summarised form of the raw and processed data
+"""
 import os
 import numpy as np
 
 from msl.io import read, read_table_excel
 
 from ..log import log
-from ..results_summary import WordDoc
+# from ..results_summary import WordDoc
 from ..results_summary_LaTeX import LaTexDoc
 from ..results_summary_Excel import ExcelSummaryWorkbook
+
 
 def export_results_summary(cfg, check_file, std_file, incl_datasets):
     """Export results summaries to Word, Excel and LaTeX
@@ -36,7 +40,7 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     elif os.path.isfile(os.path.join(cfg.folder, cfg.client + '_Scheme.xls')):
         scheme_path = os.path.join(cfg.folder, cfg.client + '_Scheme.xls')
         scheme = read_table_excel(scheme_path)
-        log.warning("Rebecca needs to fix this")
+        log.warning("Tell Rebecca to fix this")
     else:
         log.error('Please save scheme and then continue')
         return None

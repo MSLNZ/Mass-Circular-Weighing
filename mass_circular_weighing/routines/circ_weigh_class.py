@@ -1,16 +1,15 @@
-import numpy as np
-
-from ..log import log
-
-""" This class uses matrix least squares analysis for circular weighing measurement sequences
+"""
+This class uses matrix least squares analysis for circular weighing measurement sequences
 For more information, see 'A General Approach to Comparisons in the Presence of Drift'
- 
+
  Some outputs available within this class:
    - The design matrices, expected values, and variance-covariance matrix
    - Estimates of item differences and their standard deviations
    - Drift parameters and their standard deviations
 """
+import numpy as np
 
+from ..log import log
 
 class CircWeigh(object):
     _sequences = {2: 5, 3: 4, 4: 3, 5: 3, 6: 3, 7: 3}  # key: number of weight groups in weighing, value: number of cycles

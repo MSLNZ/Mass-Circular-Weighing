@@ -1,7 +1,10 @@
+"""
+Results summary in Word format (not currently used)
+"""
 import os
 import xlwt
 
-from msl.loadlib import LoadLibrary #, utils
+from msl.loadlib import LoadLibrary
 from msl.io import read
 
 from .constants import IN_DEGREES_C, MU_STR

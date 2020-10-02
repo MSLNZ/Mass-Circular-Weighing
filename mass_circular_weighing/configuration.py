@@ -115,10 +115,9 @@ class Configuration(object):
         Balance instance, mode
         """
         mode = self.equipment[alias].user_defined['weighing_mode']
-        print(mode)
-        print(self.equipment[alias], **kwargs)
         bal = self.bal_class[mode](self.equipment[alias], **kwargs)
-        print(bal)
+        log.debug('Connection information for balance:'
+                  '\nBalance mode: {} \nEquip record: {} \nBalance instance: {}'.format(mode, self.equipment[alias], bal))
 
         if mode == "aw_l":
             bal.handler = self.get_handler_record(bal_alias=alias)

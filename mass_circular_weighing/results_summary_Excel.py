@@ -1,3 +1,7 @@
+"""
+Results summary in Excel format
+Called from routines/report_results.py
+"""
 import os
 import json
 from openpyxl import load_workbook

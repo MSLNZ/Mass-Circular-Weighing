@@ -125,7 +125,6 @@ class FinalMassCalc(object):
         self.leastsq_meta['Number of unknowns'] = self.num_unknowns
         self.leastsq_meta['Degrees of freedom'] = self.num_obs - self.num_unknowns
 
-
     def parse_inputdata_to_matrices(self, ):
         if self.allmassIDs is None:
             self.import_mass_lists()

@@ -1,3 +1,7 @@
+"""
+Results summary in LaTeX format
+Called from routines/report_results.py
+"""
 import os
 import xlwt
 from tabulate import tabulate
