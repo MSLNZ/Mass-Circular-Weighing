@@ -130,6 +130,13 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         log.info('Scheme loaded from ' + str(self.scheme_path))
 
+        # check format is updated to xlsx
+        if '.xlsx' in os.path.basename(self.scheme_path):
+            return
+        elif '.xls' in os.path.basename(self.scheme_path):
+            self.save_scheme(os.path.dirname(self.scheme_path), os.path.basename(self.scheme_path)+'x')
+            return
+
     def check_scheme_entries(self, cfg):
         for i in range(self.rowCount()):
             try:
@@ -156,7 +163,7 @@ class SchemeTable(QtWidgets.QTableWidget):
         if not os.path.exists(folder):
             os.makedirs(folder)
 
-        path = folder + "\\" + filename
+        path = os.path.join(folder, filename)
 
         workbook = openpyxl.Workbook()
         sheet = workbook.active
