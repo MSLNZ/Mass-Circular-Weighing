@@ -138,11 +138,12 @@ class Housekeeping(QtWidgets.QWidget):
                 bal_list.append(alias)
         self.balance_list.emit(bal_list)
 
-        if os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')):
-            scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')
-            self.scheme_file.emit(scheme_path)
-        elif os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')):
+        # trigger automatic loading of weighing scheme
+        if os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')):
             scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')
+            self.scheme_file.emit(scheme_path)
+        elif os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')):
+            scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')
             self.scheme_file.emit(scheme_path)
 
         return True
