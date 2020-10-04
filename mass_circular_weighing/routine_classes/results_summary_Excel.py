@@ -1,6 +1,6 @@
 """
 Results summary in Excel format
-Called from routines/report_results.py
+Called from routines.report_results.py
 """
 import os
 import json
@@ -9,8 +9,8 @@ from openpyxl.styles import Font, Alignment
 
 from msl.io import read
 
-from .constants import IN_DEGREES_C
-from .log import log
+from ..constants import IN_DEGREES_C
+from ..log import log
 
 
 def list_to_csstr(idlst):
@@ -169,6 +169,7 @@ class ExcelSummaryWorkbook(object):
                 log.warning('No data yet collected for '+se)
                 return
 
+            first_dataset = True
             for dataset in root['Circular Weighings'][se].datasets():
                 dname = dataset.name.split('_')
 
@@ -197,7 +198,7 @@ class ExcelSummaryWorkbook(object):
                     analysisdata = root.require_dataset(
                         root['Circular Weighings'][se].name + '/analysis_' + run_id)
 
-                    if run_no < 2:
+                    if first_dataset:
                         # get information for header lines
                         sheet.append([])
                         sheet.append(['Balance', bal_model, 'Unit', weighdata.metadata.get("Unit")])
@@ -232,8 +233,12 @@ class ExcelSummaryWorkbook(object):
                             "max RH (%)",
                             "start P (hPa)",
                             "end P (hPa)",
+                            "Balance",
+                            "Unit",
                         ]
                         sheet.append(header)
+
+                        first_dataset = False
 
                     # add data for each run
                     data_list = [
@@ -263,7 +268,9 @@ class ExcelSummaryWorkbook(object):
                         p = weighdata.metadata.get("Pressure (hPa)")
                         data_list += [p[0], p[1]]
                     except TypeError:
-                        pass
+                        data_list += ["", ""]
+
+                    data_list += [bal_model, weighdata.metadata.get("Unit")]
 
                     sheet.append(data_list)
 

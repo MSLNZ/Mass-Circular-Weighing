@@ -1,6 +1,6 @@
 """
 Results summary in LaTeX format
-Called from routines/report_results.py
+Called from routines.report_results.py
 """
 import os
 import xlwt
@@ -8,13 +8,17 @@ from tabulate import tabulate
 
 from msl.io import read
 
-from .constants import IN_DEGREES_C, MU_STR
-from .log import log
+from ..constants import IN_DEGREES_C, MU_STR
+from ..log import log
 
 
 def greg_format(number):
-    before, after = '{:.9f}'.format(number).split('.')
-    return before + '.' + ' '.join(after[i:i+3] for i in range(0, len(after), 3))
+    try:
+        before, after = '{:.9f}'.format(number).split('.')
+        return before + '.' + ' '.join(after[i:i+3] for i in range(0, len(after), 3))
+    except ValueError as e:
+        log.error("Couldn't put {} in Greg format. {}".format(number, e))
+        return str(number)
 
 
 def list_to_csstr(idlst):
