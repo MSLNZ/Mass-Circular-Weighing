@@ -9,7 +9,7 @@ import numpy as np
 from msl.io import JSONWriter, read
 
 from .. import __version__
-from ..routines.circ_weigh_class import CircWeigh
+from ..routine_classes.circ_weigh_class import CircWeigh
 from ..constants import IN_DEGREES_C, SUFFIX, MU_STR, local_backup
 from ..equip import LabEnviron64
 from ..log import log

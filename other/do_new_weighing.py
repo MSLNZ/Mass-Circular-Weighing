@@ -1,5 +1,5 @@
 """
-A script to run a new weighing or analyse an old weighing without using the gui
+A script to run a new weighing without using the gui
 """
 
 from mass_circular_weighing.configuration import Configuration
@@ -8,31 +8,52 @@ from mass_circular_weighing.routines.run_circ_weigh import *
 #from mass_circular_weighing.routines.final_mass_calc import final_mass_calc
 
 
-def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass, timed=False, drift='quadratic drift'):
+def do_new_weighing(config, bal_alias, scheme_entry, nominal_mass):
+    """Run a circular weighing without using the gui
+
+    Parameters
+    ----------
+    config : str
+        file path to config.xml file
+    bal_alias : str
+        name of balance to use for weighing
+    scheme_entry : str
+        weight groups in weighing order, separated by spaces. Group weights in weight group by + sign only.
+    nominal_mass : int
+        the closest integer to the true mass value of the weight groups
+
+    Returns
+    -------
+    bool indicating whether the circular weighing met the specified acceptance criteria
+    """
+
+    # initialise weighing configuration
+    cfg = Configuration(config)
+    filename = cfg.client + '_' + str(nominal_mass)
+
     # get balance instance
     balance, mode = cfg.get_bal_instance(bal_alias)
     ac = cfg.acceptance_criteria(bal_alias, nominal_mass)
 
-    # get OMEGA instance for ambient monitoring
-    omega_instance = cfg.get_ambientlogger_info(bal_alias)
-
     # collect metadata
     metadata = {
-        'Client': client, 'Balance': bal_alias, 'Unit': balance.unit, 'Nominal mass (g)': nominal_mass,
+        'Client': cfg.client, 'Balance': bal_alias, 'Unit': balance.unit, 'Nominal mass (g)': nominal_mass,
     }
     for key, value in ac.items():
         metadata[key] = value
 
     # get any existing data for scheme_entry
-    url = folder + "\\" + filename + '.json'
-    root = check_for_existing_weighdata(folder, url, scheme_entry)
+    url = cfg.folder + "\\" + filename + '.json'
+    root = check_for_existing_weighdata(cfg.folder, url, scheme_entry)
     run_id = get_next_run_id(root, scheme_entry)
 
+    # do weighing
     weighing_root = do_circ_weighing(balance, scheme_entry, root, url, run_id, **metadata)
     if not weighing_root:
         return False
 
-    weigh_analysis = analyse_weighing(weighing_root, url, scheme_entry, run_id, mode, timed, drift)
+    # analyse weighing
+    weigh_analysis = analyse_weighing(weighing_root, url, scheme_entry, run_id, mode, cfg.timed, cfg.drift)
 
     return weigh_analysis.metadata.get('Acceptance met?')
 
@@ -40,10 +61,6 @@ def do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nomi
 if __name__ == "__main__":
 
     config = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\LUCY\config.xml' #r'I:\MSL\Private\Mass\transfer\Balance Software\LUCY_BuildUp\config.xml'
-    ### initialise configuration
-    cfg = Configuration(config)
-
-    # cfg.init_ref_mass_sets()
 
     scheme_entries = [
         "20KRA 10KMA+10KMB 20KRB 20KRC",
@@ -60,11 +77,8 @@ if __name__ == "__main__":
 
     scheme_entry = "100kH 50kH+50kHd 100kHdd"
 
-    filename = cfg.client + '_' + str(nominal_mass) # + '_' + run_id
-
     for i in range(1):
-        do_new_weighing(cfg, cfg.client, bal_alias, cfg.folder, filename, scheme_entry, nominal_mass,
-                        timed=cfg.timed, drift=cfg.drift)
+        do_new_weighing(config, bal_alias, scheme_entry, nominal_mass)
 
     # analyse_old_weighing(cfg, filename, scheme_entry, 'run_1')
 
@@ -76,27 +90,4 @@ if __name__ == "__main__":
 
     #print(inputdata)
 
-    '''
-    client_wt_IDs = ['100', '50']
-    check_wt_IDs = ['1000MB']
-    std_wt_IDs = ['1000MA']
-
-    check_wts = cfg.all_checks
-
-    i_s = cfg.all_stds['weight ID'].index('1000.000MA')
-    i_c = check_wts['weight ID'].index('1000.000MB')
-
-    std_masses = np.empty(len(std_wt_IDs), dtype={
-        'names': ('std weight ID', 'std mass values (g)', 'std uncertainties (ug)'),
-        'formats': (object, np.float, np.float)})
-
-    std_masses['std weight ID'] = std_wt_IDs
-    std_masses['std mass values (g)'] = cfg.all_stds['mass values (g)'][i_s]
-    std_masses['std uncertainties (ug)'] = cfg.all_stds['uncertainties (ug)'][i_s]
-
-    #print(std_masses)
-
-    filesavepath = 'savefilehere2.json'
-    #final_mass_calc(filesavepath, client, client_wt_IDs, check_wt_IDs, std_masses, inputdata)
-    '''
 

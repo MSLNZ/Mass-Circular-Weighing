@@ -1,4 +1,6 @@
-# this script will collect data from multiple json files for the same client weighing
+"""
+Functions to collate data from json files for a given client weighing.
+"""
 
 import os
 import numpy as np
@@ -12,6 +14,7 @@ from .run_circ_weigh import check_for_existing_weighdata
 
 def collate_all_weighings(schemetable, cfg):
     """Collects all data from acceptable weighings in existing json files created by all entries in schemetable
+    Selects appropriate collation method depending on mode of balance
 
     Parameters
     ----------

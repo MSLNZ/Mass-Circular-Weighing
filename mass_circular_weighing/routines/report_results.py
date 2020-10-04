@@ -7,9 +7,9 @@ import numpy as np
 from msl.io import read, read_table_excel
 
 from ..log import log
-# from ..results_summary import WordDoc
-from ..results_summary_LaTeX import LaTexDoc
-from ..results_summary_Excel import ExcelSummaryWorkbook
+# from ..routine_classes.results_summary_Word import WordDoc
+from ..routine_classes.results_summary_LaTeX import LaTexDoc
+from ..routine_classes.results_summary_Excel import ExcelSummaryWorkbook
 
 
 def export_results_summary(cfg, check_file, std_file, incl_datasets):
