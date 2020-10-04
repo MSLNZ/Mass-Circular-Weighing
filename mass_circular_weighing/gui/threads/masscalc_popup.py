@@ -4,60 +4,16 @@ Note: the pop-up window runs in a thread from the main gui window; it includes a
 """
 import numpy as np
 
-from msl.qt import Qt, QtWidgets, Button, excepthook, Signal, Slot, utils
+from msl.qt import Qt, QtWidgets, Button, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
 
 from ...constants import MU_STR, NBC
-from ...routines.final_mass_calc_class import FinalMassCalc
+from ...routine_classes.final_mass_calc_class import FinalMassCalc, filter_IDs, filter_stds
 from ...routines.report_results import export_results_summary
 
 
 def label(name):
     return QtWidgets.QLabel(name)
-
-
-def filter_IDs(ID_list, inputdata):
-    relevant_IDs = []
-    for item in ID_list:
-        if item in inputdata['+ weight group'] or item in inputdata['- weight group']:
-            relevant_IDs.append(item)
-
-    return relevant_IDs
-
-
-def filter_stds(std_masses, inputdata):
-
-    weightgroups = []
-    for i in np.append(inputdata['+ weight group'], inputdata['- weight group']):
-        if '+' in i:
-            for j in i.split('+'):
-                weightgroups.append(j)
-        else:
-            weightgroups.append(i)
-
-    relevant_IDs = []
-    relevant_nominal = []
-    relevant_massvals = []
-    relevant_uncs = []
-
-    for i, item in enumerate(std_masses['weight ID']):
-        if item in weightgroups:
-            relevant_IDs.append(item)
-            relevant_nominal.append(std_masses['nominal (g)'][i])
-            relevant_massvals.append(std_masses['mass values (g)'][i])
-            relevant_uncs.append(std_masses['uncertainties (ug)'][i])
-
-    std_masses_new = {
-        'Set file': std_masses['Set file'],
-        'Set Identifier': std_masses['Set Identifier'],
-        'Calibrated': std_masses['Calibrated'],
-        'nominal (g)': relevant_nominal,
-        'mass values (g)': relevant_massvals,
-        'uncertainties (ug)': relevant_uncs,
-        'weight ID': relevant_IDs,
-    }
-
-    return std_masses_new
 
 
 class DiffsTable(QtWidgets.QTableWidget):
