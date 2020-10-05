@@ -43,7 +43,7 @@ This install will require administrator rights on a Callaghan Innovation compute
 
 Documentation
 -------------
-The documentation for **Mass-Circular-Weighing** can be found here (link to be added).
+The documentation for **Mass-Circular-Weighing** can be found here_.
 
 
 .. _numpy: https://www.numpy.org/
@@ -54,3 +54,4 @@ The documentation for **Mass-Circular-Weighing** can be found here (link to be a
 .. _tabulate: https://pypi.org/project/tabulate/
 .. _PyQt5: https://pypi.org/project/PyQt5/
 .. _MSL Package Manager: http://msl-package-manager.readthedocs.io/en/latest/?badge=latest
+.. _here: https://github.com/MSLNZ/Mass-Circular-Weighing/blob/master/docs/index.rst
