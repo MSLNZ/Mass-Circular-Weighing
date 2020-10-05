@@ -261,3 +261,5 @@ class MassCalcThread(Thread):
             inc_datasets,
         )
 
+    def clean_up(self):
+        self.window.close()
