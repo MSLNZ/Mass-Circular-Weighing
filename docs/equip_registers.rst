@@ -22,25 +22,28 @@ and assign some initial acceptance criteria in the `AcceptanceCriteria` sheet.
 Allowed weighing modes for balances are:
 
 * **mde**	(manual data entry)
-    for balances that are manually loaded and manually read (i.e. it has no computer interface)
+    for any balance that is manually loaded and manually read (i.e. no computer interface)
 * **mw**	(manual weighing)
-    for balances that have a computer interface to the balance but are manually loaded
-* **aw**	(automatic weighing)
-    for balances that have a computer interface to the balance
-    and also to a weight changer for automatic weight loading
+    for Mettler Toledo balances that have a computer interface to the balance but are manually loaded
+* **aw_c**	(automatic weighing, circular carousel)
+    for Mettler Toledo balances that have a computer interface to the balance
+    and an in-built carousel weight changer for automatic weight loading
+* **aw_l**	(automatic weighing, linear carriage)
+    for Mettler Toledo balances that have a computer interface to the balance
+    and a custom-built linear weight changer for automatic weight loading
 
-For **aw** balances, enter the number of available weighing positions in the # pos column,
-and the address of the weight changer (Arduino) in the WC_Address column.
+For **aw** balances, enter the number of available weighing positions in the # pos column.
+For **aw_l** balances, also enter the name of the weight changer (e.g. Arduino) in the Handler column.
 
-This program does not allow for weighings using a beam balance.
+*This program does not allow for weighings using a beam balance.*
 
-Enter the Omega logger sensor in the Ambient monitoring column following the format for other entries.
+Enter the ambient monitoring sensor name following the format for other entries.
 
 To add information about connections to a computer for any type of equipment,
 please start a new sheet for that computer in the *Equipment Register*
-and copy the layout from another connections sheet (e.g. PDM Connections).
+and copy the layout from another connections sheet.
 
-    Please close the *Register* when you've made your changes so that it is available for others to work on.
+Please close the *Register* when you've made your changes so that it is available for others to work on.
 
 
 .. _MSL-Equipment:  https://msl-equipment.readthedocs.io/en/latest/index.html

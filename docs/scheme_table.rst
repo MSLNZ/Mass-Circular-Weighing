@@ -15,7 +15,7 @@ The columns in the scheme table are:
 
 1.  The weight groups in the order they are to be weighed in the comparison
 2.  The nominal mass (in g) of a weight group in the comparison
-3.  The balance 'alias' or nickname for the comparison
+3.  The 'alias' or nickname of the balance being used for the comparison
 4.  The desired number of runs to be collected that meet the acceptance criteria
 5.  The number of acceptable runs that have been collected (not editable)
 

@@ -11,9 +11,8 @@ which balances and standard mass sets are available, limits on ambient condition
 and 'housekeeping' details for the particular calibration (job number, client, client masses etc).
 
 To set up a *config.xml* file for the :ref:`mass-circular-weighing-welcome` program, a template is provided below
-with some explanation of the structure and tags.
-
-    At MSL this sample *config.xml* file can be found at I:\\MSL\\Private\\Mass\\transfer\\Balance Software\\Sample Data\\sample_config.xml
+with some explanation of the structure and tags.  At MSL this sample *config.xml* file can be found at
+I:\\MSL\\Private\\Mass\\transfer\\Balance Software\\Sample Data\\sample_config.xml
 
 
 .. code-block:: xml
@@ -59,7 +58,7 @@ with some explanation of the structure and tags.
 
         <!-- Specify the limits for ambient conditions to begin weighing. -->
         <min_temp units="C">18.1</min_temp>
-        <max_temp units="C">30</max_temp>
+        <max_temp units="C">21.9</max_temp>
         <min_rh units="%">30</min_rh>
         <max_rh units="%">70</max_rh>
 
