@@ -47,8 +47,6 @@ def test_invalid_server_ip():
     LabEnviron64.LABVIEW_SERVER = default_ip
 
 
-self.to_datetime()
-
 @pytest.mark.skipif(
     not (has_runtime and has_idrive and has_server),
     reason='requires LabVIEW Run-Time 2010, I: drive access and for the LabEnviron server to be reachable'
