@@ -1,7 +1,7 @@
 from msl.qt import prompt
 from msl.network import Service
 
-from mass_circular_weighing.routines.do_new_weighing import do_new_weighing
+from other.do_new_weighing import do_new_weighing
 
 
 class DoWeighing(Service):
@@ -9,10 +9,10 @@ class DoWeighing(Service):
     def __init__(self):
         super().__init__(max_clients=1, name='Do single circular weighing')
 
-    def do_new_weighing(self, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
-                        omega_alias=None, timed=False, drift='quadratic drift'):
-        done = do_new_weighing(client, bal_alias, folder, filename, scheme_entry, nominal_mass,
-                        omega_alias=omega_alias, timed=timed, drift=drift)
+    def do_new_weighing(self, cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
+                        timed=False, drift='quadratic drift'):
+        done = do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
+                               timed, drift)
 
         return done
 
