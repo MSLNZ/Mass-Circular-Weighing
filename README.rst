@@ -26,8 +26,7 @@ Dependencies
 * comtypes_
 * tabulate_ (for LaTeX output)
 * PyQt5_
-* `MSL Package Manager`_, which is then used to install msl packages (equipment, qt, loadlib, io, and network,
-all from the master branch) and their dependencies.
+* `MSL Package Manager`_, which is then used to install msl packages (equipment, qt, loadlib, io, and network, all from the master branch) and their dependencies.
 
 Other requirements
 ------------------
