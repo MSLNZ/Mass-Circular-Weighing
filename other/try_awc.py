@@ -6,8 +6,6 @@ import sys
 from msl.qt import application, excepthook
 
 from mass_circular_weighing.configuration import Configuration
-from mass_circular_weighing.routines.circ_weigh_class import CircWeigh
-
 
 sys.excepthook = excepthook
 gui = application()
