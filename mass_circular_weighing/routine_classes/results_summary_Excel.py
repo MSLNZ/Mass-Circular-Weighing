@@ -264,9 +264,10 @@ class ExcelSummaryWorkbook(object):
                     ]
 
                     try:
-                        # add pressures if recorded - need to check this!
-                        p = weighdata.metadata.get("Pressure (hPa)")
+                        p = weighdata.metadata.get("Pressure (hPa)").split(" to ")
                         data_list += [p[0], p[1]]
+                    except AttributeError:
+                        data_list += ["", ""]
                     except TypeError:
                         data_list += ["", ""]
 
