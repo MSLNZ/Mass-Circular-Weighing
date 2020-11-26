@@ -8,15 +8,18 @@ Weighings are performed using the method of circular weighing described in
 <https://www.callaghaninnovation.govt.nz/general-approach-comparisons-presence-drift>`_.
 
 
-
 Install
 -------
 
-To install Mass-Circular-Weighing, run:
+To install Mass-Circular-Weighing, first install `MSL Package Manager`_,
+then use the Package Manager to install Mass-Circular-Weighing:
 
 .. code-block:: console
 
-   pip install mass-circular-weighing
+   pip install msl-package-manager
+   msl install mass-circular-weighing
+
+These two commands should install the program and all its dependencies as needed.
 
 Dependencies
 ++++++++++++
@@ -26,7 +29,8 @@ Dependencies
 * comtypes_
 * tabulate_ (for LaTeX output)
 * PyQt5_
-* `MSL Package Manager`_, which is then used to install msl packages (equipment, qt, loadlib, io, and network, all from the master branch) and their dependencies.
+* `MSL Package Manager`_, which is then used to install msl packages
+  (equipment, qt, loadlib, io, and network) and their dependencies.
 
 Other requirements
 ------------------
@@ -37,7 +41,6 @@ which are stored on the I: drive in I:\\MSL\\Private\\MAP\\Equipment register.
 To enable ambient logging (e.g. of Omega loggers) via Emile's LabVIEW server, run LVRTE2010std.exe from
 I:\MSL\Shared\Temperature\LabVIEW RuntimeEngines.
 This install will require administrator rights on a Callaghan Innovation computer.
-
 
 
 Documentation
