@@ -5,7 +5,7 @@ import xlrd
 import openpyxl
 import os
 
-from msl.qt import QtWidgets, QtCore, io, prompt, Signal, Slot
+from msl.qt import QtWidgets, QtCore, utils, prompt, Signal, Slot
 
 from ...log import log
 
@@ -87,7 +87,7 @@ class SchemeTable(QtWidgets.QTableWidget):
         self.removeRow(row)
 
     def dragEnterEvent(self, event):
-        paths = io.get_drag_enter_paths(event, pattern='*.xls*')
+        paths = utils.drag_drop_paths(event, pattern='*.xls*')
         if paths:
             self.scheme_path = paths[0]
             if len(paths) > 1:

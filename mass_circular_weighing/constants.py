@@ -22,10 +22,10 @@ local_backup = r'C:\CircularWeighingData'
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 config_default = os.path.join(ROOT_DIR, r'examples\sample_config.xml')
 
-save_folder_default = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
+save_folder_default = r'G:\My Drive'
 sample_data_folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
 mass_folder = r'I:\MSL\Private\Mass'
-H_drive = r'H:'
+mydrive = r'G:\My Drive'
 
 job_default = ""
 client_default = ""
