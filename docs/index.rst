@@ -18,8 +18,14 @@ Getting Started
 Here's a quick list of the steps in the program.
 More information about the various parts of the program are provided in the links.
 
-1. :ref:`install` the program or download the repository
-2. Run show-gui (or run the executable version)
+1. :ref:`install` the program or clone the repository
+2. In Python, run
+
+.. code-block:: python
+
+   import mass_circular_weighing as mcw
+   mcw.show_gui()
+
 3. Load a *config.xml* file and/or edit the example config file using the edit config button
 
         For each calibration, a *config.xml* file is needed which follows the format described in MSL-Equipment_.

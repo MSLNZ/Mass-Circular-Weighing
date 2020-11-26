@@ -3,11 +3,15 @@
 Install
 =======
 
-To install Mass-Circular-Weighing, run:
+To install Mass-Circular-Weighing, first install `MSL Package Manager`_,
+then use the Package Manager to install Mass-Circular-Weighing:
 
 .. code-block:: console
 
-   pip install mass-circular-weighing
+   pip install msl-package-manager
+   msl install mass-circular-weighing
+
+These two commands should install the program and all its dependencies as needed.
 
 Dependencies
 ------------
@@ -17,8 +21,8 @@ Dependencies
 * comtypes_
 * tabulate_ (for LaTeX output)
 * PyQt5_
-* `MSL Package Manager`_, which is then used to install equipment, qt, loadlib, io, and network
-  (all from the master branch) and their dependencies.
+* `MSL Package Manager`_, which can be used to install msl-equipment, -qt, -loadlib, -io, and -network,
+  and any dependencies.
 
 Other requirements
 ------------------
