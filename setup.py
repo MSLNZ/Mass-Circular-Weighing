@@ -165,7 +165,8 @@ setup(
     author=fetch_init('__author__'),
     author_email='info@measurement.govt.nz',
     url='https://github.com/MSLNZ/mass-circular-weighing',
-    description='Write a short description about mass-circular-weighing here',
+    description='Mass-Circular-Weighing is a Python program intended for the calibration of masses '
+                'at the Measurement Standards Laboratory of New Zealand.',
     long_description=read('README.rst'),
     platforms='any',
     license='MIT',
@@ -180,6 +181,7 @@ setup(
     entry_points={
         'console_scripts': [
             'show-gui = mass_circular_weighing.gui.gui:show_gui',
+            'poll-omega-logger = mass_circular_weighing.routines.poll_omega_logger:poll_omega_logger'
         ],
     },
 )
