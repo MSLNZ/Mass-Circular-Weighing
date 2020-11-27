@@ -4,8 +4,8 @@ Note that calibrated values are returned by default.
 """
 import logging
 
-from ..constants import IN_DEGREES_C
-from ..equip import LabEnviron64
+from mass_circular_weighing.constants import IN_DEGREES_C
+from mass_circular_weighing.equip import LabEnviron64
 
 logging.basicConfig(level=logging.DEBUG)
 
