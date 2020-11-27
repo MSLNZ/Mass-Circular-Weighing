@@ -3,7 +3,7 @@ Class for a Mettler Toledo balance with a computer interface
 """
 from time import perf_counter
 
-from msl.equipment import MSLTimeoutError
+from msl.equipment import MSLTimeoutError, MSLConnectionError
 from msl.qt import prompt, application
 
 from ..log import log
@@ -24,17 +24,26 @@ class MettlerToledo(Balance):
             True if reset balance desired
         """
         super().__init__(record)
-        self.intcaltimeout = self.record.connection.properties.get('intcaltimeout',30)
-        self.connection = self.record.connect()
-        if reset:
-            self.reset()
-        while True:
-            r = self._query("")
-            if r.strip("\r") == "ES":
+        self.intcaltimeout = self.record.connection.properties.get('intcaltimeout', 30)
+
+        ok = True
+        while ok:
+            try:
+                self.connection = self.record.connect()
+
+                if reset:
+                    self.reset()
+                while True:
+                    r = self._query("")
+                    if r.strip("\r") == "ES":
+                        break
+                assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
+                    "Serial mismatch: expected "+str(self.record.serial)+" but received "+str(self.get_serial())
+                    # prints error if false
                 break
-        assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
-            "Serial mismatch: expected "+str(self.record.serial)+" but received "+str(self.get_serial())
-            # prints error if false
+
+            except MSLConnectionError:
+                ok = prompt.ok_cancel("Please connect balance to continue")
 
     @property
     def mode(self):
