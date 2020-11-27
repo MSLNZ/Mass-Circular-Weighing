@@ -4,11 +4,12 @@ Test communications with a Mettler Toledo balance by performing a repeatability 
 
 from time import sleep
 
+from mass_circular_weighing.constants import config_default
 from mass_circular_weighing.configuration import Configuration
 from mass_circular_weighing.equip.mettler import MettlerToledo
 
 
-cfg = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\config.xml'
+cfg = config_default
 
 app = Configuration(cfg)
 

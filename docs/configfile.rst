@@ -11,8 +11,7 @@ which balances and standard mass sets are available, limits on ambient condition
 and 'housekeeping' details for the particular calibration (job number, client, client masses etc).
 
 To set up a *config.xml* file for the :ref:`mass-circular-weighing-welcome` program, a template is provided below
-with some explanation of the structure and tags.  At MSL this sample *config.xml* file can be found at
-I:\\MSL\\Private\\Mass\\transfer\\Balance Software\\Sample Data\\sample_config.xml
+with some explanation of the structure and tags.  A sample *config.xml* file can be found in examples/sample_config.xml.
 
 
 .. code-block:: xml
@@ -21,7 +20,7 @@ I:\\MSL\\Private\\Mass\\transfer\\Balance Software\\Sample Data\\sample_config.x
       <msl>
 
         <!-- Specify client-specific information. -->
-        <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\Job</save_folder>
+        <save_folder>I:\MSL\Private\Mass\Sample Data\Job</save_folder>
         <!-- The parent folder in which all data and analysis files are saved -->
         <job>job</job>
         <!-- The MSL job code for the calibration -->
@@ -48,13 +47,6 @@ I:\\MSL\\Private\\Mass\\transfer\\Balance Software\\Sample Data\\sample_config.x
         <!-- Specify all balances available for weighings. Details here must match the Balance register entries -->
         <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
         <equipment alias="AW-demo" manufacturer="Mettler Toledo" model="Test_AW"/>
-        <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPR604"/>
-        <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
-        <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
-        <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
-        <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
-        <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
-        <equipment alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
 
         <!-- Specify the limits for ambient conditions to begin weighing. -->
         <min_temp units="C">18.1</min_temp>
@@ -79,11 +71,11 @@ I:\\MSL\\Private\\Mass\\transfer\\Balance Software\\Sample Data\\sample_config.x
         <!-- Specify all standard sets available for weighing analysis using individual tags such as <MET19A>.
         Whichever tags are used here must also be used when specifying the std_set and check_set.. -->
         <standards>
-              <MET19A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19A.set</MET19A>
-              <MET19B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19B.set</MET19B>
-              <MET16A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16A.set</MET16A>
-              <MET16B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16B.set</MET16B>
-              <CUSTOM>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\CUSTOM.set</CUSTOM>
+              <MET19A>I:\MSL\Private\Mass\Sample Data\MET19A.set</MET19A>
+              <MET19B>I:\MSL\Private\Mass\Sample Data\MET19B.set</MET19B>
+              <MET16A>I:\MSL\Private\Mass\Sample Data\MET16A.set</MET16A>
+              <MET16B>I:\MSL\Private\Mass\Sample Data\MET16B.set</MET16B>
+              <CUSTOM>I:\MSL\Private\Mass\Sample Data\CUSTOM.set</CUSTOM>
         </standards>
 
         <!-- Specify the Equipment-Register Databases to load equipment records from.

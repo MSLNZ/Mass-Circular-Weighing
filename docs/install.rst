@@ -3,8 +3,8 @@
 Install
 =======
 
-To install Mass-Circular-Weighing, first install `MSL Package Manager`_,
-then use the Package Manager to install Mass-Circular-Weighing:
+To install **Mass-Circular-Weighing**, first install `MSL Package Manager`_,
+then use the Package Manager to install **Mass-Circular-Weighing**:
 
 .. code-block:: console
 

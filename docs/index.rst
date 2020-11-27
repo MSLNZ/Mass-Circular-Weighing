@@ -21,10 +21,10 @@ More information about the various parts of the program are provided in the link
 1. :ref:`install` the program or clone the repository
 2. In Python, run
 
-.. code-block:: python
+.. code-block:: pycon
 
-   import mass_circular_weighing as mcw
-   mcw.show_gui()
+   >>> import mass_circular_weighing as mcw
+   >>> mcw.show_gui()
 
 3. Load a *config.xml* file and/or edit the example config file using the edit config button
 
@@ -56,6 +56,7 @@ Contents
    Equipment Registers <equip_registers>
    Configuration File <configfile>
    Scheme Table <scheme_table>
+   API Documentation <api>
    License <license>
    Authors <authors>
    Release Notes <changelog>
