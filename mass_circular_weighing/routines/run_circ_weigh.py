@@ -34,7 +34,7 @@ def check_for_existing_weighdata(folder, url, se):
         msl.io root object with a group for the given scheme entry in the main group 'Circular Weighings'
     """
     if os.path.isfile(url):
-        existing_root = read(url, encoding='utf-8')
+        existing_root = read(url)
         if not os.path.exists(folder +"\\backups\\"):
             os.makedirs(folder+"\\backups\\")
         new_index = len(os.listdir(folder + "\\backups\\"))  # counts number of files in backup folder
