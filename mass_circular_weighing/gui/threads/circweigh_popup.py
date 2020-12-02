@@ -71,7 +71,7 @@ class WeighingWorker(Worker):
                 ok = weighanalysis.metadata.get('Acceptance met?')
                 if ok:
                     self.good_runs += 1
-                elif 'aw' in self.bal.mode and not weighanalysis.metadata.get['Exclude?']:
+                elif 'aw' in self.bal.mode and not weighanalysis.metadata.get('Exclude?'):
                     log.warning('Weighing acceptable as part of set of automatic weighings only')
                     self.good_runs += 1
                 else:

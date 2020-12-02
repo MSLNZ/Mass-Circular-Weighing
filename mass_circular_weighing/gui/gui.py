@@ -95,7 +95,7 @@ class MCWGui(QtWidgets.QWidget):
             return None
 
         scheme_entry = self.schemetable.cellWidget(row, 0).text()
-        root = read(url, encoding='utf-8')
+        root = read(url)
 
         i = 0
         good_runs = 0
@@ -110,7 +110,7 @@ class MCWGui(QtWidgets.QWidget):
                         if ok:
                             # print('Weighing accepted')
                             good_runs += 1
-                        elif not existing_analysis.metadata.get['Exclude?']:
+                        elif not existing_analysis.metadata.get('Exclude?'):
                             # print('Weighing outside acceptance but allowed')
                             good_runs += 1
                     except:
