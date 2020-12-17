@@ -21,7 +21,7 @@ for logger in [m2]:
         print('Initial ambient conditions: ' + logger + ', sensor ' + str(sensor))
         date_start, t_start, rh_start = dll.get_t_rh_now(logger, sensor)
         # t_start, rh_start = dll.get_t_rh_during(logger, sensor, datetime(2020, 3, 17))
-        print(t_start, rh_start)
+        print(datetime.now(), round(t_start, 2), round(rh_start, 2))
 
 
 

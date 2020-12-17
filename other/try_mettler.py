@@ -13,12 +13,11 @@ cfg = config_default
 
 app = Configuration(cfg)
 
-bal, mode = app.get_bal_instance('K_C')
+bal, mode = app.get_bal_instance('LUCY')
 
 print(bal.unit)
 print(bal.mode)
 print(bal.get_serial())
-
 
 
 zeroes = []
@@ -26,18 +25,24 @@ masses = []
 bal.load_bal('None', 1)
 bal.zero_bal()
 sleep(3)
+# bal.scale_adjust()
+# sleep(3)
+
+bal.load_bal('None', 1)
 z = bal.get_mass_stable('')
 zeroes.append(z)
 bal.unload_bal('None', 1)
 
-for i in range(10):
+for i in range(11):  # added an extra loading to exercise the balance
     bal.load_bal('Mass', 1)
     m = bal.get_mass_stable(str(i))
     masses.append(m)
+    print(m)
     bal.unload_bal('Mass', 1)
     bal.load_bal('None', 1)
     z = bal.get_mass_stable('')
     zeroes.append(z)
+    print(z)
     bal.unload_bal('None', 1)
 
 
@@ -49,10 +54,3 @@ for z in zeroes:
 
 
 bal.connection.disconnect()
-
-
-
-# bal.scale_adjust()
-'''
-bal.tare_bal()
-'''
