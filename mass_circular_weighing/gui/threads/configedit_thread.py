@@ -1,3 +1,6 @@
+"""
+A thread to pop-up the Config Editor from the main gui window
+"""
 from msl.qt import Thread, Worker, Signal, QtCore, QtWidgets
 
 from ..widgets.config_editor import ConfigEditor

@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from mass_circular_weighing.routines.circ_weigh_class import CircWeigh
+from mass_circular_weighing.routine_classes.circ_weigh_class import CircWeigh
 
 # testing CircWeigh class using data from drift paper
 se = '1a 1b 1c 1d'

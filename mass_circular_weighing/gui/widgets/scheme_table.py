@@ -1,7 +1,11 @@
-import xlrd, xlwt
+"""
+A tabular display of the weighing scheme, which can import (by drag-n-drop) and export (to xlsx) Excel files.
+"""
+import xlrd
+import openpyxl
 import os
 
-from msl.qt import QtWidgets, QtCore, io, prompt, Signal, Slot
+from msl.qt import QtWidgets, QtCore, utils, prompt, Signal, Slot
 
 from ...log import log
 
@@ -83,7 +87,7 @@ class SchemeTable(QtWidgets.QTableWidget):
         self.removeRow(row)
 
     def dragEnterEvent(self, event):
-        paths = io.get_drag_enter_paths(event, pattern='*.xls*')
+        paths = utils.drag_drop_paths(event, pattern='*.xls*')
         if paths:
             self.scheme_path = paths[0]
             if len(paths) > 1:
@@ -126,6 +130,13 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         log.info('Scheme loaded from ' + str(self.scheme_path))
 
+        # check format is updated to xlsx
+        if '.xlsx' in os.path.basename(self.scheme_path):
+            return
+        elif '.xls' in os.path.basename(self.scheme_path):
+            self.save_scheme(os.path.dirname(self.scheme_path), os.path.basename(self.scheme_path)+'x')
+            return
+
     def check_scheme_entries(self, cfg):
         for i in range(self.rowCount()):
             try:
@@ -148,24 +159,25 @@ class SchemeTable(QtWidgets.QTableWidget):
         log.info('Checked all scheme entries')
 
     def save_scheme(self, folder, filename):
+        # updated to output as xlsx
         if not os.path.exists(folder):
             os.makedirs(folder)
 
-        path = folder + "\\" + filename
+        path = os.path.join(folder, filename)
 
-        workbook = xlwt.Workbook()
-        sheet = workbook.add_sheet('Scheme')
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Scheme"
         header = ['Weight groups', 'Nominal mass (g)', 'Balance alias', '# runs']
-        for j, text in enumerate(header):
-            sheet.write(0, j, text)
+        sheet.append(header)
 
         for row in range(self.rowCount()):
             # scheme_entry_row = [scheme_entry, nominal, bal_alias, num_runs]
             try:
-                sheet.write(row+1, 0, self.cellWidget(row, 0).text())
-                sheet.write(row+1, 1, self.cellWidget(row, 1).text())
-                sheet.write(row+1, 2, self.cellWidget(row, 2).currentText())
-                sheet.write(row+1, 3, self.cellWidget(row, 3).text())
+                sheet.cell(row=row+2, column=1, value=self.cellWidget(row, 0).text())
+                sheet.cell(row=row+2, column=2, value=self.cellWidget(row, 1).text())
+                sheet.cell(row=row+2, column=3, value=self.cellWidget(row, 2).currentText())
+                sheet.cell(row=row+2, column=4, value=self.cellWidget(row, 3).text())
 
             except AttributeError:
                 pass  #  log.error('Incomplete data in selected row')

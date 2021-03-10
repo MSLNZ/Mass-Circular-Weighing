@@ -8,25 +8,29 @@ Weighings are performed using the method of circular weighing described in
 <https://www.callaghaninnovation.govt.nz/general-approach-comparisons-presence-drift>`_.
 
 
-
 Install
 -------
 
-To install Mass-Circular-Weighing, run:
+To install Mass-Circular-Weighing, first install `MSL Package Manager`_,
+then use the Package Manager to install Mass-Circular-Weighing:
 
 .. code-block:: console
 
-   pip install mass-circular-weighing
+   pip install msl-package-manager
+   msl install mass-circular-weighing
+
+These two commands should install the program and all its dependencies as needed.
 
 Dependencies
 ++++++++++++
 * Python 3.6+
 * numpy_
-* xlwt_
+* xlwt_, xlrd_ and openpyxl_
 * comtypes_
+* tabulate_ (for LaTeX output)
 * PyQt5_
-* `MSL Package Manager`_, which is then used to install equipment, qt, loadlib, io, and network
-  (all from the master branch) and their dependencies.
+* `MSL Package Manager`_, which is then used to install msl packages
+  (equipment, qt, loadlib, io, and network) and their dependencies.
 
 Other requirements
 ------------------
@@ -39,14 +43,17 @@ I:\MSL\Shared\Temperature\LabVIEW RuntimeEngines.
 This install will require administrator rights on a Callaghan Innovation computer.
 
 
-
 Documentation
 -------------
-The documentation for **Mass-Circular-Weighing** can be found here (link to be added).
+The documentation for **Mass-Circular-Weighing** can be found here_.
 
 
 .. _numpy: https://www.numpy.org/
 .. _xlwt: https://pypi.org/project/xlwt/
+.. _xlrd: https://pypi.org/project/xlrd/
+.. _openpyxl: https://pypi.org/project/openpyxl/
 .. _comtypes: https://pypi.org/project/comtypes/
+.. _tabulate: https://pypi.org/project/tabulate/
 .. _PyQt5: https://pypi.org/project/PyQt5/
 .. _MSL Package Manager: http://msl-package-manager.readthedocs.io/en/latest/?badge=latest
+.. _here: https://github.com/MSLNZ/Mass-Circular-Weighing/blob/master/docs/index.rst

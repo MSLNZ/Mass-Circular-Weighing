@@ -1,4 +1,8 @@
-import sys, os
+"""
+The main gui window and overall interactive program control
+"""
+import sys
+import os
 
 from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot
 from msl.io import read
@@ -20,7 +24,7 @@ sys.excepthook = excepthook
 
 class MCWGui(QtWidgets.QWidget):
 
-    def __init__(self): # could ask user to load config file here?
+    def __init__(self):
         """A class for the mass circular weighing main GUI window"""
         super().__init__()
 
@@ -45,6 +49,13 @@ class MCWGui(QtWidgets.QWidget):
         layout.addWidget(central_panel_group, 5)
         layout.addWidget(Logger(fmt='%(message)s'), 3)
         self.setLayout(layout)
+
+    def closeEvent(self, event):
+        try:
+            self.mass_thread.clean_up()  # closes the final mass calculation window if it's still open
+        except AttributeError:
+            pass
+        super().closeEvent(event)
 
     def make_table_panel(self, ):
         check_ses = Button(text='Check scheme entries', left_click=self.check_scheme, )
@@ -84,7 +95,7 @@ class MCWGui(QtWidgets.QWidget):
             return None
 
         scheme_entry = self.schemetable.cellWidget(row, 0).text()
-        root = read(url, encoding='utf-8')
+        root = read(url)
 
         i = 0
         good_runs = 0
@@ -99,7 +110,7 @@ class MCWGui(QtWidgets.QWidget):
                         if ok:
                             # print('Weighing accepted')
                             good_runs += 1
-                        elif not existing_analysis.metadata.get['Exclude?']:
+                        elif not existing_analysis.metadata.get('Exclude?'):
                             # print('Weighing outside acceptance but allowed')
                             good_runs += 1
                     except:
@@ -123,7 +134,7 @@ class MCWGui(QtWidgets.QWidget):
 
     def save_scheme(self, ):
         folder = self.housekeeping.cfg.folder
-        filename = self.housekeeping.cfg.client + '_Scheme.xls'
+        filename = self.housekeeping.cfg.client + '_Scheme.xlsx'
         self.schemetable.save_scheme(folder, filename)
 
     def get_se_row(self, ):

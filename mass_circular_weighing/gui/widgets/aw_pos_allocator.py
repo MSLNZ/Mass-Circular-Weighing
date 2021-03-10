@@ -1,8 +1,10 @@
+"""
+The Allocator window allows the operator to specify positions for each weight group, which positions to centre (if any),
+and the position to be used for balance self-calibration (if desired).
+"""
 import numpy as np
 
-from msl.qt import QtWidgets, Button, QtCore
-
-from .browse import label
+from msl.qt import QtWidgets, Button
 
 
 class AllocatorDialog(QtWidgets.QDialog):
@@ -68,7 +70,7 @@ class AllocatorDialog(QtWidgets.QDialog):
         # centring and self adjustment parameters
         init_params = QtWidgets.QWidget()
         self.num_centrings = QtWidgets.QSpinBox()
-        self.num_centrings.setValue(5)
+        self.num_centrings.setValue(4)
         self.cal_pos_box = QtWidgets.QSpinBox()
         self.cal_pos_box.setRange(1, num_pos)
         self.cal_pos_box.setValue(self.cal_pos)

@@ -1,7 +1,9 @@
-'''Class for Mettler Toledo Balance with computer interface'''
+"""
+Class for a Mettler Toledo balance with a computer interface
+"""
 from time import perf_counter
 
-from msl.equipment import MSLTimeoutError
+from msl.equipment import MSLTimeoutError, MSLConnectionError
 from msl.qt import prompt, application
 
 from ..log import log
@@ -22,13 +24,26 @@ class MettlerToledo(Balance):
             True if reset balance desired
         """
         super().__init__(record)
-        self.intcaltimeout = self.record.connection.properties.get('intcaltimeout',30)
-        self.connection = self.record.connect()
-        if reset:
-            self.reset()
-        assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
-            "Serial mismatch: expected "+str(self.record.serial)+" but received "+str(self.get_serial())
-            # prints error if false
+        self.intcaltimeout = self.record.connection.properties.get('intcaltimeout', 30)
+
+        ok = True
+        while ok:
+            try:
+                self.connection = self.record.connect()
+
+                if reset:
+                    self.reset()
+                while True:
+                    r = self._query("")
+                    if r.strip("\r") == "ES":
+                        break
+                assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
+                    "Serial mismatch: expected "+str(self.record.serial)+" but received "+str(self.get_serial())
+                    # prints error if false
+                break
+
+            except MSLConnectionError:
+                ok = prompt.ok_cancel("Please connect balance to continue")
 
     @property
     def mode(self):
@@ -128,7 +143,7 @@ class MettlerToledo(Balance):
         float
             mass in unit set for balance
         """
-        while not self.want_abort:
+        if not self.want_abort:
             log.info('Waiting for stable reading for '+mass)
             readings = []
             t0 = perf_counter()
@@ -179,7 +194,8 @@ class MettlerToledo(Balance):
     def _raise_error(self, errorkey):
         raise ValueError(ERRORCODES.get(errorkey,'Unknown serial communication error: {}'.format(errorkey)))
 
-
+    def close_connection(self):
+        self.connection.disconnect()
 
 
 ERRORCODES = {

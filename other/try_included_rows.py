@@ -1,3 +1,7 @@
+"""
+A helper script for testing collation of data.
+This script can be used to collate weighings from selected scheme entries only.
+"""
 import numpy as np
 import sys
 

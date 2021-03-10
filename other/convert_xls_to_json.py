@@ -1,10 +1,14 @@
+"""
+A helper script to convert weighing data from the Excel-with-VBA circular weighing program into json format
+for including in the final mass calculation.  Ambient conditions are captured as part of the conversion.
+"""
 import os
 import numpy as np
 
 from msl.io import ExcelReader
 
 from mass_circular_weighing import __version__
-from mass_circular_weighing.routines.circ_weigh_class import CircWeigh
+from mass_circular_weighing.routine_classes.circ_weigh_class import CircWeigh
 from mass_circular_weighing.routines.run_circ_weigh import check_for_existing_weighdata, analyse_weighing
 from mass_circular_weighing.configuration import Configuration
 from mass_circular_weighing.constants import IN_DEGREES_C
@@ -22,7 +26,7 @@ cols = [
 cfg_path = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\Demo_Set\J00712_config.xml'
 cfg = Configuration(cfg_path)
 bal_alias = "AT106"
-omega = cfg.get_omega_instance(bal_alias)
+omega = cfg.get_ambientlogger_info(bal_alias)
 
 folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\Demo_Set\AT106 Weighings'
 files = [

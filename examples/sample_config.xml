@@ -2,13 +2,13 @@
   <msl>
 
     <!-- Specify client-specific information. -->
-    <save_folder>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\Job</save_folder>
+    <save_folder>G:\My Drive</save_folder>
     <!-- The parent folder in which all data and analysis files are saved -->
     <job>job</job>
     <!-- The MSL job code for the calibration -->
     <client>client</client>
     <!-- The name of the client. Files will be created with this name inside the parent folder during the calibration process -->
-    <client_masses>1 2 5 10 20 50 100 200 500 1000 2000 5000 10000</client_masses>
+    <client_masses>1 2 5 10 20 50 100 200 200d 500 1000 2000 5000 10000</client_masses>
     <!-- A list of client masses separated only by spaces, in any order -->
     <std_set>MET19A</std_set>
     <!-- The reference set used as standards in the weighing scheme.
@@ -32,10 +32,19 @@
     <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPR604"/>
     <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
     <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
+    <equipment alias="AX1006" manufacturer="Mettler Toledo" model="AX1006"/>
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
+    <equipment alias="XPE505C" manufacturer="Mettler Toledo" model="XPE505C"/>
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
     <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
     <equipment alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
+
+    <!-- Specify Arduino information -->
+    <equipment alias="Arduino-XPE505C" manufacturer="Arduino" model="MEGA2560" serial="95730333238351F0A011"/>
+
+    <!-- Specify Vaisala ambient monitoring equipment available for weighings. -->
+    <equipment alias="AX10005-Vaisala-K1510011" manufacturer="Vaisala" model="PTU303" serial="K1510011"/>
+    <equipment alias="AX1006-Vaisala-M2430306" manufacturer="Vaisala" model="PTU303" serial="M2430306"/>
 
     <!-- Specify the limits for ambient conditions to begin weighing. -->
     <min_temp units="C">18.1</min_temp>
@@ -50,7 +59,7 @@
     <!-- Specify where to find acceptance limits for circular weighing data.
     (i.e. specify the path to the Balance register, which should not change) -->
     <acceptance_criteria>
-          <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
+          <path>G:\Shared drives\MSL - MAP\Equipment register\Balance register.xlsx</path>
           <sheet>AcceptanceCriteria</sheet>
           <EXCL>3</EXCL> <!-- criterion for excluding a single weighing within an automatic weighing sequence
                             from the final averaging (and from any tally of happy weighings).
@@ -60,11 +69,11 @@
     <!-- Specify all standard sets available for weighing analysis using individual tags such as <MET19A>.
     Whichever tags are used here must also be used when specifying the std_set and check_set.. -->
     <standards>
-          <MET19A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19A.set</MET19A>
-          <MET19B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET19B.set</MET19B>
-          <MET16A>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16A.set</MET16A>
-          <MET16B>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\MET16B.set</MET16B>
-          <CUSTOM>I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\CUSTOM.set</CUSTOM>
+          <MET19A>G:\Shared drives\MSL - MAP\MASS_setfiles\MET19A.set</MET19A>
+          <MET19B>G:\Shared drives\MSL - MAP\MASS_setfiles\MET19B.set</MET19B>
+          <MET16A>G:\Shared drives\MSL - MAP\MASS_setfiles\MET16A.set</MET16A>
+          <MET16B>G:\Shared drives\MSL - MAP\MASS_setfiles\MET16B.set</MET16B>
+          <CUSTOM>G:\Shared drives\MSL - MAP\MASS_setfiles\CUSTOM.set</CUSTOM>
     </standards>
 
     <!-- Specify the Equipment-Register Databases to load equipment records from.
@@ -73,14 +82,14 @@
     <registers>
       <register
               team="M&amp;P"
-              user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, address">
-          <path>I:\MSL\Private\MAP\Equipment register\Balance register.xlsx</path>
+              user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution, pos, handler">
+          <path>G:\Shared drives\MSL - MAP\Equipment register\Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>
 
       <register team="M&amp;P">
-          <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
-          <sheet>Equipment</sheet>
+          <path>G:\Shared drives\MSL - MAP\Equipment register\Balance register.xlsx</path>
+          <sheet>AuxiliaryEquip</sheet>
       </register>
     </registers>
 
@@ -89,7 +98,7 @@
     Make sure to specify the correct sheet for the computer in use -->
     <connections>
       <connection>
-        <path>I:\MSL\Private\MAP\Equipment register\Equipment register.xlsx</path>
+        <path>G:\Shared drives\MSL - MAP\Equipment register\Equipment register.xlsx</path>
         <sheet>LenovoX260</sheet>
       </connection>
     </connections>

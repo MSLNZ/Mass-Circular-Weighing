@@ -1,6 +1,11 @@
-# Generic class for a balance without a computer interface
+"""
+Class for any balance without a computer interface.
+Each Balance class instance also holds connection information for the associated ambient monitoring device.
+"""
 import winsound
-from time import sleep
+from time import perf_counter
+
+from msl.qt import application
 
 from ..constants import SUFFIX, FONTSIZE
 from ..log import log
@@ -10,6 +15,9 @@ prompt_thread = PromptThread()
 
 
 class Balance(object):
+
+    _suffix = SUFFIX
+
     def __init__(self, record):
         """Initialise a balance which does not have a computer interface
 
@@ -20,7 +28,8 @@ class Balance(object):
             Requires an MSL.equipment config.xml file
         """
         self.record = record
-        self._suffix = SUFFIX
+        self._ambient_instance = None
+        self._ambient_details = None
         self._want_abort = False
 
         self._unit = record.user_defined['unit']
@@ -40,6 +49,26 @@ class Balance(object):
     @property
     def mode(self):
         return 'mde'
+
+    @property
+    def ambient_instance(self):
+        """Connection information for the ambient_instance logging associated with the balance.
+
+        Returns
+        -------
+        string "OMEGA" or class Vaisala
+        """
+        return self._ambient_instance
+
+    @property
+    def ambient_details(self):
+        """Metadata associated with ambient monitoring
+
+        Returns
+        -------
+        dict of Vaisala or OMEGA alias and limits on ambient conditions
+        """
+        return self._ambient_details
 
     @property
     def unit(self):
@@ -153,6 +182,32 @@ class Balance(object):
     def get_mass_stable(self, mass):
         while not self.want_abort:
             log.info('Waiting for stable reading for '+mass)
-            sleep(self.stable_wait)
+            self.wait_for_elapse(self.stable_wait)
             reading = self.get_mass_instant()
             return reading
+
+    def close_connection(self):
+        pass
+
+    @staticmethod
+    def wait_for_elapse(elapse_time, start_time=None):
+        """Wait for a specified time while allowing other events to be processed
+
+        Parameters
+        ----------
+        elapse_time : int
+            time to wait in seconds
+        start_time : float
+            perf_counter value at start time.
+            If not specified, the timer begins when the function is called.
+        """
+        app = application()
+        if start_time is None:
+            start_time = perf_counter()
+        time = perf_counter() - start_time
+        wait_time = elapse_time - time
+        log.info("Waiting for {} s...".format(round(wait_time, 1)))
+        while time < elapse_time:
+            app.processEvents()
+            time = perf_counter() - start_time
+        log.debug('Wait over, ready for next task')

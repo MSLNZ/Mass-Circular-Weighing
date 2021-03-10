@@ -13,17 +13,20 @@ The program is designed to guide an operator through a mass calibration using el
 automatic weight changers.  This program does not allow for weighings using a beam balance.
 
 
-
 Getting Started
 ---------------
 Here's a quick list of the steps in the program.
 More information about the various parts of the program are provided in the links.
 
-1. :ref:`install` the program
-2. Run show-gui.
-   (or an executable to be produced for software version 1!)
-3. Load a *config.xml* file and/or enter details in the relevant boxes in the Housekeeping panel
-   (this process may be facilitated by a widget at some point in the future)
+1. :ref:`install` the program or clone the repository
+2. In Python, run
+
+.. code-block:: pycon
+
+   >>> import mass_circular_weighing as mcw
+   >>> mcw.show_gui()
+
+3. Load a *config.xml* file and/or edit the example config file using the edit config button
 
         For each calibration, a *config.xml* file is needed which follows the format described in MSL-Equipment_.
         This file holds important information such as
@@ -43,9 +46,6 @@ More information about the various parts of the program are provided in the link
 10. Export a summary file (of all the data, both raw from circular weighings and analysis data)
 
 
-
-
-
 Contents
 ========
 
@@ -56,6 +56,7 @@ Contents
    Equipment Registers <equip_registers>
    Configuration File <configfile>
    Scheme Table <scheme_table>
+   API Documentation <api>
    License <license>
    Authors <authors>
    Release Notes <changelog>

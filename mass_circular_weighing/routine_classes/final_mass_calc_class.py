@@ -17,6 +17,50 @@ def num_to_eng_format(num):
             return eng_num
 
 
+def filter_IDs(ID_list, inputdata):
+    relevant_IDs = []
+    for item in ID_list:
+        if item in inputdata['+ weight group'] or item in inputdata['- weight group']:
+            relevant_IDs.append(item)
+
+    return relevant_IDs
+
+
+def filter_stds(std_masses, inputdata):
+
+    weightgroups = []
+    for i in np.append(inputdata['+ weight group'], inputdata['- weight group']):
+        if '+' in i:
+            for j in i.split('+'):
+                weightgroups.append(j)
+        else:
+            weightgroups.append(i)
+
+    relevant_IDs = []
+    relevant_nominal = []
+    relevant_massvals = []
+    relevant_uncs = []
+
+    for i, item in enumerate(std_masses['weight ID']):
+        if item in weightgroups:
+            relevant_IDs.append(item)
+            relevant_nominal.append(std_masses['nominal (g)'][i])
+            relevant_massvals.append(std_masses['mass values (g)'][i])
+            relevant_uncs.append(std_masses['uncertainties (ug)'][i])
+
+    std_masses_new = {
+        'Set file': std_masses['Set file'],
+        'Set Identifier': std_masses['Set Identifier'],
+        'Calibrated': std_masses['Calibrated'],
+        'nominal (g)': relevant_nominal,
+        'mass values (g)': relevant_massvals,
+        'uncertainties (ug)': relevant_uncs,
+        'weight ID': relevant_IDs,
+    }
+
+    return std_masses_new
+
+
 class FinalMassCalc(object):
 
     def __init__(self, folder, client, client_wt_IDs, check_masses, std_masses, inputdata, nbc=True, corr=None):
@@ -124,7 +168,6 @@ class FinalMassCalc(object):
         self.leastsq_meta['Number of observations'] = self.num_obs
         self.leastsq_meta['Number of unknowns'] = self.num_unknowns
         self.leastsq_meta['Degrees of freedom'] = self.num_obs - self.num_unknowns
-
 
     def parse_inputdata_to_matrices(self, ):
         if self.allmassIDs is None:
@@ -296,7 +339,7 @@ class FinalMassCalc(object):
             elif i >= self.num_client_masses + self.num_check_masses:
                 summarytable[i, 2] = 'Standard'
                 delta = self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses] - self.b[i]
-                summarytable[i, 7] = 'c.f. {} g; {} {}'.format(
+                summarytable[i, 7] = '{} g; {} {}'.format(
                     self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses],
                     DELTA_STR,
                     num_to_eng_format(delta),
@@ -304,7 +347,7 @@ class FinalMassCalc(object):
             else:
                 summarytable[i, 2] = 'Check'
                 delta = self.check_masses['mass values (g)'][i - self.num_client_masses] - self.b[i]
-                summarytable[i, 7] = 'c.f. {} g; {} {}'.format(
+                summarytable[i, 7] = '{} g; {} {}'.format(
                     self.check_masses['mass values (g)'][i - self.num_client_masses],
                     DELTA_STR,
                     num_to_eng_format(delta),
@@ -342,7 +385,7 @@ class FinalMassCalc(object):
                                     metadata={'headers':
                                                   ['Nominal (g)', 'Weight ID', 'Set ID',
                                                    'Mass value (g)', 'Uncertainty (ug)', '95% CI', 'Cov',
-                                                   "c.f. Reference value (g)",
+                                                   "Reference value (g)",
                                                    ]})
 
     def save_to_json_file(self, filesavepath=None, folder=None, client=None ):

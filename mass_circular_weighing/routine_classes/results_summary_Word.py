@@ -1,11 +1,14 @@
+"""
+Results summary in Word format (not currently used)
+"""
 import os
 import xlwt
 
-from msl.loadlib import LoadLibrary #, utils
+from msl.loadlib import LoadLibrary
 from msl.io import read
 
-from .constants import IN_DEGREES_C, MU_STR
-from .log import log
+from ..constants import IN_DEGREES_C, MU_STR
+from ..log import log
 # info = utils.get_com_info()
 # for key, value in info.items():
 #     if 'Microsoft' in value['ProgID']:

@@ -3,7 +3,7 @@ import os
 
 from msl.io import read
 
-from mass_circular_weighing.routines.circ_weigh_class import CircWeigh
+from mass_circular_weighing.routine_classes.circ_weigh_class import CircWeigh
 from mass_circular_weighing.constants import SUFFIX
 
 # testing consistency of CircWeigh analysis and json read

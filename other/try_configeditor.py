@@ -1,3 +1,7 @@
+"""
+A helper script for the development of the ConfigEditor popup window
+"""
+
 import sys
 from msl.qt import application, excepthook
 

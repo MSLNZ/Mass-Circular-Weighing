@@ -7,7 +7,7 @@ from msl.io import read, read_table
 from mass_circular_weighing.configuration import Configuration
 from mass_circular_weighing.constants import MU_STR
 
-from mass_circular_weighing.routines.final_mass_calc_class import FinalMassCalc
+from mass_circular_weighing.routine_classes.final_mass_calc_class import FinalMassCalc
 from mass_circular_weighing.gui.threads.masscalc_popup import filter_stds
 
 

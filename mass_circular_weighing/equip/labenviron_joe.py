@@ -139,7 +139,7 @@ class LabEnviron64(Client64):
             LabEnviron64.LABVIEW_SERVER = server_ip
 
         super(LabEnviron64, self).__init__(
-            tail, append_sys_path=[head, dll_dir], server_ip=LabEnviron64.LABVIEW_SERVER
+            tail.rstrip('c'), append_sys_path=[head, dll_dir], server_ip=LabEnviron64.LABVIEW_SERVER
         )
 
         # LabVIEW timestamps are relative to 1 Jan 1904

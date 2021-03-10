@@ -1,3 +1,6 @@
+"""
+An interactive display of the metadata needed for a mass calibration, as stored in the config.xml file
+"""
 import os
 
 from msl.qt import QtWidgets, Button, Signal
@@ -18,7 +21,7 @@ class Housekeeping(QtWidgets.QWidget):
     def __init__(self):
         super(Housekeeping, self).__init__()
 
-        self.config_io = Browse(config_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file')
+        self.config_io = Browse(config_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.xml')
         self.config_io.textbox.textChanged.connect(self.load_from_config)
         self.edit_config_but = Button(text='Edit config file', left_click=self.edit_config)
 
@@ -127,15 +130,20 @@ class Housekeeping(QtWidgets.QWidget):
         log.debug('Correlations between standards? ' + self.cfg.correlations)
 
         bal_list = []
-        for item in self.cfg.equipment:  # TODO: check that this only adds balances!
-            bal_list.append(item)
+        # NOTE: This script only adds Mettler Toledo or Sartorius balances to the drop-down list
+        for alias, equip in self.cfg.equipment.items():
+            if "mettler" in equip.manufacturer.lower():
+                bal_list.append(alias)
+            if "sartorius" in equip.manufacturer.lower():
+                bal_list.append(alias)
         self.balance_list.emit(bal_list)
 
-        if os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')):
-            scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')
-            self.scheme_file.emit(scheme_path)
-        elif os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')):
+        # trigger automatic loading of weighing scheme
+        if os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')):
             scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')
+            self.scheme_file.emit(scheme_path)
+        elif os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')):
+            scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')
             self.scheme_file.emit(scheme_path)
 
         return True
