@@ -138,9 +138,10 @@ install_requires = [
     'msl-network',
     'PyQt5',
     'comtypes',
+    'requests',  # I don't think this is in any of the other packages by default
     'xlwt',
-    'xlrd',  # could potentially remove this if rewrite methods in scheme_table.py
-    'openpyxl',
+    'xlrd',  # I could potentially remove this if we rewrite methods in scheme_table.py
+    'openpyxl',  # we should be able to only use this one instead of the two above
     'tabulate',  # only required for LaTeX output
 ]
 
