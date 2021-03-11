@@ -1,0 +1,192 @@
+"""
+Collect ambient information from the server
+"""
+import re
+from datetime import datetime
+from subprocess import check_output
+
+import requests
+import numpy as np
+
+from ..log import log
+
+
+# Hardwire the address running the server
+host = '172.16.31.199'  # '172.16.31.199' is CISS33748 (NUC) # '172.16.31.103' is CISS31653 (Laptop)
+port = '1875'
+server_add = ":".join(['http://' + host, port])
+
+
+def get(route, params=None):
+    return requests.get(server_add + route, params=params, timeout=10)
+
+
+def get_t_rh_now(ithx_name, sensor=""):
+    """Gets both temperature and humidity data for the current time (server directly contacts the Omega ithx).
+
+    Parameters
+    ----------
+    ithx_name : :class:`str`
+        The name assigned to the OMEGA iTHX device. For example:
+
+        * 'temperature 1'
+        * 'mass 1'
+        * 'mass 2'
+
+    sensor : :class:`int` or `str`
+        The OMEGA iTHX sensor from which to get the data.
+        Either 1 or 2 for a two-probe device, or an empty string if only one probe (not currently implemented).
+
+    Returns
+    -------
+    :class:`datetime.datetime`
+        The timestamp of the latest recorded value.
+    :class:`float` or :data:`None`
+        The temperature value.
+    :class:`float` or :data:`None`
+        The humidity value.
+    """
+    date_start = datetime.now().replace(microsecond=0).isoformat(sep=' ')
+
+    try:
+        json = get('/now', params={'alias': ithx_name}).json()
+    except Exception as e:
+        json = {}
+        log.error(e)
+        if not ping(host):
+            error = 'The server is currently not pingable at {}. ' \
+                    'Are both computers on the CI network?'.format(host)
+            log.error(error)
+        else:
+            log.error('The server is pingable but not responding to requests. ' 
+                      'Please check ambient monitoring is running.')
+
+    if not json:  # i.e. an empty dictionary is returned
+        log.error("No Omega device available with that alias!")
+        return datetime.now().replace(microsecond=0).isoformat(sep=' '), None, None
+
+    if len(json) > 1:
+        log.warning("More than one device with that alias")  # there should only be one...
+
+    for serial, info in json.items():
+        if json[serial]['error']:
+            log.error(json[serial]['error'])
+        if info['alias'] == ithx_name:
+            t_start = info['temperature' + str(sensor)]
+            rh_start = info['humidity' + str(sensor)]
+            return date_start, t_start, rh_start
+
+
+def get_t_rh_during(ithx_name, sensor="", start=None, end=None):
+    """Gets a list of temperature and humidity values since the specified start time.
+
+    Parameters
+    ----------
+    ithx_name : :class:`str`
+        The name assigned to the OMEGA iTHX device. For example:
+
+        * 'temperature 1'
+        * 'mass 1'
+        * 'mass 2'
+
+    sensor : :class:`int` or `str`
+        The OMEGA iTHX sensor from which to get the data.
+        Either 1 or 2 for a two-probe device, or an empty string if only one probe.
+
+    start : optional
+        Start date and time as an ISO 8601 string (e.g. YYYY-MM-DDThh:mm:ss).
+        If not specified, default is earliest record in database.
+
+    end : optional
+        End date and time as an ISO 8601 string. Default is now.
+
+    Returns
+    -------
+    :class:`numpy.ndarray` or :data:`None`
+        The temperature values
+    :class:`numpy.ndarray` or :data:`None`
+        The humidity values
+    """
+    if end is None:
+        end = datetime.now()
+
+    try:
+        json = get('/fetch',
+                   params={'alias': ithx_name, 'start': start, 'end': end}
+                   ).json()
+    except Exception as e:
+        json = {}
+        log.error(e)
+        if not ping(host):
+            error = 'The server is currently not pingable at {}. ' \
+                    'Are both computers on the CI network?'.format(host)
+            log.error(error)
+        else:
+            log.error('The server is pingable but not responding to requests. ' 
+                      'Please check ambient monitoring is running.')
+
+    if not json:  # i.e. an empty dictionary is returned
+        log.error("No data available for alias {}".format(ithx_name))
+        return None, None
+
+    if len(json) > 1:
+        log.warning("More than one device with that alias")  # there should only be one...
+
+    for serial, info in json.items():
+        if json[serial]['error']:
+            log.error(json[serial]['error'])
+        if info['alias'] == ithx_name:
+            timed_temperatures = info['temperature' + str(sensor)]
+            timed_humidities = info['humidity' + str(sensor)]
+
+            temperatures = np.asarray([a[1] for a in timed_temperatures])
+            humidities = np.asarray([a[1] for a in timed_humidities])
+
+            # sanity check to let the user know why there might not be data in the specified date range
+            if temperatures.size == 0 and humidities.size == 0:
+                error = 'No data available for iTHX={!r}, start={}, end={}.'.format(ithx_name, start, end)
+                log.error(error)
+
+            return temperatures, humidities
+
+
+def ping(host, attempts=3, timeout=1.0):
+    """Ping a device to see if it is available on the network.
+
+    Parameters
+    ----------
+    host : :class:`str`
+        The IP address or hostname of the device to ping.
+    attempts : :class:`int`, optional
+        The maximum number of times to ping the device.
+    timeout : :class:`int`, optional
+        Timeout in seconds to wait for a reply.
+
+    Returns
+    -------
+    :class:`bool`
+        Whether the device is available.
+    """
+    i = 0
+    wait = str(int(timeout*1e3))
+    success_regex = re.compile(r'TTL=\d+', flags=re.MULTILINE)
+    while i < attempts:
+        try:
+            out = check_output(['ping', '-n', '1', '-w', wait, host])
+            if success_regex.search(out.decode()):
+                return True
+        except:
+            return False
+        i += 1
+    return False
+
+
+if __name__ == "__main__":
+
+    print(get_t_rh_during('Mass 1', sensor=2, start="2021-03-11 13:00", end="2021-03-11 14:00"))
+
+    # print(get_t_rh_now('Mass 1', sensor=2))
+    # print(get_t_rh_now('Mass 2', sensor=1))
+    # print(get_t_rh_now('Mass 2', sensor=2))
+    # print(get_t_rh_now('pukeko', sensor=1))
+
