@@ -5,12 +5,12 @@ Note that calibrated values are returned by default.
 import logging
 
 from mass_circular_weighing.constants import IN_DEGREES_C
-from mass_circular_weighing.equip import get_t_rh_now
+from mass_circular_weighing.equip import get_t_rh_now, get_aliases
 
 logging.basicConfig(level=logging.DEBUG)
 
 
-def poll_omega_logger(logger):
+def poll_omega_logger(logger=None):
     """A method to quickly check if an omega logger is online
 
     Parameters
@@ -19,7 +19,15 @@ def poll_omega_logger(logger):
        one of 'mass 1', 'mass 2', 'temperature 1'
 
     """
-    for sensor in [1, 2]:
-        print('Collecting current ambient conditions from {}, sensor {}...'.format(logger, sensor))
-        date_start, t_start, rh_start = get_t_rh_now(logger, sensor=sensor)
-        print("Temperature: {:.2f}{}, Relative humidity: {:.2f} %".format(t_start, IN_DEGREES_C, rh_start))
+    if logger is None:
+        omegas = get_aliases()
+        aliases = [val for key, val in omegas.items()]
+        print("Available omega loggers are: {}".format(", ".join(aliases)))
+        logger = input("Enter alias of omega logger to poll: ")
+
+    if logger:
+        for sensor in [1, 2]:
+            print('Collecting current ambient conditions from {}, sensor {}...'.format(logger, sensor))
+            date_start, t_start, rh_start = get_t_rh_now(logger, sensor=sensor)
+            print("Temperature: {:.2f}{}, Relative humidity: {:.2f} %".format(t_start, IN_DEGREES_C, rh_start))
+

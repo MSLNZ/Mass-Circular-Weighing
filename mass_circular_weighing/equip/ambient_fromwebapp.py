@@ -150,6 +150,23 @@ def get_t_rh_during(ithx_name, sensor="", start=None, end=None):
             return temperatures, humidities
 
 
+def get_aliases():
+    try:
+        json = get('/aliases').json()
+    except Exception as e:
+        json = {}
+        log.error(e)
+        if not ping(host):
+            error = 'The server is currently not pingable at {}. ' \
+                    'Are both computers on the CI network?'.format(host)
+            log.error(error)
+        else:
+            log.error('The server is pingable but not responding to requests. ' 
+                      'Please check ambient monitoring is running.')
+
+    return json
+
+
 def ping(host, attempts=3, timeout=1.0):
     """Ping a device to see if it is available on the network.
 
@@ -179,14 +196,3 @@ def ping(host, attempts=3, timeout=1.0):
             return False
         i += 1
     return False
-
-
-if __name__ == "__main__":
-
-    print(get_t_rh_during('Mass 1', sensor=2, start="2021-03-11 13:00", end="2021-03-11 14:00"))
-
-    # print(get_t_rh_now('Mass 1', sensor=2))
-    # print(get_t_rh_now('Mass 2', sensor=1))
-    # print(get_t_rh_now('Mass 2', sensor=2))
-    # print(get_t_rh_now('pukeko', sensor=1))
-
