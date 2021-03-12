@@ -109,6 +109,8 @@ def test_get_t_rh_during():
 
 
 if __name__ == "__main__":
+    print(ping('172.16.31.199'))  # is running server
+    print(ping('172.16.31.16'))   # is not running server
     test_ping()
     test_get_aliases()
     test_get_t_rh_now()

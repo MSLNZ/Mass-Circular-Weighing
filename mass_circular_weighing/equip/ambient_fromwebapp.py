@@ -21,6 +21,23 @@ def get(route, params=None):
     return requests.get(server_add + route, params=params, timeout=10)
 
 
+def handle_exception(e):
+    """A helper function to handle when get() fails to communicate with the server.
+
+    Parameters
+    ----------
+    e : error
+        the error message
+    """
+    log.error(e)
+    if not ping(host):
+        log.error('The server is currently not pingable at {}. '
+                  'Are both computers on the CI network?'.format(host))
+    else:
+        log.error('The server is pingable but not responding to requests. '
+                  'Please check ambient monitoring is running.')
+
+
 def get_t_rh_now(ithx_name, sensor=""):
     """Gets both temperature and humidity data for the current time (server directly contacts the Omega ithx).
 
@@ -52,14 +69,7 @@ def get_t_rh_now(ithx_name, sensor=""):
         json = get('/now', params={'alias': ithx_name}).json()
     except Exception as e:
         json = {}
-        log.error(e)
-        if not ping(host):
-            error = 'The server is currently not pingable at {}. ' \
-                    'Are both computers on the CI network?'.format(host)
-            log.error(error)
-        else:
-            log.error('The server is pingable but not responding to requests. ' 
-                      'Please check ambient monitoring is running.')
+        handle_exception(e)
 
     if not json:  # i.e. an empty dictionary is returned
         log.error("No Omega device available with that alias!")
@@ -116,14 +126,7 @@ def get_t_rh_during(ithx_name, sensor="", start=None, end=None):
                    ).json()
     except Exception as e:
         json = {}
-        log.error(e)
-        if not ping(host):
-            error = 'The server is currently not pingable at {}. ' \
-                    'Are both computers on the CI network?'.format(host)
-            log.error(error)
-        else:
-            log.error('The server is pingable but not responding to requests. ' 
-                      'Please check ambient monitoring is running.')
+        handle_exception(e)
 
     if not json:  # i.e. an empty dictionary is returned
         log.error("No data available for alias {}".format(ithx_name))
@@ -155,14 +158,7 @@ def get_aliases():
         json = get('/aliases').json()
     except Exception as e:
         json = {}
-        log.error(e)
-        if not ping(host):
-            error = 'The server is currently not pingable at {}. ' \
-                    'Are both computers on the CI network?'.format(host)
-            log.error(error)
-        else:
-            log.error('The server is pingable but not responding to requests. ' 
-                      'Please check ambient monitoring is running.')
+        handle_exception(e)
 
     return json
 
