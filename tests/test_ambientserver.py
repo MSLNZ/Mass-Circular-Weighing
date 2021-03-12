@@ -89,13 +89,18 @@ def test_get_t_rh_during():
     assert hums[-1] == pytest.approx(63.84765033)
 
     # there is no data within the specified date range
-    temps, hums = get_t_rh_during('mass 1', sensor=1, start="2021-03-01 13:00", end="2021-03-01 13:00")# start='2021-2-27 12:00', end='2021-2-28 12:00')
+    temps, hums = get_t_rh_during('mass 1', sensor=1, start="2021-03-01 13:00", end="2021-03-01 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
     assert temps.size == 0
     assert hums.size == 0
 
-    temps, hums = get_t_rh_during('mass 1', sensor=1, start="2010-03-03 13:00", end="2010-04-04 13:00")# start='2021-2-27 12:00', end='2021-2-28 12:00')
+    temps, hums = get_t_rh_during('mass 1', sensor=1, start="2010-03-03 13:00", end="2010-04-04 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
     assert temps.size == 0
     assert hums.size == 0
+
+    # there is no data within the specified date range because start is in the future but end time is now (polls server)
+    temps, hums = get_t_rh_during('mass 1', sensor=1, start="4321-03-01 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
+    assert temps
+    assert hums
 
     # fetch data for a narrow time window
     temps, hums = get_t_rh_during('mass 1', sensor=1, start="2021-03-01 13:00", end="2021-03-01 13:02")

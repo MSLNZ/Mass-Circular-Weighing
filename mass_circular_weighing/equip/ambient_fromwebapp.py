@@ -63,7 +63,7 @@ def get_t_rh_now(ithx_name, sensor=""):
     :class:`float` or :data:`None`
         The humidity value.
     """
-    date_start = datetime.now().replace(microsecond=0).isoformat(sep=' ')
+    date_now = datetime.now().replace(microsecond=0).isoformat(sep=' ')
 
     try:
         json = get('/now', params={'alias': ithx_name}).json()
@@ -82,9 +82,9 @@ def get_t_rh_now(ithx_name, sensor=""):
         if json[serial]['error']:
             log.error(json[serial]['error'])
         if info['alias'] == ithx_name:
-            t_start = info['temperature' + str(sensor)]
-            rh_start = info['humidity' + str(sensor)]
-            return date_start, t_start, rh_start
+            t_now = info['temperature' + str(sensor)]
+            rh_now = info['humidity' + str(sensor)]
+            return date_now, t_now, rh_now
 
 
 def get_t_rh_during(ithx_name, sensor="", start=None, end=None):
@@ -117,9 +117,6 @@ def get_t_rh_during(ithx_name, sensor="", start=None, end=None):
     :class:`numpy.ndarray` or :data:`None`
         The humidity values
     """
-    if end is None:
-        end = datetime.now()
-
     try:
         json = get('/fetch',
                    params={'alias': ithx_name, 'start': start, 'end': end}
@@ -147,8 +144,15 @@ def get_t_rh_during(ithx_name, sensor="", start=None, end=None):
 
             # sanity check to let the user know why there might not be data in the specified date range
             if temperatures.size == 0 and humidities.size == 0:
-                error = 'No data available for iTHX={!r}, start={}, end={}.'.format(ithx_name, start, end)
-                log.error(error)
+                error = 'No data in the database for iTHX={!r}, start={}, end={}.'.format(ithx_name, start, end)
+
+                if end is None:
+                    log.warning(error + ' Collecting current ambient conditions instead.')
+                    date_now, t_now, rh_now = get_t_rh_now(ithx_name, sensor=sensor)
+                    temperatures, humidities = [t_now], [rh_now]
+
+                else:
+                    log.warning(error)
 
             return temperatures, humidities
 
