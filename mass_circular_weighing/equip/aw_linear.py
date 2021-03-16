@@ -7,8 +7,9 @@ from time import sleep
 from . import AWBalCarousel
 from ..log import log
 
-from ..gui.threads.allocator_thread import AllocatorThread
+from ..gui.threads import AllocatorThread, PromptThread
 allocator = AllocatorThread()
+prompt_thread = PromptThread()
 
 
 #TODO: add clean up to close connection to Arduino and leave in Sleep mode
@@ -114,6 +115,23 @@ class AWBalLinear(AWBalCarousel):
             return self.parse_reply(status)
         # if status BAD, set self._want_abort = True (see parent Balance class)
         # TODO: check serial number is correct
+
+    def place_weight(self, mass, pos):
+        """Allow a mass to be placed onto the carrier in position pos.
+
+        Parameters
+        ----------
+        mass : str
+            string of weight group allocated to the position pos
+        pos : int
+            integer of position where mass is to be placed
+        """
+        self.move_to(pos)
+        # TODO: these balances are loaded in the ?? position
+        message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
+        reply = prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
+
+        return reply
 
     def prep_for_scale_adjust(self, cal_pos):
         """Ensures balance is unloaded before commencing scale adjustment.

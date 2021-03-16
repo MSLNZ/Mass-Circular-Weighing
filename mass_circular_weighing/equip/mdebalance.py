@@ -17,6 +17,7 @@ prompt_thread = PromptThread()
 class Balance(object):
 
     _suffix = SUFFIX
+    _fontsize = FONTSIZE
 
     def __init__(self, record):
         """Initialise a balance which does not have a computer interface

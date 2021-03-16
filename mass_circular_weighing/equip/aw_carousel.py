@@ -11,8 +11,9 @@ from msl.qt import application
 from ..log import log
 from .mettler import MettlerToledo, ERRORCODES
 
-from ..gui.threads.allocator_thread import AllocatorThread
+from ..gui.threads import AllocatorThread, PromptThread
 allocator = AllocatorThread()
+prompt_thread = PromptThread()
 
 
 class AWBalCarousel(MettlerToledo):
@@ -178,6 +179,23 @@ class AWBalCarousel(MettlerToledo):
             return None, None, None
 
         return self._positions, pos_to_centre, int(repeats)
+
+    def place_weight(self, mass, pos):
+        """Allow a mass to be placed onto the carrier in position pos.
+
+        Parameters
+        ----------
+        mass : str
+            string of weight group allocated to the position pos
+        pos : int
+            integer of position where mass is to be placed
+        """
+        self.move_to(pos)
+        # these balances are loaded in the top position
+        message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
+        reply = prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
+
+        return reply
 
     def check_loading(self):
         """Tests each position involved in the automatic circular weighing procedure.
