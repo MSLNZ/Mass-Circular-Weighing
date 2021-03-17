@@ -33,6 +33,9 @@ class Balance(object):
         self._ambient_details = None
         self._want_abort = False
 
+        self.want_adjust = True
+        self._is_adjusted = False
+
         self._unit = record.user_defined['unit']
         if not self._unit:
             self.set_unit()
@@ -127,8 +130,8 @@ class Balance(object):
         if not self.want_abort:
             prompt_thread.show('ok_cancel', "Perform internal balance calibration.", font=FONTSIZE,
                                title='Balance Preparation')
-            adjusted = prompt_thread.wait_for_prompt_reply()
-            if not adjusted:
+            self._is_adjusted = prompt_thread.wait_for_prompt_reply()
+            if not self._is_adjusted:
                 self._want_abort = True
 
     def tare_bal(self):
