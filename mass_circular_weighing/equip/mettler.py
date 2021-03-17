@@ -90,6 +90,7 @@ class MettlerToledo(Balance):
                     if c[1] == 'A':
                         print('Balance self-calibration completed successfully')
                         log.info('Balance self-calibration completed successfully')
+                        self._is_adjusted = True
                         return
                     elif c[1] == 'I':
                         self._raise_error('CAL C')
