@@ -63,7 +63,7 @@ class AllocatorDialog(QtWidgets.QDialog):
 
         shuffle = Button(text='Shuffle all weight groups down one position', left_click=self.roll)
         accept = Button(
-            text='Accept all and begin balance initialisation',
+            text='OK', # and begin balance initialisation',
             left_click=self.accept_loading_order
         )
 
