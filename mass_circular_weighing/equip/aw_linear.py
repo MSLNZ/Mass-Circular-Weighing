@@ -192,7 +192,9 @@ class AWBalLinear(AWBalCarousel):
     def check_pos(self, pos):
         self.get_status()
         if pos:
-            if not self.hori_pos == str(pos):
+            if self.hori_pos == str(pos):
+                return True
+            else:
                 log.error("Asked to load mass in position {} but currently at position {}".format(pos, self.hori_pos))
                 return False
 
