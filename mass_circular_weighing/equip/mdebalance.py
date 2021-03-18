@@ -87,6 +87,24 @@ class Balance(object):
     def want_abort(self):
         return self._want_abort
 
+    @property
+    def is_adjusted(self):
+        return self._is_adjusted
+
+    def adjust_scale_if_needed(self):
+        if not self.want_adjust:
+            log.info("Balance self-calibration was not selected")
+        elif self.want_adjust and not self.is_adjusted:
+            ok = self.scale_adjust()
+            if not self.is_adjusted:
+                if ok is None:
+                    log.info("Balance self-calibration was cancelled by operator or by bal.want_abort")
+                    # return None
+                else:
+                    log.warning("Balance self-calibration was not successful.\nContinuing to weighings anyway.")
+        else:
+            log.info("Balance self-calibration was already completed")
+
     def calc_dp(self):
         """Calculates the number of decimal places displayed on the balance for convenient data entry
 
@@ -131,8 +149,8 @@ class Balance(object):
             prompt_thread.show('ok_cancel', "Perform internal balance calibration.", font=FONTSIZE,
                                title='Balance Preparation')
             self._is_adjusted = prompt_thread.wait_for_prompt_reply()
-            if not self._is_adjusted:
-                self._want_abort = True
+            # if not self._is_adjusted:
+            #     self._want_abort = True
 
     def tare_bal(self):
         """Prompts user to tare balance with correct tare load"""

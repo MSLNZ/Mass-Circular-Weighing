@@ -71,6 +71,23 @@ def get_next_run_id(root, scheme_entry):
 
     return run_id
 
+
+def check_bal_initialised(bal, wtgrps):
+    if 'aw' in bal.mode:
+        # use the class method within the AWBalCarousel and AWBalLinear classes
+        # to check that the balance has been initialised correctly
+        positions = bal.initialise_balance(wtgrps)
+        log.debug(str(positions))
+        if positions is None:
+            log.error("Balance initialisation was not completed")
+            return None
+    else:
+        positions = range(1, len(wtgrps) + 1)
+        bal.adjust_scale_if_needed()
+
+    return positions
+
+
 # do_circ_weighing is called in circweigh_popup
 def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                      local_backup_folder=local_backup, **metadata):
@@ -110,20 +127,11 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     metadata['Weighing complete'] = False
 
     weighing = CircWeigh(se)
-    # assign positions to weight groups
-    if 'aw' in bal.mode:
-        if not bal.positions:
-            positions = bal.initialise_balance(weighing.wtgrps)
-            # pops up a window to allocate positions, then begins the check_loading, centring and scale_adjust routines
-            # within the AWBalCarousel and AWBalLinear classes
-            log.debug(str(positions))
-            if positions is None:
-                log.error("Balance initialisation not complete")
-                return None
-        else:
-            positions = bal.positions
-    else:
-        positions = range(1, weighing.num_wtgrps + 1)
+    # check that initialisation has been completed
+    positions = check_bal_initialised(bal=bal, wtgrps=weighing.wtgrps)
+    if positions is None:
+        log.error("Balance initialisation not complete")
+        return None
 
     positionstr = ''
     positiondict = {}

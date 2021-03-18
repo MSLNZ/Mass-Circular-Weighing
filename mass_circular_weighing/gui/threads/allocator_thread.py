@@ -32,7 +32,7 @@ class AllocatorThread(Thread):
         """Popup the allocator Dialog widget"""
         w = AllocatorDialog(args[0], args[1])
         w.exec()
-        self.reply = w.positions, w.pos_to_centre, w.centrings, w.cal_pos, w.want_adjust
+        self.reply = w.positions, w.pos_to_centre, w.centrings, w.cal_pos
         if QtWidgets.QApplication.instance() is not None:
             self.signal_prompt_done.emit()
 
