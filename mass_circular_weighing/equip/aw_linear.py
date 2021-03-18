@@ -128,7 +128,8 @@ class AWBalLinear(AWBalCarousel):
         self.move_to(pos)
         self.loading_position(pos)
         message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
-        reply = prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
+        prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
+        reply = prompt_thread.wait_for_prompt_reply()
 
         return reply
 

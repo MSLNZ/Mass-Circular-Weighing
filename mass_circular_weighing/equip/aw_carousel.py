@@ -183,6 +183,10 @@ class AWBalCarousel(MettlerToledo):
             self._want_abort = True
             return None, None, None
 
+        message = f'Assigned weight groups {wtgrps} to positions {self.positions} respectively'
+        log.info(msg=message)
+        log.info(f"Position for self calibration is position {self.cal_pos}")
+
         return self._positions
 
     def place_weight(self, mass, pos):
@@ -198,7 +202,8 @@ class AWBalCarousel(MettlerToledo):
         self.move_to(pos)
         # these balances are loaded in the top position
         message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
-        reply = prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
+        prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
+        reply = prompt_thread.wait_for_prompt_reply()
 
         return reply
 
