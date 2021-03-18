@@ -577,6 +577,8 @@ class AWBalCarousel(MettlerToledo):
         if not self.lift_pos == lift_position:
             self._raise_error_loaded("LT")
 
+        return True
+
     def load_bal(self, mass, pos):
         """Load the balance with a specified mass in position pos, including appropriate waits to ensure consistent timing.
 
@@ -602,9 +604,7 @@ class AWBalCarousel(MettlerToledo):
             # wait for some time to make all moves same
             self.wait_for_elapse(self._move_time + 5, start_time=t0)
 
-            self.lift_to('weighing', hori_pos=pos)  # this raises an error if it fails to get to the weighing position
-
-            return True
+            return self.lift_to('weighing', hori_pos=pos)  # this raises an error if it fails to get to the weighing position
 
     def unload_bal(self, mass, pos):
         """Unloads mass from pan"""

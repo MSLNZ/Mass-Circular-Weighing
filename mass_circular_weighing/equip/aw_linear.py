@@ -220,7 +220,7 @@ class AWBalLinear(AWBalCarousel):
         print(move_str)
         self.arduino.write(move_str)
         sleep(1)
-        self.handle_lift_reply('W')
+        return self.handle_lift_reply('W')
 
     def raise_handler(self, pos=None):
         """Raises the mass off the pan at the current position
@@ -245,7 +245,7 @@ class AWBalLinear(AWBalCarousel):
         print(move_str)
         self.arduino.write(move_str)
         sleep(1)
-        self.handle_lift_reply('U')
+        return self.handle_lift_reply('U')
 
     def loading_position(self, pos=None):
         """Raises or lowers the carriage so that masses can be placed in the centre at the current position.
@@ -271,7 +271,7 @@ class AWBalLinear(AWBalCarousel):
         print(move_str)
         self.arduino.write(move_str)
         sleep(1)
-        self.handle_lift_reply('L')
+        return self.handle_lift_reply('L')
 
     def lift_to(self, lift_position, hori_pos=None, wait=True):
         """Lowers or raises handler to the lift position specified.
@@ -290,19 +290,22 @@ class AWBalLinear(AWBalCarousel):
             hori_pos = self.hori_pos
 
         if lift_position == 'top':
-            self.raise_handler(pos=hori_pos)
+            return self.raise_handler(pos=hori_pos)
 
         elif lift_position == 'weighing':
             ok = self.lower_handler(pos=hori_pos)
-            if ok and wait:
-                self.wait_for_elapse(self.stable_wait)
+            if ok:
+                if wait:
+                    self.wait_for_elapse(self.stable_wait)
+                return True
 
         elif lift_position == 'loading':
-            self.loading_position(pos=hori_pos)
+            return self.loading_position(pos=hori_pos)
 
         else:
             log.error("Lift position {} not recognised for this handler".format(lift_position))
-            return False
+
+        return False
 
     def handle_lift_reply(self, lift_pos):
         reply = self.wait_for_reply(cxn=self.arduino)
