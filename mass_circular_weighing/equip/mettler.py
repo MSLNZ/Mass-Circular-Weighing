@@ -34,7 +34,9 @@ class MettlerToledo(Balance):
                 if reset:
                     self.reset()
                 while True:
+                    log.debug("...talking to balance...")
                     r = self._query("")
+                    log.debug(f'...received {r}...')
                     if r.strip("\r") == "ES":
                         break
                 assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
