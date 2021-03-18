@@ -12,7 +12,6 @@ allocator = AllocatorThread()
 prompt_thread = PromptThread()
 
 
-#TODO: add clean up to close connection to Arduino and leave in Sleep mode
 class AWBalLinear(AWBalCarousel):
     def __init__(self, record, reset=False, ):
         """Initialise Mettler Toledo Balance,
@@ -117,7 +116,7 @@ class AWBalLinear(AWBalCarousel):
         # TODO: check serial number is correct
 
     def place_weight(self, mass, pos):
-        """Allow a mass to be placed onto the carrier in position pos.
+        """Allow a mass to be placed onto the carrier in position pos using the loading height.
 
         Parameters
         ----------
@@ -127,7 +126,7 @@ class AWBalLinear(AWBalCarousel):
             integer of position where mass is to be placed
         """
         self.move_to(pos)
-        # TODO: these balances are loaded in the ?? position
+        self.loading_position(pos)
         message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
         reply = prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
 
@@ -189,6 +188,13 @@ class AWBalLinear(AWBalCarousel):
             if wait:
                 self.wait_for_elapse(5)
 
+    def check_pos(self, pos):
+        self.get_status()
+        if pos:
+            if not self.hori_pos == str(pos):
+                log.error("Asked to load mass in position {} but currently at position {}".format(pos, self.hori_pos))
+                return False
+
     def lower_handler(self, pos=None):
         """Lowers the mass onto the pan at the current horizontal position
 
@@ -205,25 +211,15 @@ class AWBalLinear(AWBalCarousel):
         if self.want_abort:
             return False
 
-        self.get_status()
-        if pos:
-            if not self.hori_pos == str(pos):
-                log.error("Asked to load mass in position {} but currently at position {}".format(pos, self.hori_pos))
-                return False
+        if not self.check_pos(pos):
+            return False
 
-        log.info("Sinking mass")
-        move_str = 'MOVE TO '+str(self.hori_pos)+'L'
+        log.info("Sinking mass to weighing position")
+        move_str = 'MOVE TO '+str(self.hori_pos)+'W'
         print(move_str)
         self.arduino.write(move_str)
         sleep(1)
-        reply = self.wait_for_reply(cxn=self.arduino)
-        if self.parse_reply(reply):
-            log.info("Handler in position {}, {} position".format(self.hori_pos, self.lift_pos))
-            if not self.lift_pos == "L":
-                for i in range(8):
-                    print(self.arduino.read())
-                raise ValueError("Loading failure")
-            return True
+        self.handle_lift_reply('W')
 
     def raise_handler(self, pos=None):
         """Raises the mass off the pan at the current position
@@ -240,25 +236,41 @@ class AWBalLinear(AWBalCarousel):
         if self.want_abort:
             return False
 
-        self.get_status()
-        if pos:
-            if not self.hori_pos == str(pos):
-                log.error("Asked to unload mass from position {} but currently at position {}".format(pos, self.hori_pos))
-                return False
+        if not self.check_pos(pos):
+            return False
 
         log.info("Lifting mass")
         move_str = 'MOVE TO ' + str(pos) + 'U'
         print(move_str)
         self.arduino.write(move_str)
         sleep(1)
-        reply = self.wait_for_reply(cxn=self.arduino)
-        if self.parse_reply(reply):
-            log.info("Handler in position {}, {} position".format(self.hori_pos, self.lift_pos))
-            if not self.lift_pos == "U":
-                for i in range(8):
-                    print(self.arduino.read())
-                raise ValueError("Unloading failure")
-            return True
+        self.handle_lift_reply('U')
+
+    def loading_position(self, pos=None):
+        """Raises or lowers the carriage so that masses can be placed in the centre at the current position.
+        Loading position is equivalent to panbraking position.
+
+        Parameters
+        ----------
+        pos : int, optional
+            If not specified, uses the current position
+
+        Returns
+        -------
+        Bool of completion, or raises error
+        """
+        if self.want_abort:
+            return False
+
+        if not self.check_pos(pos):
+            return False
+
+        log.info("Going to loading lift position")
+        move_str = 'MOVE TO ' + str(pos) + 'L'
+        print(move_str)
+        self.arduino.write(move_str)
+        sleep(1)
+        self.handle_lift_reply('L')
 
     def lift_to(self, lift_position, hori_pos=None, wait=True):
         """Lowers or raises handler to the lift position specified.
@@ -266,7 +278,7 @@ class AWBalLinear(AWBalCarousel):
         Parameters
         ----------
         lift_position : string
-            string for desired lift position. Allowed strings are: top, weighing.
+            string for desired lift position. Allowed strings are: top, weighing, loading.
         hori_pos : int, optional
             confirmation of the desired horizontal position
         wait : Bool, optional
@@ -274,7 +286,7 @@ class AWBalLinear(AWBalCarousel):
         """
         if hori_pos is None:
             self.get_status()
-            hori_pos=self.hori_pos
+            hori_pos = self.hori_pos
 
         if lift_position == 'top':
             self.raise_handler(pos=hori_pos)
@@ -284,12 +296,26 @@ class AWBalLinear(AWBalCarousel):
             if ok and wait:
                 self.wait_for_elapse(self.stable_wait)
 
+        elif lift_position == 'loading':
+            self.loading_position(pos=hori_pos)
+
         else:
             log.error("Lift position {} not recognised for this handler".format(lift_position))
             return False
 
+    def handle_lift_reply(self, lift_pos):
+        reply = self.wait_for_reply(cxn=self.arduino)
+        if self.parse_reply(reply):
+            log.info("Handler in position {}, {} position".format(self.hori_pos, self.lift_pos))
+            if not self.lift_pos == lift_pos:
+                for i in range(8):
+                    print(self.arduino.read())
+                raise ValueError(f"Failed to get to {lift_pos} lift position")
+            return True
+
     def close_connection(self):
         self.connection.disconnect()
         print(self.arduino.query("END"))
+        # TODO: check that this closes connection to Arduino and leaves in Sleep mode
         self.arduino.disconnect()
 
