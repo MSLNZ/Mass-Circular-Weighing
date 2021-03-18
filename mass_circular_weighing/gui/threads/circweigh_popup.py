@@ -225,7 +225,7 @@ class WeighingThread(Thread):
         self.se_row_data = se_row_data
         self.cfg = cfg
         self.bal, self.mode = self.cfg.get_bal_instance(self.se_row_data['bal_alias'])
-        self.mode = "aw_l"
+
         self.scheme_entry.setText(self.se_row_data['scheme_entry'])
         self.nominal_mass.setText(se_row_data['nominal'])
         self.num_runs = se_row_data['num_runs']
@@ -255,7 +255,7 @@ class WeighingThread(Thread):
         self.bal.scale_adjust()
 
     def alloc_pos(self):
-        self.bal.allocate_positions_and_centrings(self.scheme_entry.split())
+        self.bal.allocate_positions_and_centrings(self.scheme_entry.text().split())
 
     def place_weights(self):
         if self.bal.positions is None:
@@ -264,7 +264,12 @@ class WeighingThread(Thread):
             return
 
         for mass, pos in zip(self.bal.weight_groups, self.bal.positions):
-            self.bal.place_weight(mass, pos)
+            ok = self.bal.place_weight(mass, pos)
+            if ok is None:
+                log.info("Placing aborted")
+                break
+
+        log.info("All weights placed")
 
     def check_loading(self):
         self.bal.check_loading()
