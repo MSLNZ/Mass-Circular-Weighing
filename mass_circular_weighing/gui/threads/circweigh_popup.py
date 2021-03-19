@@ -6,6 +6,7 @@ to initialise the balance's self-calibration program, and to begin the circular 
 import sys
 import numpy as np
 import winsound
+from datetime import datetime
 
 from msl.qt import QtGui, QtWidgets, Button, excepthook, Signal, utils
 from msl.qt.threading import Thread, Worker
@@ -17,6 +18,10 @@ from ...constants import MAX_BAD_RUNS, FONTSIZE
 from ...routines.run_circ_weigh import do_circ_weighing, analyse_weighing, check_for_existing_weighdata, check_existing_runs
 from ..widgets.browse import label
 
+from .prompt_thread import PromptThread
+pt = PromptThread()
+from .wait_until_time_thread import WaitThread
+wt = WaitThread()
 
 check_box_style = '''
 QCheckBox {
@@ -28,6 +33,7 @@ QCheckBox::indicator {
     height: ''' + str(FONTSIZE) + '''px;
 }
 '''
+
 
 class WeighingWorker(Worker):
 
@@ -164,7 +170,7 @@ class WeighingThread(Thread):
         return controls
 
     def initialisation_panel(self):
-        # TODO: make these buttons actually do something
+
         pos_alloc = Button(text='Allocate weight(s) to positions', left_click=self.alloc_pos, )
         place = Button(text='Place weights in positions', left_click=self.place_weights, )
         check_loading = Button(text='Check loading and centring', left_click=self.check_loading, )
@@ -276,15 +282,15 @@ class WeighingThread(Thread):
 
     def start_weighing(self):
         self.bal.want_adjust = True if self.adjust_ch.checkState() else False
-        # TODO: check balance is initialised here or in run_circ_weigh??
         self.change_to_weighing_layout()
         self.check_for_existing()
         self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.cfg, self.bal)
 
     def start_weighing_at(self):
-        # TODO: show a waiting clock...
-        print("TODO: wait until specified time ....")
-        self.start_weighing()
+        wt.show(kwargs={'message': f"Delayed start for weighing for {self.scheme_entry.text()}.", 'loop_delay': 1000,})
+        go = wt.wait_for_prompt_reply()
+        if go:
+            self.start_weighing()
 
     def close_comms(self, *args):
         self.bal._want_abort = True

@@ -25,6 +25,7 @@ class WaitUntilTimeDisplay(QtWidgets.QDialog):
         parent : QtWidget or app ?, optional
         font_family : str, optional
         """
+        print("kwargs in display widget", loop_delay, message, title, parent, font_family)
         super().__init__(parent=parent)
 
         if title is None:
