@@ -1,15 +1,21 @@
 """
-A thread to pop-up the Allocator Window from the Circular Weighing pop-up window
+A thread to pop-up the Delay Start Window from the Circular Weighing pop-up window
 """
-from msl.qt import Thread, Worker, Signal, QtCore, QtWidgets
+from msl.qt import (
+    Thread,
+    Worker,
+    Signal,
+    QtCore,
+    QtWidgets
+)
 
-from ..widgets.aw_pos_allocator import AllocatorDialog
+from mass_circular_weighing.gui.widgets.wait_until_time import WaitUntilTimeDisplay
 
 
-class AllocatorWorker(Worker):
+class WaitWorker(Worker):
 
     def __init__(self, parent, *args, **kwargs):
-        super(AllocatorWorker, self).__init__()
+        super(WaitWorker, self).__init__()
         self.parent = parent
         self.args = args
         self.kwargs = kwargs
@@ -18,21 +24,21 @@ class AllocatorWorker(Worker):
         self.parent.signal_prompt.emit(self.args, self.kwargs)
 
 
-class AllocatorThread(Thread):
+class WaitThread(Thread):
 
     signal_prompt = Signal(tuple, dict)
     signal_prompt_done = Signal()
 
     def __init__(self):
-        super(AllocatorThread, self).__init__(AllocatorWorker)
+        super(WaitThread, self).__init__(WaitWorker)
         self.reply = None
-        self.signal_prompt.connect(self.allocator)
+        self.signal_prompt.connect(self.display)
 
-    def allocator(self, args, kwargs):
+    def display(self, kwargs):
         """Popup the allocator Dialog widget"""
-        w = AllocatorDialog(args[0], args[1])
+        w = WaitUntilTimeDisplay(**kwargs[0])
         w.exec()
-        self.reply = w.positions, w.pos_to_centre, w.centrings, w.cal_pos
+        self.reply = w.go
         if QtWidgets.QApplication.instance() is not None:
             self.signal_prompt_done.emit()
 
@@ -47,8 +53,12 @@ class AllocatorThread(Thread):
     def show(self, *args, **kwargs):
         self.reply = None
         if QtWidgets.QApplication.instance() is None:
-            self.allocator(args, kwargs)
+            self.display(self, kwargs)
         else:
-            self.start(self, *args, **kwargs)
+            self.start(self, kwargs)
 
 
+if __name__ == '__main__':
+    pt = WaitThread()
+    pt.show(message=f"Delayed start for weighing for 100.", loop_delay=1000,)
+    print(pt.wait_for_prompt_reply())

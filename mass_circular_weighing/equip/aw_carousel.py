@@ -11,8 +11,9 @@ from msl.qt import application
 from ..log import log
 from .mettler import MettlerToledo, ERRORCODES
 
-from ..gui.threads.allocator_thread import AllocatorThread
+from ..gui.threads import AllocatorThread, PromptThread
 allocator = AllocatorThread()
+prompt_thread = PromptThread()
 
 
 class AWBalCarousel(MettlerToledo):
@@ -36,15 +37,16 @@ class AWBalCarousel(MettlerToledo):
         self._positions = None
         self._weight_groups = None
 
+        self.pos_to_centre = []
+        self.repeats = 0
+
         self.cal_pos = 1
-        self.want_adjust = True
 
         self.lift_pos = None    # vertical position   (string)
         self.hori_pos = None    # horizontal position (string of integer)
 
         self._move_time = False
         self._is_centred = False
-        self._is_adjusted = False
 
         self.handler = None
 
@@ -91,14 +93,15 @@ class AWBalCarousel(MettlerToledo):
         return False
 
     def initialise_balance(self, wtgrps):
-        """Assigns weight groups to weighing positions using the AllocatorDialog,
+        """Completes any remaining tasks of the following initialisation steps:
+        Assigns weight groups to weighing positions using the AllocatorDialog,
         including specifying which of these positions require centring.
-        Performs the check_loading routine, then the centring routine, then does a scale adjustment.
+        Performs the check_loading routine, then the centring routine and scale adjustment if selected.
 
         Parameters
         ----------
         wtgrps : list
-            list of weight groups as strings
+            list of weight groups as strings (e.g. from string split of scheme entry)
 
         Returns
         -------
@@ -106,17 +109,20 @@ class AWBalCarousel(MettlerToledo):
             Returns a list of positions for the weight groups in the order the groups appear in the scheme entry.
         """
         # allocate weight groups to positions, and specify which to centre
-        self._positions, pos_to_centre, repeats = self.allocate_positions_and_centrings(wtgrps)
+        if self.positions is None:
+            self._positions = self.allocate_positions_and_centrings(wtgrps)
         if self.positions is None:
             log.error("Position assignment was not completed")
             self._want_abort = True
             return None
 
-        if self.want_adjust:
-            if self.cal_pos not in self.positions:
-                log.error("No mass in position selected for self calibration")
-                self._want_abort = True
-                return None
+        if self.want_adjust and not self.is_adjusted:
+            # Carousel needs a mass loaded in the calibration position
+            if self.mode == "aw_c":
+                if self.cal_pos not in self.positions:
+                    log.error("No mass in position selected for self calibration")
+                    self._want_abort = True
+                    return None
 
         if self.handler is None:
             ok = self.identify_handler()
@@ -124,28 +130,21 @@ class AWBalCarousel(MettlerToledo):
                 return None
 
         # check sensible weights loaded
-        self.check_loading()
+        if not self._move_time:
+            self.check_loading()
         if not self._move_time:
             log.error("Loading check was not completed")
             return None
 
         # centre weights as needed (ok if no weights to centre)
-        self.centring(pos_to_centre, repeats)
-        if not self._is_centred:
-            log.error("Centring was not completed")
-            return None
+        if self.pos_to_centre and not self._is_centred:
+            self.centring(self.pos_to_centre, self.repeats)
+            if not self._is_centred:
+                log.error("Centring was not completed")
+                return None
 
-        # Do a self calibration using the calibration position
-        if self.want_adjust:
-            ok = self.scale_adjust(cal_pos=self.cal_pos)
-            if not self._is_adjusted:
-                if ok is None:
-                    # ("Self calibration aborted by bal.want_abort")
-                    return None
-                else:
-                    log.warning("Balance self-calibration was not successful.\nContinuing to weighings.")
-        else:
-            log.info("Balance self-calibration was not selected")
+        # Do a self calibration if needed
+        self.adjust_scale_if_needed()
 
         return self.positions
 
@@ -169,15 +168,38 @@ class AWBalCarousel(MettlerToledo):
 
         # allocate weight groups to positions, and specify which to centre
         allocator.show(self.num_pos, wtgrps)
-        self._positions, pos_to_centre, repeats, self.cal_pos, self.want_adjust \
+        self._positions, self.pos_to_centre, repeats, self.cal_pos \
             = allocator.wait_for_prompt_reply()
+        self.repeats = int(repeats)
 
         if self.positions is None:
             log.error("Position assignment was not completed")
             self._want_abort = True
             return None, None, None
 
-        return self._positions, pos_to_centre, int(repeats)
+        message = f'Assigned weight groups {wtgrps} to positions {self.positions} respectively'
+        log.info(msg=message)
+        log.info(f"Position for self calibration is position {self.cal_pos}")
+
+        return self._positions
+
+    def place_weight(self, mass, pos):
+        """Allow a mass to be placed onto the carrier in position pos.
+
+        Parameters
+        ----------
+        mass : str
+            string of weight group allocated to the position pos
+        pos : int
+            integer of position where mass is to be placed
+        """
+        self.move_to(pos)
+        # these balances are loaded in the top position
+        message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
+        prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
+        reply = prompt_thread.wait_for_prompt_reply()
+
+        return reply
 
     def check_loading(self):
         """Tests each position involved in the automatic circular weighing procedure.
@@ -284,7 +306,7 @@ class AWBalCarousel(MettlerToledo):
         cal_pos : int, optional
         """
         # When initiated from run_circ_weigh, this method is called from initialise_balance after check_loading
-        # and centring.
+        # and centring via the mdebalance adjust_scale_if_needed method.
         if self.want_abort:
             log.warning('Balance self-calibration aborted before commencing')
             return None
@@ -549,6 +571,8 @@ class AWBalCarousel(MettlerToledo):
         if not self.lift_pos == lift_position:
             self._raise_error_loaded("LT")
 
+        return True
+
     def load_bal(self, mass, pos):
         """Load the balance with a specified mass in position pos, including appropriate waits to ensure consistent timing.
 
@@ -574,9 +598,7 @@ class AWBalCarousel(MettlerToledo):
             # wait for some time to make all moves same
             self.wait_for_elapse(self._move_time + 5, start_time=t0)
 
-            self.lift_to('weighing', hori_pos=pos)  # this raises an error if it fails to get to the weighing position
-
-            return True
+            return self.lift_to('weighing', hori_pos=pos)  # this raises an error if it fails to get to the weighing position
 
     def unload_bal(self, mass, pos):
         """Unloads mass from pan"""

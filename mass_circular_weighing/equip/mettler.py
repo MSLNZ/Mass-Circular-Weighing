@@ -34,7 +34,9 @@ class MettlerToledo(Balance):
                 if reset:
                     self.reset()
                 while True:
+                    log.debug("...talking to balance...")
                     r = self._query("")
+                    log.debug(f'...received {r}...')
                     if r.strip("\r") == "ES":
                         break
                 assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
@@ -90,9 +92,12 @@ class MettlerToledo(Balance):
                     if c[1] == 'A':
                         print('Balance self-calibration completed successfully')
                         log.info('Balance self-calibration completed successfully')
-                        return
+                        self._is_adjusted = True
+                        return True
                     elif c[1] == 'I':
-                        self._raise_error('CAL C')
+                        log.error('The calibration was aborted as, e.g. stability not attained or the procedure was aborted with the C key.')
+                        return False
+                        # self._raise_error('CAL C')
                 except MSLTimeoutError:
                     if perf_counter()-t0 > self.intcaltimeout:
                         raise TimeoutError("Calibration took longer than expected")
@@ -192,7 +197,7 @@ class MettlerToledo(Balance):
             return m
 
     def _raise_error(self, errorkey):
-        raise ValueError(ERRORCODES.get(errorkey,'Unknown serial communication error: {}'.format(errorkey)))
+        raise ValueError(ERRORCODES.get(errorkey, 'Unknown serial communication error: {}'.format(errorkey)))
 
     def close_connection(self):
         self.connection.disconnect()

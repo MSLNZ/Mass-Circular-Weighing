@@ -3,16 +3,35 @@ A pop-up window to begin the Circular Weighing routine and display progress.
 Note: the pop-up runs in a thread so it can be opened from the main gui. It has buttons to tare/zero the balance,
 to initialise the balance's self-calibration program, and to begin the circular weighing routine
 """
-import winsound
+import sys
 import numpy as np
+import winsound
 
-from msl.qt import QtGui, QtWidgets, Button, excepthook, Logger, Signal, utils
+from msl.qt import QtGui, QtWidgets, Button, excepthook, Signal
 from msl.qt.threading import Thread, Worker
+
+sys.excepthook = excepthook
 
 from ...log import log
 from ...constants import MAX_BAD_RUNS, FONTSIZE
 from ...routines.run_circ_weigh import do_circ_weighing, analyse_weighing, check_for_existing_weighdata, check_existing_runs
-from ..widgets.browse import label
+from ..widgets import label
+
+from .prompt_thread import PromptThread
+pt = PromptThread()
+from .wait_until_time_thread import WaitThread
+wt = WaitThread()
+
+check_box_style = '''
+QCheckBox {
+    font-size:''' + str(FONTSIZE) + '''px;     /* <--- */
+}
+
+QCheckBox::indicator {
+    width:  ''' + str(FONTSIZE) + '''px;
+    height: ''' + str(FONTSIZE) + '''px;
+}
+'''
 
 
 class WeighingWorker(Worker):
@@ -101,8 +120,6 @@ class WeighingThread(Thread):
         self.window.setFont(f)
         self.window.setWindowTitle('Circular Weighing')
         self.window.closeEvent = self.close_comms
-        geo = utils.screen_geometry()
-        self.window.resize(geo.width() // 2, geo.height())
 
         self.scheme_entry = label('scheme_entry')
         self.nominal_mass = label('nominal')
@@ -110,6 +127,17 @@ class WeighingThread(Thread):
         self.cycle = label('0')
         self.position = label('0')
         self.reading = label('0')
+
+        self.status = self.status_panel()
+        self.controls = self.mettler_panel()
+        self.initialise_controls = self.initialisation_panel()
+        self.adjust_ch = QtWidgets.QCheckBox("Do self calibration?")
+        self.adjust_ch.setStyleSheet(check_box_style)
+        self.start_panel = self.start_panel()
+
+        self.finished.connect(self.window.close)
+
+    def status_panel(self):
 
         status = QtWidgets.QGroupBox()
         status_layout = QtWidgets.QFormLayout()
@@ -121,25 +149,82 @@ class WeighingThread(Thread):
         status_layout.addRow(label('Reading'), self.reading)
         status.setLayout(status_layout)
 
+        # TODO: add a widget here for logged messages?
+
+        return status
+
+    def mettler_panel(self):
         zero = Button(text='Zero balance', left_click=self.zero_balance, )
-        scale = Button(text='Scale adjustment', left_click=self.scale, )
         tare = Button(text='Tare balance', left_click=self.tare, )
-        start_weighing = Button(text='START', left_click=self.start_weighing, )
+        scale = Button(text='Scale adjustment', left_click=self.scale, )
 
         controls = QtWidgets.QGroupBox()
-        controls_layout = QtWidgets.QGridLayout()
-        controls_layout.addWidget(zero, 0, 0)
-        controls_layout.addWidget(scale, 0, 1)
-        controls_layout.addWidget(tare, 1, 0)
-        controls_layout.addWidget(start_weighing, 1, 1)
+        controls_layout = QtWidgets.QVBoxLayout()
+        controls_layout.addWidget(zero)
+        controls_layout.addWidget(tare)
+        controls_layout.addWidget(scale)
+
         controls.setLayout(controls_layout)
 
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(status)
-        layout.addWidget(controls)
-        self.window.setLayout(layout)
+        return controls
 
-        self.finished.connect(self.window.close)
+    def initialisation_panel(self):
+
+        pos_alloc = Button(text='Allocate weight(s) to positions', left_click=self.alloc_pos, )
+        place = Button(text='Place weights in positions', left_click=self.place_weights, )
+        check_loading = Button(text='Check loading and centring', left_click=self.check_loading, )
+
+        controls = QtWidgets.QGroupBox()
+        controls_layout = QtWidgets.QVBoxLayout()
+        controls_layout.addWidget(pos_alloc)
+        controls_layout.addWidget(place)
+        controls_layout.addWidget(check_loading)
+
+        controls.setLayout(controls_layout)
+
+        return controls
+
+    def start_panel(self):
+
+        start_weighing = Button(text='START', left_click=self.start_weighing, )
+        start_at = Button(text='Start at...', left_click=self.start_weighing_at, )
+
+        start_box = QtWidgets.QGroupBox()
+        start_panel = QtWidgets.QVBoxLayout()
+        start_panel.addWidget(self.adjust_ch)
+        start_panel.addWidget(start_weighing)
+        start_panel.addWidget(start_at)
+        start_box.setLayout(start_panel)
+
+        return start_box
+
+    def make_layout(self):
+
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(self.status, 0, 0)
+        layout.addWidget(self.controls, 1, 0)
+        layout.addWidget(self.initialise_controls, 0, 1)
+        layout.addWidget(self.start_panel, 1, 1)
+
+        return layout
+
+    def make_layout_mde(self):
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.status)
+        layout.addWidget(self.start_panel)
+
+        return layout
+
+    def change_to_weighing_layout(self):
+        """Shows only the status of weighing"""
+        self.controls.hide()
+        self.initialise_controls.hide()
+        self.start_panel.hide()
+
+        self.window.resize(self.window.minimumSizeHint())
+        # geo = utils.screen_geometry()
+        # self.window.resize(geo.width() // 3, geo.height()//2)
 
     def show(self, se_row_data, cfg):
         self.se_row_data = se_row_data
@@ -152,20 +237,59 @@ class WeighingThread(Thread):
 
         self.check_for_existing()
         if not self.bal.want_abort:
+            self.adjust_ch.setChecked(self.bal.want_adjust)
+
+            if "mde" in self.mode:
+                layout = self.make_layout_mde()
+            else:
+                layout = self.make_layout()
+                if "aw" not in self.mode:
+                    self.initialise_controls.hide()
+            self.window.setLayout(layout)
+            self.window.resize(self.window.minimumSizeHint())
+
             self.window.show()
 
     def zero_balance(self):
         self.bal.zero_bal()
 
-    def scale(self):
-        self.bal.scale_adjust()
-
     def tare(self):
         self.bal.tare_bal()
 
-    def start_weighing(self, ):
+    def scale(self):
+        self.bal.scale_adjust()
+
+    def alloc_pos(self):
+        self.bal.allocate_positions_and_centrings(self.scheme_entry.text().split())
+
+    def place_weights(self):
+        if self.bal.positions is None:
+            self.alloc_pos()
+        if self.bal.weight_groups is None:
+            return
+
+        for mass, pos in zip(self.bal.weight_groups, self.bal.positions):
+            ok = self.bal.place_weight(mass, pos)
+            if ok is None:
+                log.info("Placing aborted")
+                break
+
+        log.info("All weights placed")
+
+    def check_loading(self):
+        self.bal.check_loading()
+
+    def start_weighing(self):
+        self.bal.want_adjust = True if self.adjust_ch.checkState() else False
+        self.change_to_weighing_layout()
         self.check_for_existing()
         self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.cfg, self.bal)
+
+    def start_weighing_at(self):
+        wt.show(message=f"Delayed start for weighing for {self.scheme_entry.text()}.", loop_delay=1000,)
+        go = wt.wait_for_prompt_reply()
+        if go:
+            self.start_weighing()
 
     def close_comms(self, *args):
         self.bal._want_abort = True
@@ -195,5 +319,3 @@ class WeighingThread(Thread):
             self.reading.setText('None')
         else:
             self.reading.setText('{} {}'.format(np.round(reading, 9), unit))
-
-
