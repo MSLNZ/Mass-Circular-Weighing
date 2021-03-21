@@ -6,9 +6,8 @@ to initialise the balance's self-calibration program, and to begin the circular 
 import sys
 import numpy as np
 import winsound
-from datetime import datetime
 
-from msl.qt import QtGui, QtWidgets, Button, excepthook, Signal, utils
+from msl.qt import QtGui, QtWidgets, Button, excepthook, Signal
 from msl.qt.threading import Thread, Worker
 
 sys.excepthook = excepthook
@@ -16,7 +15,7 @@ sys.excepthook = excepthook
 from ...log import log
 from ...constants import MAX_BAD_RUNS, FONTSIZE
 from ...routines.run_circ_weigh import do_circ_weighing, analyse_weighing, check_for_existing_weighdata, check_existing_runs
-from ..widgets.browse import label
+from ..widgets import label
 
 from .prompt_thread import PromptThread
 pt = PromptThread()
@@ -287,7 +286,7 @@ class WeighingThread(Thread):
         self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.cfg, self.bal)
 
     def start_weighing_at(self):
-        wt.show(kwargs={'message': f"Delayed start for weighing for {self.scheme_entry.text()}.", 'loop_delay': 1000,})
+        wt.show(message=f"Delayed start for weighing for {self.scheme_entry.text()}.", loop_delay=1000,)
         go = wt.wait_for_prompt_reply()
         if go:
             self.start_weighing()

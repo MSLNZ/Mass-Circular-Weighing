@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from msl.qt import QtCore, QtGui, QtWidgets, Button
 
+from ...log import log
 from ...constants import FONTSIZE
 
 
@@ -25,7 +26,6 @@ class WaitUntilTimeDisplay(QtWidgets.QDialog):
         parent : QtWidget or app ?, optional
         font_family : str, optional
         """
-        print("kwargs in display widget", loop_delay, message, title, parent, font_family)
         super().__init__(parent=parent)
 
         if title is None:
@@ -38,7 +38,7 @@ class WaitUntilTimeDisplay(QtWidgets.QDialog):
 
         # display a message if one has been passed
         if message is not None:
-            print(message)
+            log.info(message)
             msg = QtWidgets.QLabel(message)
             msg.setWordWrap(True)
             msg.setFont(font)
@@ -70,7 +70,6 @@ class WaitUntilTimeDisplay(QtWidgets.QDialog):
         self.go = False
 
         self._loop_delay = loop_delay
-        print(self._loop_delay)
         self._loop_timer = QtCore.QTimer()
         self._loop_timer.timeout.connect(self.loop)
         self._loop_timer.start(self._loop_delay)
@@ -82,7 +81,7 @@ class WaitUntilTimeDisplay(QtWidgets.QDialog):
     @property
     def target_time(self):
         """Return displayed time as normal datetime type"""
-        try:  # PyQt
+        try:     # PyQt
             dto = self.dte.dateTime().toPyDateTime()
         except:  # PySide
             dto = self.dte.dateTime().toPython()

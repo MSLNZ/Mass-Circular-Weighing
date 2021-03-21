@@ -36,8 +36,7 @@ class WaitThread(Thread):
 
     def display(self, kwargs):
         """Popup the allocator Dialog widget"""
-        print("display", kwargs)
-        w = WaitUntilTimeDisplay(**kwargs)
+        w = WaitUntilTimeDisplay(**kwargs[0])
         w.exec()
         self.reply = w.go
         if QtWidgets.QApplication.instance() is not None:
@@ -54,9 +53,9 @@ class WaitThread(Thread):
     def show(self, *args, **kwargs):
         self.reply = None
         if QtWidgets.QApplication.instance() is None:
-            self.display(kwargs)
+            self.display(self, kwargs)
         else:
-            self.start(self, *args, **kwargs)
+            self.start(self, kwargs)
 
 
 if __name__ == '__main__':

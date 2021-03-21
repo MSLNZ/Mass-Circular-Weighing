@@ -142,7 +142,7 @@ class MCWGui(QtWidgets.QWidget):
         if row < 0:
             log.warning('No row selected')
             return None
-        log.info('\nRow ' + str(row + 1) + ' selected for weighing')
+        log.info('Row ' + str(row + 1) + ' selected for weighing')
 
         se_row_data = self.schemetable.get_se_row_dict(row)
 
