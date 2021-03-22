@@ -431,7 +431,8 @@ class AWBalCarousel(MettlerToledo):
         wait : bool (optional)
         """
         if self.num_pos is None:
-            return False  # TODO raise error
+            log.error("Number of positions not set for balance!")
+            return False
         if not 0 < pos <= self.num_pos:
             self._raise_error_loaded('POS')
 
