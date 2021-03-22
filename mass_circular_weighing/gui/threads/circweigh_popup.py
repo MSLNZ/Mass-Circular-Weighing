@@ -7,7 +7,7 @@ import sys
 import numpy as np
 import winsound
 
-from msl.qt import QtGui, QtWidgets, Button, excepthook, Signal
+from msl.qt import QtGui, QtWidgets, Button, excepthook, Signal, Logger
 from msl.qt.threading import Thread, Worker
 
 sys.excepthook = excepthook
@@ -147,9 +147,8 @@ class WeighingThread(Thread):
         status_layout.addRow(label('Cycle'), self.cycle)
         status_layout.addRow(label('Position'), self.position)
         status_layout.addRow(label('Reading'), self.reading)
+        status_layout.setWidget(6, 2, Logger(fmt='%(message)s'))
         status.setLayout(status_layout)
-
-        # TODO: add a widget here for logged messages?
 
         return status
 
