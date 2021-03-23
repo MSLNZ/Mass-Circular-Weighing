@@ -90,8 +90,8 @@ class MettlerToledo(Balance):
                 try:
                     c = self.connection.read().split()
                     if c[1] == 'A':
-                        print('Balance self-calibration completed successfully')
-                        log.info('Balance self-calibration completed successfully')
+                        print(f'Balance self-calibration completed successfully in {perf_counter() - t0} seconds')
+                        log.info(f'Balance self-calibration completed successfully in {perf_counter() - t0} seconds')
                         self._is_adjusted = True
                         return True
                     elif c[1] == 'I':
@@ -99,8 +99,8 @@ class MettlerToledo(Balance):
                         return False
                         # self._raise_error('CAL C')
                 except MSLTimeoutError:
-                    if perf_counter()-t0 > self.intcaltimeout:
-                        raise TimeoutError("Calibration took longer than expected")
+                    if perf_counter() - t0 > self.intcaltimeout:
+                        raise TimeoutError(f"Internal calibration took longer than {self.intcaltimeout} seconds.")
                     else:
                         log.info('Waiting for internal calibration to complete')
 

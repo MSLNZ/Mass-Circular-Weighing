@@ -349,9 +349,9 @@ class AWBalCarousel(MettlerToledo):
                         self.connection.write("")
                         continue
                     elif c[1] == 'A':
-                        print('Balance self-calibration completed successfully')
+                        print(f'Balance self-calibration completed successfully in {perf_counter() - t0} seconds')
+                        log.info(f'Balance self-calibration completed successfully in {perf_counter() - t0} seconds')
                         self._is_adjusted = True
-                        log.info('Balance self-calibration completed successfully')
                         self.lift_to("top", hori_pos=cal_pos)
                         return True
                     elif c[1] == 'I':
@@ -385,7 +385,7 @@ class AWBalCarousel(MettlerToledo):
                     if perf_counter() - t0 > self.intcaltimeout:
                         self.raise_handler()
                         self.raise_handler()
-                        raise TimeoutError("Calibration took longer than expected")
+                        raise TimeoutError(f"Internal calibration took longer than {self.intcaltimeout} seconds.")
                     else:
                         log.info('Waiting for internal calibration to complete')
 
