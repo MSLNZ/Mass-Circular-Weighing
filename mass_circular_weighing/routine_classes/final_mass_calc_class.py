@@ -291,6 +291,7 @@ class FinalMassCalc(object):
             self.leastsq_meta['Residuals greater than 2 balance uncerts'] = flag
 
     def cal_rel_unc(self, ):
+        # TODO: allow for magnetic uncertainty (if present) and buoyancy
         if self.b is None:
             self.do_least_squares()
 

@@ -67,7 +67,8 @@
     </acceptance_criteria>
 
     <!-- Specify all standard sets available for weighing analysis using individual tags such as <MET19A>.
-    Whichever tags are used here must also be used when specifying the std_set and check_set.. -->
+    Whichever tags are used here must also be used when specifying the std_set and check_set..
+    # TODO: Update to look for MassRef.xlsx -->
     <standards>
           <MET19A>G:\Shared drives\MSL - MAP\MASS_setfiles\MET19A.set</MET19A>
           <MET19B>G:\Shared drives\MSL - MAP\MASS_setfiles\MET19B.set</MET19B>

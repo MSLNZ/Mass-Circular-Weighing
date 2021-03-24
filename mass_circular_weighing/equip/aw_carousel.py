@@ -349,8 +349,9 @@ class AWBalCarousel(MettlerToledo):
                         self.connection.write("")
                         continue
                     elif c[1] == 'A':
-                        print(f'Balance self-calibration completed successfully in {perf_counter() - t0} seconds')
-                        log.info(f'Balance self-calibration completed successfully in {perf_counter() - t0} seconds')
+                        cal_time = perf_counter() - t0
+                        print(f'Balance self-calibration completed successfully in {cal_time} seconds')
+                        log.info(f'Balance self-calibration completed successfully in {cal_time} seconds')
                         self._is_adjusted = True
                         self.lift_to("top", hori_pos=cal_pos)
                         return True
