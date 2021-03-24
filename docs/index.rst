@@ -23,8 +23,8 @@ More information about the various parts of the program are provided in the link
 
 .. code-block:: pycon
 
-   >>> import mass_circular_weighing as mcw
-   >>> mcw.show_gui()
+   >>> import mass_circular_weighing as mcw  # doctest: +SKIP
+   >>> mcw.show_gui()  # doctest: +SKIP
 
 3. Load a *config.xml* file and/or edit the example config file using the edit config button
 
