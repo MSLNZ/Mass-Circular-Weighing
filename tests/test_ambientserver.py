@@ -6,6 +6,7 @@ import pytest
 from mass_circular_weighing.equip.ambient_fromwebapp import *
 
 has_server = ping(host)  # not sure how to do this so that it won't break...
+mass1 = 'Mass 1'  # alias for Mass 1, serial 7410664
 
 
 def test_ping():
@@ -17,14 +18,14 @@ def test_ping():
 def test_get_aliases():
     aliases = get_aliases()
     assert aliases
-    assert aliases['7410664'] == 'mass 1'
+    assert aliases['7410664'] == mass1
     # if this test fails then all the others will too!
 
 
 @pytest.mark.skipif(not has_server, reason='requires access to server running webapp')
 def test_get_t_rh_now():
     # invalid alias
-    for ithx in ['mass1', 'Mass 1', 'M']:  # alias now mass 1 (all lower case)
+    for ithx in ['mass_1', 'Mass1', 'M']:
         timestr, temp, hum = get_t_rh_now(ithx, sensor=1)
         timestamp = datetime.fromisoformat(timestr)
         assert timestamp.date() == datetime.date(datetime.now())
@@ -36,10 +37,10 @@ def test_get_t_rh_now():
     # invalid probe number
     for probe in [-1, 6, -0.1, 5.1]:
         with pytest.raises(KeyError):
-            get_t_rh_now('mass 1', sensor=probe)
+            get_t_rh_now(mass1, sensor=probe)
 
     # operational
-    ambient = get_t_rh_now('mass 1', sensor=1)
+    ambient = get_t_rh_now(mass1, sensor=1)
     assert len(ambient) == 3
     assert isinstance(ambient[0], str)
     timestamp = datetime.fromisoformat(ambient[0])
@@ -79,7 +80,7 @@ def test_get_t_rh_during():
        63.94640104, 63.94640104, 63.91348231, 63.8805654 , 63.84765033,
        63.8805654 , 63.8805654 , 63.84765033, 63.84765033, 63.84765033]
 
-    temps, hums = get_t_rh_during('mass 1', sensor=2, start="2021-03-11 13:00", end="2021-03-11 14:00")
+    temps, hums = get_t_rh_during(mass1, sensor=2, start="2021-03-11 13:00", end="2021-03-11 14:00")
     # note that these values are corrected by default
     assert len(temps) == len(temperatures) == len(hums) == len(humidities) == 60
 
@@ -89,21 +90,21 @@ def test_get_t_rh_during():
     assert hums[-1] == pytest.approx(63.84765033)
 
     # there is no data within the specified date range
-    temps, hums = get_t_rh_during('mass 1', sensor=1, start="2021-03-01 13:00", end="2021-03-01 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
+    temps, hums = get_t_rh_during(mass1, sensor=1, start="2021-03-01 13:00", end="2021-03-01 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
     assert temps.size == 0
     assert hums.size == 0
 
-    temps, hums = get_t_rh_during('mass 1', sensor=1, start="2010-03-03 13:00", end="2010-04-04 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
+    temps, hums = get_t_rh_during(mass1, sensor=1, start="2010-03-03 13:00", end="2010-04-04 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
     assert temps.size == 0
     assert hums.size == 0
 
     # there is no data within the specified date range because start is in the future but end time is now (polls server)
-    temps, hums = get_t_rh_during('mass 1', sensor=1, start="4321-03-01 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
+    temps, hums = get_t_rh_during(mass1, sensor=1, start="4321-03-01 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
     assert temps
     assert hums
 
     # fetch data for a narrow time window
-    temps, hums = get_t_rh_during('mass 1', sensor=1, start="2021-03-01 13:00", end="2021-03-01 13:02")
+    temps, hums = get_t_rh_during(mass1, sensor=1, start="2021-03-01 13:00", end="2021-03-01 13:02")
     temperatures = [20.09202, 20.07244]
     humidities = [65.00239709, 65.00239709]
     for t1, t2 in zip(temps, temperatures):
