@@ -134,17 +134,16 @@ install_requires = [
     'msl-equipment @ https://github.com/MSLNZ/msl-equipment/archive/master.tar.gz',
     'msl-qt @ https://github.com/MSLNZ/msl-qt/archive/master.tar.gz',
     'msl-io @ https://github.com/MSLNZ/msl-io/archive/master.tar.gz',
-    'msl-loadlib',
-    'msl-network',
-    'PyQt5',
-    'comtypes',
-    'requests',  # I don't think this is in any of the other packages by default
-    'xlwt',
-    'xlrd',  # I could potentially remove this if we rewrite methods in scheme_table.py
-    'openpyxl',  # we should be able to only use this one instead of the two above
-    'tabulate',  # only required for LaTeX output
+    'msl-loadlib',  # used in Word file creation
+    'msl-network',  # demo in services
+    'PyQt5',     # if not already installed with msl-qt
+    'requests',  # for communicating with Omega loggers via a web app
+    'xlwt',      # still used in three modules (could re-write to use openpyxl)
+    'openpyxl',  # for reading and writing Excel files
+    'tabulate',  # for nice tables in LaTeX output
 ]
-
+# 'xlrd<2.0' is required in msl-io to open both .xls and .xlsx files
+# 'comtypes' isn't used any more?
 
 testing = {'test', 'tests'}.intersection(sys.argv)
 pytest_runner = ['pytest-runner'] if testing else []

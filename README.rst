@@ -24,36 +24,32 @@ These two commands should install the program and all its dependencies as needed
 Dependencies
 ++++++++++++
 * Python 3.6+
-* numpy_
-* xlwt_, xlrd_ and openpyxl_
-* comtypes_
-* tabulate_ (for LaTeX output)
-* PyQt5_
 * `MSL Package Manager`_, which is then used to install msl packages
   (equipment, qt, loadlib, io, and network) and their dependencies.
+* PyQt5_ is needed for msl-qt (see msl-qt_ for how to install PyQt5 with msl-qt)
+* numpy_ and xlrd_ are included in the msl packages
+* requests_ is needed to communicate with the Omega ambient monitoring web server
+* xlwt_, and openpyxl_ are used for Excel file handling
+* tabulate_ is used for LaTeX output
 
 Other requirements
 ------------------
 
 To run the program, you will need to be able to access the *Balance Register* and the *Equipment Register*
-which are stored on the I: drive in I:\\MSL\\Private\\MAP\\Equipment register.
-
-To enable ambient logging (e.g. of Omega loggers) via Emile's LabVIEW server, run LVRTE2010std.exe from
-I:\MSL\Shared\Temperature\LabVIEW RuntimeEngines.
-This install will require administrator rights on a Callaghan Innovation computer.
-
+in G:\Shared drives\MSL - MAP\Equipment register.
 
 Documentation
 -------------
 The documentation for **Mass-Circular-Weighing** can be found here_.
 
-
-.. _numpy: https://www.numpy.org/
-.. _xlwt: https://pypi.org/project/xlwt/
-.. _xlrd: https://pypi.org/project/xlrd/
-.. _openpyxl: https://pypi.org/project/openpyxl/
-.. _comtypes: https://pypi.org/project/comtypes/
-.. _tabulate: https://pypi.org/project/tabulate/
-.. _PyQt5: https://pypi.org/project/PyQt5/
 .. _MSL Package Manager: http://msl-package-manager.readthedocs.io/en/latest/?badge=latest
+.. _msl-qt: https://github.com/MSLNZ/msl-qt
+.. _PyQt5: https://pypi.org/project/PyQt5/
+.. _numpy: https://www.numpy.org/
+.. _xlrd: https://pypi.org/project/xlrd/
+.. _requests: https://requests.readthedocs.io/en/master/index.html
+.. _xlwt: https://pypi.org/project/xlwt/
+.. _openpyxl: https://pypi.org/project/openpyxl/
+.. _tabulate: https://pypi.org/project/tabulate/
+
 .. _here: https://github.com/MSLNZ/Mass-Circular-Weighing/blob/master/docs/index.rst
