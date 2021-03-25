@@ -4,6 +4,7 @@ A tabular display of the weighing scheme, which can import (by drag-n-drop) and 
 import xlrd
 import openpyxl
 import os
+import string
 
 from msl.qt import QtWidgets, QtCore, utils, prompt, Signal, Slot
 
@@ -107,9 +108,10 @@ class SchemeTable(QtWidgets.QTableWidget):
         self.scheme_path = scheme_path
         self.load_scheme()
 
-    def load_scheme(self):
-        header, rows = read_excel_scheme(self.scheme_path)
-        self.make_rows(len(rows))
+    @Slot(list, list)
+    def load_scheme(self, header=None, rows=None):
+        if header is None:
+            header, rows = read_excel_scheme(self.scheme_path)
 
         index_map = {}
         for col_name in {'weight', 'nominal', 'balance', 'runs', }:
@@ -117,6 +119,11 @@ class SchemeTable(QtWidgets.QTableWidget):
                 if col_name in name.lower():
                     index_map[col_name] = i
 
+        if len(index_map) < 4:
+            log.error(f"Unable to create weighing scheme from {self.scheme_path}")
+            return
+
+        self.make_rows(len(rows))
         for i, row in enumerate(rows):
             se = row[index_map['weight']]
             self.cellWidget(i, 0).setText(se)
@@ -128,14 +135,15 @@ class SchemeTable(QtWidgets.QTableWidget):
             self.check_good_runs_in_file.emit(i)
             # updates status of number of collected runs
 
-        log.info('Scheme loaded from ' + str(self.scheme_path))
+        if self.scheme_path:
+            log.info(f'Scheme loaded from {self.scheme_path}')
 
-        # check format is updated to xlsx
-        if '.xlsx' in os.path.basename(self.scheme_path):
-            return
-        elif '.xls' in os.path.basename(self.scheme_path):
-            self.save_scheme(os.path.dirname(self.scheme_path), os.path.basename(self.scheme_path)+'x')
-            return
+            # check format is updated to xlsx
+            if '.xlsx' in os.path.basename(self.scheme_path):
+                return
+            elif '.xls' in os.path.basename(self.scheme_path):
+                self.save_scheme(os.path.dirname(self.scheme_path), os.path.basename(self.scheme_path)+'x')
+                return
 
     def check_scheme_entries(self, cfg):
         for i in range(self.rowCount()):
@@ -143,7 +151,7 @@ class SchemeTable(QtWidgets.QTableWidget):
                 scheme_entry = self.cellWidget(i, 0).text()
                 for wtgrp in scheme_entry.split():
                     for mass in wtgrp.split('+'):
-                        if mass in cfg.client_wt_IDs.split():
+                        if mass in cfg.client_wt_IDs:
                             log.debug(mass + ' in client set')
                         elif mass in cfg.all_stds['weight ID']:
                             log.debug(mass + ' in std set')
@@ -165,11 +173,22 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         path = os.path.join(folder, filename)
 
-        workbook = openpyxl.Workbook()
-        sheet = workbook.active
-        sheet.title = "Scheme"
+        if os.path.isfile(path):
+            workbook = openpyxl.load_workbook(path)
+            try:
+                # If scheme already exists, we need to clear the data
+                workbook.remove(workbook["Scheme"])
+            except KeyError:
+                pass
+            sheet = workbook.create_sheet("Scheme", 1)
+        else:
+            workbook = openpyxl.Workbook()
+            sheet = workbook.active
+            sheet.title = "Scheme"
+
         header = ['Weight groups', 'Nominal mass (g)', 'Balance alias', '# runs']
-        sheet.append(header)
+        for i, a in enumerate(string.ascii_lowercase[:len(header)]):
+            sheet[a+'1'] = header[i]
 
         for row in range(self.rowCount()):
             # scheme_entry_row = [scheme_entry, nominal, bal_alias, num_runs]
@@ -202,7 +221,7 @@ class SchemeTable(QtWidgets.QTableWidget):
 
 
 def read_excel_scheme(path):
-    """Read an Excel file containing a weighing scheme"""
+    """Read an Excel file containing a weighing scheme."""
     _book = xlrd.open_workbook(path, on_demand=True)
 
     names = _book.sheet_names()

@@ -1,20 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
   <msl>
 
-    <!-- Specify client-specific information. -->
-    <save_folder>tests</save_folder> <!-- parent folder -->
-    <job>Program Check</job>
-    <client>10 kg to 1 mg weight set</client>
-    <client_masses>
-        10000 10000d 5000 2000 2000d 1000 500 200 200d 100 50 20 20d 10
-        5 2 2d 1 0.5 0.2 0.2d 0.1 0.05 0.02 0.02d 0.01 0.005 0.002 0.002d 0.001
-    </client_masses>                <!-- Write as str separated by spaces or +. -->
-    <std_set>MET14A</std_set>       <!-- Use only names of sets as in <standards> below. -->
-    <check_set>MET14B</check_set>   <!-- Use only names of sets as in <standards> below, or None. -->
-    <drift>auto select</drift>      <!-- Allowed options: auto select, linear drift, quadratic drift, cubic drift -->
-    <use_times>NO</use_times>       <!-- Allowed options: YES or NO -->
-    <correlations>None</correlations>       <!-- Allowed options: None, or matrix of correlations-->
-
     <!-- Specify all balances available for weighings. -->
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
 

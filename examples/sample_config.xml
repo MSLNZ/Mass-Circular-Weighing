@@ -1,31 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
   <msl>
 
-    <!-- Specify client-specific information. -->
-    <save_folder>G:\My Drive</save_folder>
-    <!-- The parent folder in which all data and analysis files are saved -->
-    <job>job</job>
-    <!-- The MSL job code for the calibration -->
-    <client>client</client>
-    <!-- The name of the client. Files will be created with this name inside the parent folder during the calibration process -->
-    <client_masses>1 2 5 10 20 50 100 200 200d 500 1000 2000 5000 10000</client_masses>
-    <!-- A list of client masses separated only by spaces, in any order -->
-    <std_set>MET19A</std_set>
-    <!-- The reference set used as standards in the weighing scheme.
-    Use tags of sets as in <standards> below. -->
-    <check_set>MET19B</check_set>
-    <!-- The reference set used as checks in the weighing scheme.
-    Use tags of sets as in <standards> below, or None. -->
-    <drift>auto select</drift>
-    <!-- Specify a drift option to use in the least squares analysis of each circular weighing.
-    Allowed options: auto select, linear drift, quadratic drift, cubic drift -->
-    <use_times>NO</use_times>
-    <!-- Specify whether to use the recorded times for each mass measurement in the least squares analysis of each circular weighing.
-    Allowed options: YES or NO -->
-    <correlations>None</correlations>
-    <!-- If relevant, include a matrix/list of correlations between standards (e.g. in build-up or build-down).
-    Allowed options: None, or matrix of correlations-->
-
     <!-- Specify all balances available for weighings. Details here must match the Balance register entries -->
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
     <equipment alias="AW-demo" manufacturer="Mettler Toledo" model="Test_AW"/>

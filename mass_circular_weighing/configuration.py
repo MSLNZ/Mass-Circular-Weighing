@@ -1,11 +1,11 @@
 """
-Configure the weighing program according to the config.xml file provided.
-Gets connection information for all balances in the config.xml file, including weight handlers,
+Configure the weighing program according to the admin.xlsx file provided.
+This file must include a working link to a configuration file, config.xml.
+Configuration loads and stores administrative details and mass set file information.
+It stores connection information for all balances in the config.xml file, including weight handlers,
 as well as ambient logger details and acceptance criteria for each balance.
-Loads and stores mass set file information.
 """
 import os
-import numpy as np
 
 from msl.equipment import Config
 from msl.io import read_table
@@ -15,20 +15,22 @@ from .equip import Vaisala
 
 from .constants import MU_STR
 from .log import log
+from .admin_details import AdminDetails
 
 
-class Configuration(object):
+class Configuration(AdminDetails):
 
-    def __init__(self, config, ):
-        """Initialise the calibration configuration from a config file following msl.equipment rules.
-        Assumes specific tags exist in the config file - TODO: make asserts here that the tags exist?
+    def __init__(self, adminxlsx):
+        """Initialise the calibration configuration from an admin.xlsx and a config file following msl.equipment rules.
+        Assumes that the admin.xlsx file follows the template, and that specific tags exist in the config.xml file.
 
         Parameters
         ----------
-        config : path to config.xml file containing relevant parameters
+        adminxlsx : path to admin.xlsx file containing administrative details including path to config.xml file
         """
+        super().__init__(adminxlsx)
 
-        self.cfg = Config(config)               # loads cfg file
+        self.cfg = Config(self.config_xml)      # loads cfg file
         self.db = self.cfg.database()           # loads database
         self.equipment = self.db.equipment      # loads subset of database with equipment being used
 
@@ -40,20 +42,6 @@ class Configuration(object):
         }
 
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
-
-        self.folder = self.cfg.root.find('save_folder').text
-        self.job = self.cfg.root.find('job').text
-        self.client = self.cfg.root.find('client').text
-        self.client_wt_IDs = self.cfg.root.find('client_masses').text
-
-        self.drift_text = self.cfg.root.find('drift').text
-        self.timed_text = self.cfg.root.find('use_times').text
-        self.correlations = self.cfg.root.find('correlations').text
-
-        self.all_stds = None
-        self.all_checks = None
-        self.std_set = self.cfg.root.find('std_set').text
-        self.check_set_text = self.cfg.root.find('check_set').text
 
     @property
     def check_set(self):
@@ -270,7 +258,7 @@ def load_stds_from_set_file(path, wtset):
     Returns
     -------
     dict
-        keys: 'Set Identifier', 'Calibrated', 'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (ug)'
+        keys: 'Set file', 'Set Identifier', 'Calibrated', 'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (ug)'
     """
 
     stds = {'Set file': path}
@@ -310,9 +298,9 @@ def load_stds_from_set_file(path, wtset):
                         else:
                             stds[key].append(trunc_val + id + stds['Set Identifier'])
                     elif key == 'uncertainties ('+MU_STR+'g)':
-                        stds[key].append(np.float(value)) # /SUFFIX[MU_STR+'g']
+                        stds[key].append(float(value))  # /SUFFIX[MU_STR+'g']
                     else:
-                        stds[key].append(np.float(value))
+                        stds[key].append(float(value))
 
                 line = fp.readline()
         else:

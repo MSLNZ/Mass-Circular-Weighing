@@ -33,7 +33,7 @@ class MCWGui(QtWidgets.QWidget):
         self.setWindowTitle('Mass Calibration Program (version {}): Main Window'.format(__version__))
 
         self.housekeeping = Housekeeping()
-        self.housekeeping.load_from_config()
+        self.housekeeping.load_from_admin()
         lhs_panel_group = self.housekeeping.lhs_panel_group()
         self.schemetable = SchemeTable()
         central_panel_group = self.make_table_panel()
@@ -41,6 +41,7 @@ class MCWGui(QtWidgets.QWidget):
         self.housekeeping.balance_list.connect(self.update_balances)
         self.schemetable.check_good_runs_in_file.connect(self.check_good_runs_in_file)
         self.housekeeping.scheme_file.connect(self.schemetable.auto_load_scheme)
+        self.housekeeping.scheme_info.connect(self.schemetable.load_scheme)
 
         self.mass_thread = MassCalcThread()
 
@@ -134,7 +135,7 @@ class MCWGui(QtWidgets.QWidget):
 
     def save_scheme(self, ):
         folder = self.housekeeping.cfg.folder
-        filename = self.housekeeping.cfg.client + '_Scheme.xlsx'
+        filename = self.housekeeping.cfg.client + '_Admin.xlsx'
         self.schemetable.save_scheme(folder, filename)
 
     def get_se_row(self, ):

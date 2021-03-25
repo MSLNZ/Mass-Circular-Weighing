@@ -77,8 +77,10 @@ if __name__ == "__main__":
 
     scheme_entry = "100 100MA 100MB" #"100kH 50kH+50kHd 100kHdd"
 
+    admin = r"C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\examples\Admin.xlsx"
+
     for i in range(1):
-        do_new_weighing(config, bal_alias, scheme_entry, nominal_mass)
+        do_new_weighing(admin, bal_alias, scheme_entry, nominal_mass)
 
     # analyse_old_weighing(cfg, filename, scheme_entry, 'run_1')
 

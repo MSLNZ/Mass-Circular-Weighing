@@ -163,7 +163,7 @@ class CalcWorker(Worker):
     def process(self):
         # collate and sort metadata
         inputdata = self.cw_data_table.get_checked_rows()
-        client_wt_IDs = filter_IDs(self.cfg.client_wt_IDs.split(), inputdata)
+        client_wt_IDs = filter_IDs(self.cfg.client_wt_IDs, inputdata)
         if self.cfg.all_checks is not None:
             check_masses = filter_stds(self.cfg.all_checks, inputdata)
         else:
