@@ -27,7 +27,6 @@ def filter_IDs(ID_list, inputdata):
 
 
 def filter_stds(std_masses, inputdata):
-
     weightgroups = []
     for i in np.append(inputdata['+ weight group'], inputdata['- weight group']):
         if '+' in i:
@@ -407,7 +406,7 @@ class FinalMassCalc(object):
 
 def make_backup(folder, client, filesavepath, ):
     if os.path.isfile(filesavepath):
-        existing_root = read(filesavepath, encoding='utf-8')
+        existing_root = read(filesavepath)
         if not os.path.exists(folder + "\\backups\\"):
             os.makedirs(folder + "\\backups\\")
         new_index = len(os.listdir(folder + "\\backups\\"))
@@ -415,7 +414,7 @@ def make_backup(folder, client, filesavepath, ):
         existing_root.is_read_only = False
         root = JSONWriter()
         root.set_root(existing_root)
-        root.save(root=existing_root, file=new_file, mode='w', encoding='utf-8', ensure_ascii=False)
+        root.save(root=existing_root, file=new_file, mode='w', ensure_ascii=False)
         log.info('Backup of previous Final Mass Calc saved as {}'.format(new_file))
 
 
@@ -423,7 +422,7 @@ def make_stds_dataset(type, masses_dict, scheme):
     num_masses = len(masses_dict['weight ID'])
     masses_dataarray = np.empty(num_masses, dtype={
         'names': ('weight ID', 'nominal (g)', 'mass values (g)', 'std uncertainties (ug)'),
-        'formats': (object, np.float, np.float, np.float)})
+        'formats': (object, float, float, float)})
     masses_dataarray['weight ID'] = masses_dict['weight ID']
     masses_dataarray['nominal (g)'] = masses_dict['nominal (g)']
     masses_dataarray['mass values (g)'] = masses_dict['mass values (g)']
