@@ -103,8 +103,9 @@ class LaTexDoc(object):
             )
         self.fp.close()
 
-    def init_report(self, job, client, folder):
+    def init_report(self, job, client, operator, folder):
         self.make_title(job + " for " + client)
+        self.fp.write(f"Operator: {operator}\n")
         self.fp.write("Data files saved in \\url{" + folder + '} \n')
 
     def make_table_wts(self, client_wt_IDs, check_wt_IDs, check_set_file_path, std_wt_IDs, std_set_file_path):
@@ -457,22 +458,15 @@ class LaTexDoc(object):
 
     def add_weighing_datasets(self, client, folder, scheme, cfg, incl_datasets, ):
         self.make_heading1("Circular Weighing Data")
-        if len(scheme.shape) == 1:
-            se = scheme[0]
-            nom = scheme[1]
+        for row in scheme:
+            se = row[0]
+            nom = row[1]
             cw_file = os.path.join(folder, client + '_' + nom + '.json')
-            self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
-            self.add_collated_data(cw_file, se)
-        else:
-            for row in scheme:
-                se = row[0]
-                nom = row[1]
-                cw_file = os.path.join(folder, client + '_' + nom + '.json')
-                if not os.path.isfile(cw_file):
-                    log.warning('No data yet collected for ' + se)
-                else:
-                    self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
-                    self.add_collated_data(cw_file, se)
+            if not os.path.isfile(cw_file):
+                log.warning('No data yet collected for ' + se)
+            else:
+                self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
+                self.add_collated_data(cw_file, se)
 
         self.make_heading2("Overall ambient conditions for included weighings")
         if self.collate_ambient["T" + IN_DEGREES_C]:
