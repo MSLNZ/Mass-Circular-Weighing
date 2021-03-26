@@ -150,6 +150,8 @@ class MCWGui(QtWidgets.QWidget):
         return se_row_data
 
     def collect_n_good_runs(self, ):
+        self.save_scheme()
+
         if not self.housekeeping.cfg.all_stds:
             self.housekeeping.initialise_cfg()
 

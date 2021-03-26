@@ -7,20 +7,21 @@ from mass_circular_weighing.constants import MU_STR, config_default, save_folder
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 admin_for_test = os.path.join(ROOT_DIR, r'tests\samples\admin_for_testing.xlsx')
 config_for_test = os.path.join(ROOT_DIR, r'tests\samples\config_for_testing.xml')
-config_no_details = os.path.join(ROOT_DIR, r'tests\samples\admin_no_details.xlsx')
+config_fmc = os.path.join(ROOT_DIR, r'tests\samples\config_fmc.xml')
+admin_no_details = os.path.join(ROOT_DIR, r'tests\samples\admin_no_details.xlsx')
 
 
 def test_no_admin_details():
     # this config has no Client, Job or Folder, and no weights in weight set
     # testing default values are picked up
-    cfg = Configuration(config_no_details)
+    cfg = Configuration(admin_no_details)
 
     assert cfg.operator is None
     assert cfg.client == client_default
     assert cfg.job == job_default
-    assert cfg.folder == save_folder_default
+    assert cfg.folder == os.path.join(ROOT_DIR, r'tests\samples')
 
-    assert cfg.config_xml == config_default
+    assert cfg.config_xml in config_fmc
 
     assert cfg.std_set == "CUSTOM"
     assert cfg.check_set is None

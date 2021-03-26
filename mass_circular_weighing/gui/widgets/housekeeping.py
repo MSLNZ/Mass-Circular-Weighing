@@ -136,6 +136,9 @@ class Housekeeping(QtWidgets.QWidget):
         log.info(f'Use measurement times? {self.cfg.timed}')
         log.info(f'Correlations between standards? {self.cfg.correlations}')
 
+        # save admin.xlsx in save folder
+        self.cfg.save_admin()
+
         bal_list = []
         # NOTE: This script only adds Mettler Toledo or Sartorius balances to the drop-down list
         for alias, equip in self.cfg.equipment.items():

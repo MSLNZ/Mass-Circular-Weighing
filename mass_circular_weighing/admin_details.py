@@ -41,31 +41,43 @@ class AdminDetails(object):
             self.client = self.ds['B3'].value
         if not self.client:
             self.client = client_default
+            self.ds['B3'] = self.client  # update value in memory
             log.warning(f"No client name specified. Defaulting to {self.client}.")
 
         # Job
         self.job = self.ds['B4'].value
         if not self.job:
             self.job = job_default
+            self.ds['B4'] = self.job
             log.warning(f"No job number specified. Defaulting to {self.job}.")
 
         # Save Folder
         try:
             self.folder = self.ds['B5'].value.encode('unicode-escape').decode()  # convert to raw string
-        except AttributeError:
-            self.folder = save_folder_default
+            if not os.path.exists(self.folder):
+                os.makedirs(self.folder)
+        except AttributeError:  # no fodler specified
+            # get folder information from where the Admin.xlsx file is coming from
+            self.folder = os.path.dirname(self.path)  # save_folder_default
+            self.ds['B5'] = self.folder
             log.warning(f"No save folder specified. Defaulting to {self.folder}.")
 
         # Configuration File
-        self.config_xml = ""
-        # try:
-        self.config_xml = self.ds['E11'].value # .encode('unicode-escape').decode()
+        self.config_xml = self.ds['E11'].value
         if not self.config_xml:
-            self.config_xml = config_default  # the example config file in Mass-Circular-Weighing
-
-            log.warning(f"No config.xml file path specified. Defaulting to {self.config_xml}.")
-        if not os.path.isfile(self.config_xml):  # then there's a big problem
+            # look for a config file in the same folder as the Admin.xlsx file
+            xml_files = [f for f in os.listdir(self.folder) if f.endswith(".xml")]
+            if xml_files:
+                config_xml = prompt.item("Select your config.xml file if present", xml_files)
+                if config_xml:
+                    self.config_xml = os.path.join(self.folder, config_xml)
+                    log.warning(f"No config.xml file path specified in {self.path}.")
+            if not self.config_xml:
+                self.config_xml = config_default  # the example config file in Mass-Circular-Weighing
+                log.warning(f"No config.xml file path specified. Defaulting to {self.config_xml}.")
+        if not os.path.isfile(self.config_xml):
             raise FileNotFoundError(f"Cannot find the configuration file at {self.config_xml}.")
+        self.ds['E11'] = self.config_xml
 
         # Circular Weighing Analysis Parameters
         self.drift_text = self.ds['E7'].value
@@ -79,9 +91,9 @@ class AdminDetails(object):
         self.all_stds = None
         self.all_checks = None
         self.std_set = self.ds['B10'].value
-        self.check_set_text = self.ds['B11'].value
         if not self.std_set:
             log.error("No reference mass set specified!")
+        self.check_set_text = self.ds['B11'].value
 
         self.scheme = self.load_scheme()
 
@@ -111,23 +123,37 @@ class AdminDetails(object):
         dict
             keys: 'Set Identifier', 'weight ID', 'nominal (g)', 'Marking', 'Container', 'u_mag (ug)', 'Density', 'u_density'
         """
-        num_wts = self.ds['E13'].value
-        if not num_wts:
-            log.error("No weights in client weight set!")
-        start_row = 15
+        header_row = 14
         wt_dict = {'Set Identifier': None}  # TODO: alter here if decide to add an identifier to client weights
 
         for i in string.ascii_lowercase[:7]:  # go across a row ;)
-            key = self.ds[i+str(14)].value
-            if key == 'weight ID':
-                # ensure all weight IDs are strings
-                val = [str(self.ds[i + str(row)].value) for row in range(start_row, start_row + num_wts)]
-            else:
-                # keep whatever data type makes sense
-                val = [self.ds[i+str(row)].value for row in range(start_row, start_row + num_wts)]
+            key = self.ds[i+str(header_row)].value
+
+            val = []
+            for row in range(header_row + 1, self.ds.max_row):
+                v = self.ds[i + str(row)].value
+                if v is not None:
+                    if key == 'weight ID':
+                        # ensure all weight IDs are strings
+                        val.append(str(v))
+                    else:
+                        # keep whatever data type makes sense
+                        val.append(v)
+
             wt_dict[key] = val
 
+        if not wt_dict['weight ID']:
+            log.error("No weights in client weight set!")
+
         return wt_dict
+
+    def save_admin(self):
+        # triggered by 'Confirm settings' button on main panel of gui
+        # update location of new Admin file
+        self.path = os.path.join(self.folder, self.client + '_Admin.xlsx')
+        # overwrite any previous version of admin details
+        self.wb.save(filename=self.path)
+        log.info(f'Admin details saved to {self.path}')
 
 
 if __name__ == "__main__":
