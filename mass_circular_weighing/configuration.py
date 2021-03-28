@@ -7,7 +7,7 @@ as well as ambient logger details and acceptance criteria for each balance.
 """
 import os
 
-from msl.equipment import Config
+from msl.equipment import Config, utils
 from msl.io import read_table
 
 from .equip import Balance, MettlerToledo, AWBalCarousel, AWBalLinear
@@ -31,6 +31,19 @@ class Configuration(AdminDetails):
         super().__init__(adminxlsx)
 
         self.cfg = Config(self.config_xml)      # loads cfg file
+
+        # update root with name of the computer running this Python script
+        root = self.cfg.root
+        root.find('connections/connection/sheet').text = os.environ['COMPUTERNAME']
+
+        # save config to the folder specified in AdminDetails
+        new_config = os.path.join(self.folder, self.job + '_config.xml')
+        with open(new_config, mode='w', encoding='utf-8') as fp:
+            fp.write(utils.convert_to_xml_string(root))
+        self.config_xml = new_config
+
+        self.cfg = Config(self.config_xml)      # reload cfg file
+
         self.db = self.cfg.database()           # loads database
         self.equipment = self.db.equipment      # loads subset of database with equipment being used
 
