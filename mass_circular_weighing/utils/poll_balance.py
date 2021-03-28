@@ -1,5 +1,5 @@
 """
-Test communications with a balance listed in sample_config.xml
+Test communications with a balance listed in default_config.xml
 """
 from ..constants import config_default
 from ..configuration import Configuration

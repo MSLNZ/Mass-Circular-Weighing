@@ -75,7 +75,7 @@
     <connections>
       <connection>
         <path>G:\Shared drives\MSL - MAP\Equipment register\Equipment register.xlsx</path>
-        <sheet>LenovoX260</sheet>
+        <sheet>(will be replaced by os.environ['COMPUTERNAME'])</sheet>
       </connection>
     </connections>
 

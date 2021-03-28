@@ -10,7 +10,7 @@ from mass_circular_weighing.configuration import Configuration
 sys.excepthook = excepthook
 gui = application()
 
-config = r"C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\examples\sample_config.xml"
+config = r"C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\examples\default_config.xml"
 # config = r'C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\vaisala_config.xml'  # change this of course!
 cfg = Configuration(config)
 

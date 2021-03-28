@@ -21,7 +21,7 @@ REL_UNC = 0.03              # relative uncertainty in ppm for no buoyancy correc
 local_backup = r'C:\CircularWeighingData'
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 admin_default = os.path.join(ROOT_DIR, r'examples\Admin.xlsx')
-config_default = os.path.join(ROOT_DIR, r'examples\sample_config.xml')
+config_default = os.path.join(ROOT_DIR, r'examples\default_config.xml')
 
 save_folder_default = r'G:\My Drive'
 sample_data_folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'

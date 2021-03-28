@@ -56,7 +56,7 @@ class AdminDetails(object):
             self.folder = self.ds['B5'].value.encode('unicode-escape').decode()  # convert to raw string
             if not os.path.exists(self.folder):
                 os.makedirs(self.folder)
-        except AttributeError:  # no fodler specified
+        except AttributeError:  # no folder specified
             # get folder information from where the Admin.xlsx file is coming from
             self.folder = os.path.dirname(self.path)  # save_folder_default
             self.ds['B5'] = self.folder

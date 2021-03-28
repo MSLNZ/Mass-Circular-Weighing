@@ -7,7 +7,7 @@ from mass_circular_weighing.configuration import Configuration
 sys.excepthook = excepthook
 gui = application()
 
-config = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\examples\sample_config.xml'  # change this of course!
+config = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\examples\default_config.xml'  # change this of course!
 cfg = Configuration(config)
 
 bal_alias = 'XPE505C'
