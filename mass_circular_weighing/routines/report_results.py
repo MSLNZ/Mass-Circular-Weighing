@@ -2,6 +2,7 @@
 Prepares an easily-checked summarised form of the raw and processed data
 """
 import os
+from stat import S_IREAD, S_IRGRP, S_IROTH
 import numpy as np
 
 from msl.io import read, read_table_excel
@@ -58,13 +59,15 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     log.info("LaTeX file saved to {}".format(latex_file))
 
     # make Excel summary file
-    xl_output_file = os.path.join(cfg.folder, cfg.client + '_Summary.xlsx')
+    # xl_output_file = os.path.join(cfg.folder, cfg.client + '_Summary.xlsx')
     xl = ExcelSummaryWorkbook(cfg)
     xl.format_scheme_file()
     xl.add_mls(fmc_root)
     xl.add_all_cwdata(cfg, incl_datasets)
     xl.add_overall_ambient()
-    xl.save_workbook(xl_output_file)
+    xl_output_file = xl.save_workbook(cfg.folder, cfg.client)
+    # set Excel output to read_only
+    os.chmod(xl_output_file, S_IREAD | S_IRGRP | S_IROTH)
 
     # Make Word Output file - not in use at present
     # wd = WordDoc()

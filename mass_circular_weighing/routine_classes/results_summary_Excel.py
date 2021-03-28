@@ -72,6 +72,22 @@ class ExcelSummaryWorkbook(object):
         """Adds matrix least squares sections to summary file;
         separates input and output data into two different sheets"""
 
+        # Save input to sheet
+        indata = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
+        self.save_array_to_sheet(indata, sheet_name="MLS Input Data")
+        insheet = self.wb["MLS Input Data"]
+        insheet.insert_rows(0, 2)
+        insheet['A1'] = "Input data for Matrix Least Squares analysis"
+        insheet['A1'].font = Font(bold=True)
+
+        # add custom number formatting
+        for i in range(4, insheet.max_row):
+            insheet["C" + str(i)].number_format = "0.000 000 000"
+        insheet.column_dimensions["A"].width = 15
+        insheet.column_dimensions["B"].width = 15
+        insheet.column_dimensions["C"].width = 16
+        insheet.column_dimensions["D"].width = 19
+
         # Save output to sheet
         outdata = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
         self.save_array_to_sheet(outdata, sheet_name="MLS Output Data")
@@ -99,22 +115,6 @@ class ExcelSummaryWorkbook(object):
         # add custom number formatting
         for i in range(5, mls.max_row):
             mls["D"+str(i)].number_format = "0.000 000 000"
-
-        # Save input to sheet
-        indata = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
-        self.save_array_to_sheet(indata, sheet_name="MLS Input Data")
-        insheet = self.wb["MLS Input Data"]
-        insheet.insert_rows(0, 2)
-        insheet['A1'] = "Input data for Matrix Least Squares analysis"
-        insheet['A1'].font = Font(bold=True)
-
-        # add custom number formatting
-        for i in range(4, insheet.max_row):
-            insheet["C"+str(i)].number_format = "0.000 000 000"
-        insheet.column_dimensions["A"].width = 15
-        insheet.column_dimensions["B"].width = 15
-        insheet.column_dimensions["C"].width = 16
-        insheet.column_dimensions["D"].width = 19
 
     def add_weighing_dataset(self, se, cw_file,  nom, incl_datasets, cfg):
         """Adds relevant from each circular weighing for a given scheme entry
@@ -288,6 +288,19 @@ class ExcelSummaryWorkbook(object):
             except ValueError:
                 mls.append([key, "(no data)"])
 
-    def save_workbook(self, path):
-        self.wb.save(path)
-        log.info('Data saved to {}'.format(path))
+    def save_workbook(self, folder, client):
+        xl_output_file = os.path.join(folder, client + '_Summary.xlsx')
+        # make backup
+        if os.path.isfile(xl_output_file):
+            new_index = len(os.listdir(folder + "\\backups\\"))
+            back_up_file = str(folder + "\\backups\\" + client + '_summary_backup{}.xlsx'.format(new_index))
+            os.rename(xl_output_file, back_up_file)  # this moves the file and renames it
+        # protect each sheet
+        for sheet in self.wb.sheetnames:
+            self.wb[sheet].protection.set_password('Mass')
+        self.wb.active = self.wb['Admin']
+        # save the new file
+        self.wb.save(xl_output_file)
+        log.info('Data saved to {}'.format(xl_output_file))
+
+        return xl_output_file
