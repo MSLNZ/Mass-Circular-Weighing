@@ -32,12 +32,12 @@
     <!-- Specify the Equipment-Register Databases to load equipment records from. -->
     <registers>
       <register team="M&amp;P" user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution">
-          <path>Balance register.xlsx</path>
+          <path>tests\samples\Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>
 
       <register team="M&amp;P">
-          <path>Equipment register.xlsx</path>
+          <path>tests\samples\Equipment register.xlsx</path>
           <sheet>Equipment</sheet>
       </register>
     </registers>
@@ -45,7 +45,7 @@
     <!-- Specify the Connections Databases to load connection records from. -->
     <connections>
       <connection>
-        <path>Equipment register.xlsx</path>
+        <path>tests\samples\Equipment register.xlsx</path>
         <sheet>LenovoX260</sheet>
       </connection>
     </connections>

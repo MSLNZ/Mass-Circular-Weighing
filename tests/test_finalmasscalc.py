@@ -12,11 +12,8 @@ from mass_circular_weighing.gui.threads.masscalc_popup import filter_stds
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-config_for_test = os.path.join(ROOT_DIR, r'tests\samples\admin_fmc.xlsx')
+admin_for_test = os.path.join(ROOT_DIR, r'tests\samples\admin_fmc.xlsx')
 input_data_file_for_test = os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc\LeastSquaresInputData_All.xlsx')
-
-cfg = Configuration(config_for_test)
-cfg.init_ref_mass_sets()
 
 # test data
 data_table = read_table(input_data_file_for_test, sheet='Sheet1')
@@ -30,13 +27,15 @@ for i in range(len(data_table)):
     collated['mass difference (g)'][i] = float(data_table[i,2])
     collated['balance uncertainty (' + MU_STR + 'g)'][i] = float(data_table[i, 3])
 
+check_fmc = read(os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc\samplefinalmasscalc.json'))
+
+cfg = Configuration(admin_for_test)
+cfg.init_ref_mass_sets()
+
 client_wt_ids = cfg.client_wt_IDs
 checks = filter_stds(cfg.all_checks, collated)
 # Here all standards are used so no need to filter
 # stds = filter_stds(cfg.all_stds, collated)
-
-check_fmc = read(os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc\samplefinalmasscalc.json'))
-
 fmc = FinalMassCalc(cfg.folder, cfg.client, client_wt_ids, checks, cfg.all_stds, collated, nbc=True, corr=None)
 
 

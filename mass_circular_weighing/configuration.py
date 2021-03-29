@@ -32,19 +32,23 @@ class Configuration(AdminDetails):
 
         self.cfg = Config(self.config_xml)      # loads cfg file
 
-        # update root with name of the computer running this Python script
-        root = self.cfg.root
-        root.find('connections/connection/sheet').text = os.environ['COMPUTERNAME']
+        try:
+            self.db = self.cfg.database()       # loads database
+        except ValueError as e:                 # can't find the named sheet
+            log.debug(e)
+            # update root with name of the computer running this Python script
+            root = self.cfg.root
+            root.find('connections/connection/sheet').text = os.environ['COMPUTERNAME']
 
-        # save config to the folder specified in AdminDetails
-        new_config = os.path.join(self.folder, self.job + '_config.xml')
-        with open(new_config, mode='w', encoding='utf-8') as fp:
-            fp.write(utils.convert_to_xml_string(root))
-        self.config_xml = new_config
+            # save config to the folder specified in AdminDetails
+            new_config = os.path.join(self.folder, self.job + '_config.xml')
+            with open(new_config, mode='w', encoding='utf-8') as fp:
+                fp.write(utils.convert_to_xml_string(root))
+            self.config_xml = new_config
 
-        self.cfg = Config(self.config_xml)      # reload cfg file
+            self.cfg = Config(self.config_xml)  # reload cfg file
+            self.db = self.cfg.database()       # loads database
 
-        self.db = self.cfg.database()           # loads database
         self.equipment = self.db.equipment      # loads subset of database with equipment being used
 
         self.bal_class = {

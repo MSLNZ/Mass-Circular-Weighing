@@ -102,7 +102,7 @@ class AdminDetails(object):
         try:
             sheet = self.wb["Scheme"]
         except KeyError:
-            log.error('Scheme worksheet does not exist in {}'.format(self.path))
+            log.info('Scheme worksheet does not yet exist in {}'.format(self.path))
             return None
 
         header = []
