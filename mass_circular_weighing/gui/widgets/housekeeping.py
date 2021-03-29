@@ -3,14 +3,14 @@ An interactive display of the metadata needed for a mass calibration, as stored 
 """
 import os
 
-from msl.qt import QtWidgets, Button, Signal, utils, prompt
+from msl.qt import QtWidgets, Button, Signal
 
 from ...log import log
-from ...constants import admin_default, save_folder_default, job_default, client_default, client_wt_IDs_default
+from ...constants import save_folder_default, job_default, client_default, client_wt_IDs_default
 from ...configuration import Configuration
 from .browse import Browse, label
-from ..threads.configedit_thread import ConfigEditorThread
-cfe = ConfigEditorThread()
+# from ..threads.configedit_thread import ConfigEditorThread
+# cfe = ConfigEditorThread()
 
 
 class Housekeeping(QtWidgets.QWidget):
@@ -22,7 +22,7 @@ class Housekeeping(QtWidgets.QWidget):
     def __init__(self):
         super(Housekeeping, self).__init__()
 
-        self.admin_io = Browse(admin_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.xlsx')
+        self.admin_io = Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.xlsx')
         self.admin_io.textbox.textChanged.connect(self.load_from_admin)
         self.config_lbl = label("")
         # self.edit_config_but = Button(text='Edit config file', left_click=self.edit_config)
@@ -52,6 +52,7 @@ class Housekeeping(QtWidgets.QWidget):
         formlayout.addRow('Admin file (.xlsx)', label(""))
         formlayout.setWidget(1, 2, self.admin_io) #0, 2, config_box)
         formlayout.addRow('Config file', self.config_lbl)
+        # could add revised config editor back in here if needed
         formlayout.addRow('Folder for saving data', self.folder_io)
         formlayout.addRow('Job', self.job_io)
         formlayout.addRow(label('Client'), self.client_io)
@@ -61,15 +62,6 @@ class Housekeeping(QtWidgets.QWidget):
         formGroup.setLayout(formlayout)
 
         return formGroup
-
-    def arrange_config_box(self):
-        configbox = QtWidgets.QGroupBox('Admin.xlsx File')
-        layout = QtWidgets.QVBoxLayout()
-
-
-        # layout.addWidget(self.edit_config_but)
-        configbox.setLayout(layout)
-        return configbox
 
     def arrange_options_box(self):
         self.optionsGroup = QtWidgets.QGroupBox('Options for analysis')
@@ -113,12 +105,11 @@ class Housekeeping(QtWidgets.QWidget):
         else:
             log.error('File does not exist at {!r}'.format(self.admin_io.textbox.text()))
 
-    def edit_config(self):
-        cfe.show(self.cfg)
-        newconfig = cfe.wait_for_prompt_reply()
-        self.cfg.config_xml = newconfig
-        self.config_lbl.setText(f'Config file: {self.cfg.config_xml}')
-        # TODO: ensure this change gets updated in the Admin sheet
+    # def edit_config(self):
+    #     cfe.show(self.cfg)
+    #     newconfig = cfe.wait_for_prompt_reply()
+    #     self.cfg.config_xml = newconfig
+    #     self.config_lbl.setText(f'Config file: {self.cfg.config_xml}')
 
     def initialise_cfg(self):
         """Set and log values for configuration variables; initialise next phase of calibration"""
@@ -136,7 +127,7 @@ class Housekeeping(QtWidgets.QWidget):
         log.info(f'Use measurement times? {self.cfg.timed}')
         log.info(f'Correlations between standards? {self.cfg.correlations}')
 
-        # save admin.xlsx in save folder
+        # save details to Admin sheet in (client)_admin.xlsx in save folder
         self.cfg.save_admin()
 
         bal_list = []
