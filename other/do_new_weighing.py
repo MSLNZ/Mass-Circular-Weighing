@@ -1,7 +1,7 @@
 """
 A script to run a new weighing without using the gui
 """
-from mass_circular_weighing.constants import config_default
+from mass_circular_weighing.constants import admin_default
 from mass_circular_weighing.configuration import Configuration
 from mass_circular_weighing.routines.run_circ_weigh import *
 #from mass_circular_weighing.routines.collate_data import collate_a_data_from_json
@@ -61,7 +61,9 @@ def do_new_weighing(config, bal_alias, scheme_entry, nominal_mass):
 if __name__ == "__main__":
 
     # config = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\LUCY\config.xml' #r'I:\MSL\Private\Mass\transfer\Balance Software\LUCY_BuildUp\config.xml'
-    config = config_default
+    admin = admin_default
+    bal_alias = 'MDE-demo'  # codename for balance
+
     scheme_entries = [
         "20KRA 10KMA+10KMB 20KRB 20KRC",
         "20KRB 10KMA+10KMB 20KRC 20KRD",
@@ -73,11 +75,8 @@ if __name__ == "__main__":
     # "3kn10+500mb+50mb+20mb 2ko+2kod 3kn11+500mb+50mb+20mb" # pressure calibration example
     # "1 1s 0.5+0.5s" #
     nominal_mass = 100  # nominal mass in g
-    bal_alias = 'MDE-demo' # codename for balance
 
     scheme_entry = "100 100MA 100MB" #"100kH 50kH+50kHd 100kHdd"
-
-    admin = r"C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\examples\Admin.xlsx"
 
     for i in range(1):
         do_new_weighing(admin, bal_alias, scheme_entry, nominal_mass)
