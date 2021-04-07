@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 from msl.qt import prompt
 
 from .log import log
-from .constants import config_default, save_folder_default, client_default, job_default
+from .constants import config_default, client_default, job_default, MU_STR
 
 
 class AdminDetails(object):
@@ -86,7 +86,7 @@ class AdminDetails(object):
 
         # Weight Set Information
         self.all_client_wts = self.load_client_set()
-        self.client_wt_IDs = self.all_client_wts['weight ID']
+        self.client_wt_IDs = self.all_client_wts['Weight ID']
 
         self.all_stds = None
         self.all_checks = None
@@ -133,7 +133,7 @@ class AdminDetails(object):
             for row in range(header_row + 1, self.ds.max_row):
                 v = self.ds[i + str(row)].value
                 if v is not None:
-                    if key == 'weight ID':
+                    if key == 'Weight ID':
                         # ensure all weight IDs are strings
                         val.append(str(v))
                     else:
@@ -142,7 +142,7 @@ class AdminDetails(object):
 
             wt_dict[key] = val
 
-        if not wt_dict['weight ID']:
+        if not wt_dict['Weight ID']:
             log.error("No weights in client weight set!")
 
         return wt_dict

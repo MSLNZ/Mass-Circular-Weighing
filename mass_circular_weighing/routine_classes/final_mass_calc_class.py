@@ -6,7 +6,7 @@ from msl.io import JSONWriter, read
 
 from .. import __version__
 from ..log import log
-from ..constants import REL_UNC, DELTA_STR, SUFFIX
+from ..constants import REL_UNC, DELTA_STR, SUFFIX, MU_STR
 
 
 def num_to_eng_format(num):
@@ -18,6 +18,7 @@ def num_to_eng_format(num):
 
 
 def filter_IDs(ID_list, inputdata):
+    # TODO: update to carry more information through in the client weight set dictionary
     relevant_IDs = []
     for item in ID_list:
         if item in inputdata['+ weight group'] or item in inputdata['- weight group']:
@@ -35,34 +36,26 @@ def filter_stds(std_masses, inputdata):
         else:
             weightgroups.append(i)
 
-    relevant_IDs = []
-    relevant_nominal = []
-    relevant_massvals = []
-    relevant_uncs = []
+    # create copy of std_masses with empty mass lists
+    std_masses_new = dict()
+    for key, val in std_masses.items():
+        std_masses_new[key] = val
+    to_append = ['Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)', 'u_drift']
+    for key in to_append:
+        std_masses_new[key] = []
 
-    for i, item in enumerate(std_masses['weight ID']):
+    # add info for included masses  only
+    for i, item in enumerate(std_masses['Weight ID']):
         if item in weightgroups:
-            relevant_IDs.append(item)
-            relevant_nominal.append(std_masses['nominal (g)'][i])
-            relevant_massvals.append(std_masses['mass values (g)'][i])
-            relevant_uncs.append(std_masses['uncertainties (ug)'][i])
-
-    std_masses_new = {
-        'Set file': std_masses['Set file'],
-        'Set Identifier': std_masses['Set Identifier'],
-        'Calibrated': std_masses['Calibrated'],
-        'nominal (g)': relevant_nominal,
-        'mass values (g)': relevant_massvals,
-        'uncertainties (ug)': relevant_uncs,
-        'weight ID': relevant_IDs,
-    }
+            for key in to_append:
+                std_masses_new[key].append(std_masses[key][i])
 
     return std_masses_new
 
 
 class FinalMassCalc(object):
 
-    def __init__(self, folder, client, client_wt_IDs, check_masses, std_masses, inputdata, nbc=True, corr=None):
+    def __init__(self, folder, client, client_masses, check_masses, std_masses, inputdata, nbc=True, corr=None):
         """Initialises the calculation of mass values using matrix least squares methods
 
         Parameters
@@ -71,13 +64,16 @@ class FinalMassCalc(object):
             folder in which to save json file with output data; ideally an absolute path
         client : str
             name of client
-        client_wt_IDs : list
-            list of client wt IDs as strings, as used in the circular weighing scheme
-        check_masses : dict
-            list of check wt IDs as str, as used in the circular weighing scheme
-            None if no check weights are used
+        client_masses : dict
+            dict of client weights
+            Weight IDs are the strings used in the circular weighing scheme
+        check_masses : dict or None
+            dict of check weights as for std_masses, or None if no check weights are used
         std_masses : dict
-            keys: 'nominal (g)', 'mass values (g)', 'uncertainties (ug)', 'weight ID', 'Set Identifier', 'Calibrated'
+            keys: 'MASSREF file', 'Sheet name', 'Set name', 'Set type', 'Set identifier', 'Calibrated',
+            'Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)',
+            'u_drift'
+            Weight ID values must match those used in the circular weighing scheme
         inputdata : numpy structured array
             use format np.asarray(<data>, dtype =[('+ weight group', object), ('- weight group', object),
             ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
@@ -100,7 +96,7 @@ class FinalMassCalc(object):
         self.finalmasscalc = JSONWriter(metadata=metadata)
         self.structure_jsonfile()
 
-        self.client_wt_IDs = client_wt_IDs
+        self.client_wt_IDs = client_masses["Weight ID"]
         self.check_masses = check_masses
         self.std_masses = std_masses
         self.inputdata = inputdata
@@ -138,11 +134,11 @@ class FinalMassCalc(object):
     def import_mass_lists(self, ):
         # import lists of masses from supplied info
         log.info('Beginning mass calculation for the following client masses:\n' + str(self.client_wt_IDs))
-        # get client weight IDs for metadata
+        # get client Weight IDs for metadata
         self.num_client_masses = len(self.client_wt_IDs)
         self.finalmasscalc['1: Mass Sets']['Client'].add_metadata(**{
             'Number of masses': self.num_client_masses,
-            'weight ID': self.client_wt_IDs
+            'Weight ID': self.client_wt_IDs
         })
         # get number of check masses, if used, and save as dataset
         if not self.check_masses:
@@ -150,10 +146,10 @@ class FinalMassCalc(object):
             check_wt_IDs = []
             self.finalmasscalc['1: Mass Sets']['Check'].add_metadata(**{
                 'Number of masses': self.num_check_masses,
-                'Set Identifier': 'No check set'})
+                'Set identifier': 'No check set'})
             log.info('Checks: None')
         else:
-            check_wt_IDs = self.check_masses['weight ID']
+            check_wt_IDs = self.check_masses['Weight ID']
             self.num_check_masses = make_stds_dataset('Checks', self.check_masses, self.finalmasscalc['1: Mass Sets']['Check'])
 
         # get number of standards, and save as dataset
@@ -161,7 +157,7 @@ class FinalMassCalc(object):
 
         self.num_unknowns = self.num_client_masses + self.num_check_masses + self.num_stds
         log.info('Number of unknowns = '+str(self.num_unknowns))
-        self.allmassIDs = np.append(np.append(self.client_wt_IDs, check_wt_IDs), self.std_masses['weight ID'])
+        self.allmassIDs = np.append(np.append(self.client_wt_IDs, check_wt_IDs), self.std_masses['Weight ID'])
         # note that stds are grouped last
         self.num_obs = len(self.inputdata) + self.num_stds
         self.leastsq_meta['Number of observations'] = self.num_obs
@@ -193,12 +189,12 @@ class FinalMassCalc(object):
             self.differences[rowcounter] = entry[2]
             self.uncerts[rowcounter] = entry[3]
             rowcounter += 1
-        for std in self.std_masses['weight ID']:
+        for std in self.std_masses['Weight ID']:
             designmatrix[rowcounter, np.where(self.allmassIDs == std)] = 1
             rowcounter += 1
 
         self.differences = np.append(self.differences, self.std_masses['mass values (g)'])  # corresponds to Y, in g
-        self.uncerts = np.append(self.uncerts, self.std_masses['uncertainties (ug)'])  # balance uncertainties in ug
+        self.uncerts = np.append(self.uncerts, self.std_masses['uncertainties (' + MU_STR + 'g)'])  # balance uncertainties in ug
         log.debug('differences:\n' + str(self.differences))
         log.debug('uncerts:\n' + str(self.uncerts))
 
@@ -236,10 +232,10 @@ class FinalMassCalc(object):
 
         rmeas = np.identity(self.num_obs)
         if type(self.corr) == np.ndarray:                        # Add off-diagonal terms for correlations
-            for mass1 in self.std_masses['weight ID']:
-                i = np.where(self.std_masses['weight ID'] == mass1)
-                for mass2 in self.std_masses['weight ID']:
-                    j = np.where(self.std_masses['weight ID'] == mass2)
+            for mass1 in self.std_masses['Weight ID']:
+                i = np.where(self.std_masses['Weight ID'] == mass1)
+                for mass2 in self.std_masses['Weight ID']:
+                    j = np.where(self.std_masses['Weight ID'] == mass2)
                     rmeas[len(self.inputdata)+i[0], len(self.inputdata)+j[0]] = self.corr[i, j]
             log.debug('rmeas matrix includes correlations for stds:\n'+str(rmeas[:, len(self.inputdata)-self.num_obs:]))
 
@@ -267,7 +263,7 @@ class FinalMassCalc(object):
             # dtype =[('+ weight group', object), ('- weight group', object), ('mass difference (g)', object),
             #         ('balance uncertainty (ug)', 'float64'), ('residual (ug)', 'float64')])
         inputdatares[0:len(inputdata), 0] = inputdata['+ weight group']
-        inputdatares[len(inputdata):, 0] = self.std_masses['weight ID']
+        inputdatares[len(inputdata):, 0] = self.std_masses['Weight ID']
         inputdatares[0:len(inputdata), 1] = inputdata['- weight group']
         inputdatares[:, 2] = self.differences
         inputdatares[:, 3] = self.uncerts
@@ -418,26 +414,29 @@ def make_backup(folder, client, filesavepath, ):
         log.info('Backup of previous Final Mass Calc saved as {}'.format(new_file))
 
 
-def make_stds_dataset(type, masses_dict, scheme):
-    num_masses = len(masses_dict['weight ID'])
-    masses_dataarray = np.empty(num_masses, dtype={
-        'names': ('weight ID', 'nominal (g)', 'mass values (g)', 'std uncertainties (ug)'),
-        'formats': (object, float, float, float)})
-    masses_dataarray['weight ID'] = masses_dict['weight ID']
-    masses_dataarray['nominal (g)'] = masses_dict['nominal (g)']
+def make_stds_dataset(set_type, masses_dict, scheme):
+    num_masses = len(masses_dict['Weight ID'])
+    masses_dataarray = np.empty(num_masses, dtype=[
+        ('Weight ID', object),
+        ('Nominal (g)', float),
+        ('mass values (g)', float),
+        ('std uncertainties (' + MU_STR + 'g)', float)
+    ])
+    masses_dataarray['Weight ID'] = masses_dict['Weight ID']
+    masses_dataarray['Nominal (g)'] = masses_dict['Nominal (g)']
     masses_dataarray['mass values (g)'] = masses_dict['mass values (g)']
-    masses_dataarray['std uncertainties (ug)'] = masses_dict['uncertainties (ug)']
+    masses_dataarray['std uncertainties (' + MU_STR + 'g)'] = masses_dict['uncertainties (' + MU_STR + 'g)']
 
     scheme.add_metadata(**{
         'Number of masses': num_masses,
-        'Set Identifier': masses_dict['Set Identifier'],
+        'Set identifier': masses_dict['Set identifier'],
         'Calibrated': masses_dict['Calibrated'],
-        'weight ID': masses_dict['weight ID'],
+        'Weight ID': masses_dict['Weight ID'],
     })
 
     scheme.create_dataset('mass values', data=masses_dataarray)
 
-    log.info(type + ' '+str(masses_dict['weight ID']))
+    log.info(set_type + ' '+str(masses_dict['Weight ID']))
 
     return num_masses
 

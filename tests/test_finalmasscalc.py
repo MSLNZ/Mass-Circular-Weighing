@@ -49,7 +49,6 @@ def test_file_structure():
 
 def test_import_mass_lists():
     fmc.import_mass_lists()
-
     # check client info
     assert fmc.num_client_masses == 30 \
            == fmc.finalmasscalc['1: Mass Sets']['Client'].metadata['Number of masses'] \
@@ -59,19 +58,19 @@ def test_import_mass_lists():
             '10000', '10000d', '5000', '2000', '2000d', '1000', '500', '200', '200d', '100', '50', '20', '20d', '10', '5',
             '2', '2d', '1', '0.5', '0.2', '0.2d', '0.1', '0.05', '0.02', '0.02d', '0.01', '0.005', '0.002', '0.002d', '0.001'
         ][i] \
-               == fmc.finalmasscalc['1: Mass Sets']['Client'].metadata['weight ID'][i] \
-               == check_fmc['1: Mass Sets']['Client'].metadata['weight ID'][i]
+               == fmc.finalmasscalc['1: Mass Sets']['Client'].metadata['Weight ID'][i] \
+               == check_fmc['1: Mass Sets']['Client'].metadata['Weight ID'][i]
 
     # check check info
     assert fmc.num_check_masses == 13 \
            == fmc.finalmasscalc['1: Mass Sets']['Check'].metadata['Number of masses'] \
            == check_fmc['1: Mass Sets']['Check'].metadata['Number of masses']
     for i in range(fmc.num_check_masses):
-        assert fmc.check_masses['weight ID'][i] == [
+        assert fmc.check_masses['Weight ID'][i] == [
             '10KMB', '5KMB', '2KMB', '1KMB', '500MB', '200MB', '100MB', '50MB', '20MB', '10MB', '5MB', '0.1MB', '0.001MB'
         ][i] \
-               == fmc.finalmasscalc['1: Mass Sets']['Check'].metadata['weight ID'][i] \
-               == check_fmc['1: Mass Sets']['Check'].metadata['weight ID'][i]
+               == fmc.finalmasscalc['1: Mass Sets']['Check'].metadata['Weight ID'][i] \
+               == check_fmc['1: Mass Sets']['Check'].metadata['Weight ID'][i]
 
     assert fmc.finalmasscalc['1: Mass Sets']['Check']['mass values']
     assert "0 groups, 1 datasets, 4 metadata" in repr(fmc.finalmasscalc['1: Mass Sets']['Check'])
@@ -81,12 +80,12 @@ def test_import_mass_lists():
            == fmc.finalmasscalc['1: Mass Sets']['Standard'].metadata['Number of masses'] \
            == check_fmc['1: Mass Sets']['Standard'].metadata['Number of masses']
     for i in range(fmc.num_stds):
-        assert fmc.std_masses['weight ID'][i] == [
+        assert fmc.std_masses['Weight ID'][i] == [
             '10KMA', '5KMA', '2KMA', '1KMA', '500MA', '200MA', '100MA', '50MA', '20MA', '10MA', '5MA', '2MA', '1MA',
             '0.5MA', '0.2MA', '0.1MA', '0.05MA', '0.02MA', '0.01MA', '0.005MA', '0.002MA', '0.001MA'
         ][i] \
-               == fmc.finalmasscalc['1: Mass Sets']['Standard'].metadata['weight ID'][i] \
-               == check_fmc['1: Mass Sets']['Standard'].metadata['weight ID'][i]
+               == fmc.finalmasscalc['1: Mass Sets']['Standard'].metadata['Weight ID'][i] \
+               == check_fmc['1: Mass Sets']['Standard'].metadata['Weight ID'][i]
 
     for row in range(fmc.num_stds):
         assert fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values'][row] \

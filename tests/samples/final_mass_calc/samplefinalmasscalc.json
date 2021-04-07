@@ -7,20 +7,20 @@
   "1: Mass Sets": {
     "Client": {
       "Number of masses": 30,
-      "weight ID": ["10000","10000d","5000","2000","2000d","1000","500","200","200d","100","50","20","20d","10","5","2","2d","1","0.5","0.2","0.2d","0.1","0.05","0.02","0.02d","0.01","0.005","0.002","0.002d","0.001"]
+      "Weight ID": ["10000","10000d","5000","2000","2000d","1000","500","200","200d","100","50","20","20d","10","5","2","2d","1","0.5","0.2","0.2d","0.1","0.05","0.02","0.02d","0.01","0.005","0.002","0.002d","0.001"]
     },
     "Check": {
       "Number of masses": 13,
-      "weight ID": ["10KMB","5KMB","2KMB","1KMB","500MB","200MB","100MB","50MB","20MB","10MB","5MB","0.1MB","0.001MB"]
+      "Weight ID": ["10KMB","5KMB","2KMB","1KMB","500MB","200MB","100MB","50MB","20MB","10MB","5MB","0.1MB","0.001MB"]
     },
     "Standard": {
       "Number of masses": 22,
       "Set Identifier": "MA",
       "Calibrated": "2013-14",
-      "weight ID": ["10KMA","5KMA","2KMA","1KMA","500MA","200MA","100MA","50MA","20MA","10MA","5MA","2MA","1MA","0.5MA","0.2MA","0.1MA","0.05MA","0.02MA","0.01MA","0.005MA","0.002MA","0.001MA"],
+      "Weight ID": ["10KMA","5KMA","2KMA","1KMA","500MA","200MA","100MA","50MA","20MA","10MA","5MA","2MA","1MA","0.5MA","0.2MA","0.1MA","0.05MA","0.02MA","0.01MA","0.005MA","0.002MA","0.001MA"],
       "mass values": {
         "dtype": [
-          ["weight ID","object"],
+          ["Weight ID","object"],
           ["nominal (g)","float64"],
           ["mass values (g)","float64"],
           ["std uncertainties (ug)","float64"]

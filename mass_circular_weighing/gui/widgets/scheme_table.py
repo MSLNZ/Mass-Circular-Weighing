@@ -153,10 +153,10 @@ class SchemeTable(QtWidgets.QTableWidget):
                     for mass in wtgrp.split('+'):
                         if mass in cfg.client_wt_IDs:
                             log.debug(mass + ' in client set')
-                        elif mass in cfg.all_stds['weight ID']:
+                        elif mass in cfg.all_stds['Weight ID']:
                             log.debug(mass + ' in std set')
                         elif cfg.all_checks is not None \
-                                and mass in cfg.all_checks['weight ID']:
+                                and mass in cfg.all_checks['Weight ID']:
                             log.debug(mass + ' in check set')
                         else:
                             log.error(mass + ' is not in any of the specified mass sets.')

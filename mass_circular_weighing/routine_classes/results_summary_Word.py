@@ -200,21 +200,21 @@ class WordDoc(object):
         self.make_normal_text("", size=self.smallfont)
 
     def add_weighing_scheme(self, scheme, fmc_root, check_file, std_file):
-        client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("weight ID"))
+        client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("Weight ID"))
         if check_file:
             checks = {
-                'weight ID': list_to_csstr(fmc_root["1: Mass Sets"]["Check"].metadata.get("weight ID")),
+                'Weight ID': list_to_csstr(fmc_root["1: Mass Sets"]["Check"].metadata.get("Weight ID")),
                 'Set file': check_file
             }
         else:
             checks = None
-        std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("weight ID"))
+        std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("Weight ID"))
 
         self.make_heading1('Weighing Scheme')
         headers = ['Weight groups', 'Nominal mass(g)', 'Balance', '# runs']
         self.make_table_struct(headers, scheme)
         if checks is not None:
-            self.make_table_wts(client_wt_IDs, checks['weight ID'], checks['Set file'], std_wts, std_file)
+            self.make_table_wts(client_wt_IDs, checks['Weight ID'], checks['Set file'], std_wts, std_file)
         else:
             self.make_table_wts_nochecks(client_wt_IDs, std_wts, std_file)
 

@@ -21,7 +21,8 @@ class Browse(QtWidgets.QWidget):
 
         Parameters
         ----------
-        default
+        default : str
+            the string to display when the Browse widget is first created
         icon
         find : str
             this argument specifies which type of browse widget is created: file or folder.
