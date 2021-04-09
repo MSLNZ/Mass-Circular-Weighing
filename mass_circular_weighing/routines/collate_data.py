@@ -66,7 +66,7 @@ def collate_all_weighings(schemetable, cfg):
                 data[-len(newdata):]['balance uncertainty ('+MU_STR+'g)'] = newdata[:]['balance uncertainty ('+MU_STR+'g)']
                 data[-len(newdata):]['Acceptance met?'] = newdata[:]['Acceptance met?']
 
-                log.debug('Collated scheme entry '+schemetable.cellWidget(row, 0).text()+' from '+url)
+                log.debug(f'Collated scheme entry {schemetable.cellWidget(row, 0).text()} from {url} ({mode} mode)')
 
     return data
 
@@ -95,7 +95,7 @@ def collate_a_data_from_json(url, scheme_entry):
     if not os.path.isfile(url):
         log.warning('File does not yet exist {!r}'.format(url))
         return None
-    folder = url.strip(url.split("\\")[-1])
+    folder = os.path.dirname(os.path.abspath(url))
     root = check_for_existing_weighdata(folder, url, scheme_entry)
     schemefolder = root['Circular Weighings'][scheme_entry]
     wt_grps = scheme_entry.split()
@@ -177,6 +177,7 @@ def collate_a_data_from_json(url, scheme_entry):
     root.save(root=root, file=url, mode='w', encoding='utf-8', ensure_ascii=False)
 
     return inputdata
+
 
 def collate_m_data_from_json(url, scheme_entry):
     """Use this function to collate individual runs from a mde or mw weighing

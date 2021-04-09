@@ -280,7 +280,7 @@ class ExcelSummaryWorkbook(object):
     def add_overall_ambient(self):
         mls = self.wb["MLS Output Data"]
         mls.append([])
-        mls.append(["Overall range of ambient conditions for included datasets"])
+        mls.append(["Overall range of ambient conditions for included datasets (min, max)"])
         mls['A'+str(mls.max_row)].font = Font(italic=True)
         for key, value in self.collate_ambient.items():
             try:
@@ -292,8 +292,9 @@ class ExcelSummaryWorkbook(object):
         xl_output_file = os.path.join(folder, client + '_Summary.xlsx')
         # make backup
         if os.path.isfile(xl_output_file):
-            new_index = len(os.listdir(folder + "\\backups\\"))
-            back_up_file = str(folder + "\\backups\\" + client + '_summary_backup{}.xlsx'.format(new_index))
+            back_up_folder = os.path.join(folder, "backups")
+            new_index = len(back_up_folder)  # counts number of files in backup folder
+            back_up_file = os.path.join(back_up_folder, client + '_summary_backup{}.xlsx'.format(new_index))
             os.rename(xl_output_file, back_up_file)  # this moves the file and renames it
         # protect each sheet
         for sheet in self.wb.sheetnames:
