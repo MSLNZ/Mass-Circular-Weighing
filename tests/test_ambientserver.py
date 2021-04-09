@@ -2,6 +2,7 @@
 # from the host set in ambient_fromwebapp.py
 
 import pytest
+from time import sleep
 
 from mass_circular_weighing.equip.ambient_fromwebapp import *
 
@@ -40,17 +41,25 @@ def test_get_t_rh_now():
             get_t_rh_now(mass1, sensor=probe)
 
     # operational
-    ambient = get_t_rh_now(mass1, sensor=1)
-    assert len(ambient) == 3
-    assert isinstance(ambient[0], str)
-    timestamp = datetime.fromisoformat(ambient[0])
-    assert timestamp.date() == datetime.date(datetime.now())
-    assert timestamp.hour == datetime.now().hour
-    assert datetime.now().minute - 1 <= timestamp.minute <= datetime.now().minute
+    for i in range(20):
+        ambient = get_t_rh_now(mass1, sensor=1)
+        assert isinstance(ambient[0], str)
+        assert len(ambient) == 3
 
-    assert isinstance(ambient[1], float) and isinstance(ambient[2], float)
-    assert 0 < ambient[1] < 30
-    assert 10 < ambient[2] < 100
+        timestamp = datetime.fromisoformat(ambient[0])
+        assert timestamp.date() == datetime.date(datetime.now())
+        assert timestamp.hour == datetime.now().hour
+        assert datetime.now().minute - 1 <= timestamp.minute <= datetime.now().minute
+
+        if ambient[1] is not None:
+            assert isinstance(ambient[1], float) and isinstance(ambient[2], float)
+            assert 0 < ambient[1] < 30
+            assert 10 < ambient[2] < 100
+            break
+        else:
+            # ambient is tuple of datetime (as str), None, None, typically because of the following error:
+            # "[WinError 10053] An established connection was aborted by the software in your host machine"
+            sleep(1)
 
 
 @pytest.mark.skipif(not has_server, reason='requires access to server running webapp')

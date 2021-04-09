@@ -1,5 +1,6 @@
 import numpy as np
 from datetime import datetime
+from time import sleep
 
 from ..log import log
 from ..constants import FONTSIZE, IN_DEGREES_C
@@ -27,7 +28,13 @@ def check_ambient_pre(ambient_instance, ambient_details):
     if ambient_details["Type"] == "OMEGA":
         log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger '+ambient_details['Alias'] + ' sensor ' + str(ambient_details['Sensor']))
 
-        date_start, t_start, rh_start = get_t_rh_now(str(ambient_details['Alias']), sensor=ambient_details['Sensor'])
+        date_start, t_start, rh_start = None, None, None
+        for i in range(15):  # in case the connection gets aborted by the software in the host machine
+            date_start, t_start, rh_start = get_t_rh_now(str(ambient_details['Alias']), sensor=ambient_details['Sensor'])
+            if t_start is not None:
+                break
+            else:
+                sleep(1)
 
         if t_start is None:
             t_start, rh_start = prompt_t_rh(timepoint=None)
