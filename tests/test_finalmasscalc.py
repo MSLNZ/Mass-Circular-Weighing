@@ -8,7 +8,7 @@ from mass_circular_weighing.configuration import Configuration
 from mass_circular_weighing.constants import MU_STR
 
 from mass_circular_weighing.routine_classes.final_mass_calc_class import FinalMassCalc
-from mass_circular_weighing.gui.threads.masscalc_popup import filter_stds
+from mass_circular_weighing.gui.threads.masscalc_popup import filter_mass_set
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -32,11 +32,32 @@ check_fmc = read(os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc\samplefi
 cfg = Configuration(admin_for_test)
 cfg.init_ref_mass_sets()
 
-client_wt_ids = cfg.client_wt_IDs
-checks = filter_stds(cfg.all_checks, collated)
-# Here all standards are used so no need to filter
-# stds = filter_stds(cfg.all_stds, collated)
-fmc = FinalMassCalc(cfg.folder, cfg.client, client_wt_ids, checks, cfg.all_stds, collated, nbc=True, corr=None)
+# client_wt_ids = cfg.client_wt_IDs
+checks = filter_mass_set(cfg.all_checks, collated)
+
+fmc = FinalMassCalc(cfg.folder, cfg.client, cfg.all_client_wts, checks, cfg.all_stds, collated, nbc=True, corr=None)
+
+
+def test_filter_masses():
+    # Here all standards are used so stds should be unchanged
+    stds = filter_mass_set(cfg.all_stds, collated)
+    for key, value in cfg.all_stds.items():
+        if value is None:
+            assert stds[key] is None
+        else:
+            assert len(stds[key]) == len(value)
+            assert stds[key][0] == value[0]
+            assert stds[key][-1] == value[-1]
+
+    # Here all client weights are used so also should be unchanged
+    stds = filter_mass_set(cfg.all_client_wts, collated)
+    for key, value in cfg.all_client_wts.items():
+        if value is None:
+            assert stds[key] is None
+        else:
+            assert len(stds[key]) == len(value)
+            assert stds[key][0] == value[0]
+            assert stds[key][-1] == value[-1]
 
 
 def test_file_structure():
@@ -73,6 +94,9 @@ def test_import_mass_lists():
                == check_fmc['1: Mass Sets']['Check'].metadata['Weight ID'][i]
 
     assert fmc.finalmasscalc['1: Mass Sets']['Check']['mass values']
+    assert fmc.num_check_masses == 13 \
+           == fmc.finalmasscalc['1: Mass Sets']['Check'].metadata['Number of masses'] \
+           == check_fmc['1: Mass Sets']['Check'].metadata['Number of masses']
     assert "0 groups, 1 datasets, 4 metadata" in repr(fmc.finalmasscalc['1: Mass Sets']['Check'])
 
     # check std info
@@ -88,8 +112,8 @@ def test_import_mass_lists():
                == check_fmc['1: Mass Sets']['Standard'].metadata['Weight ID'][i]
 
     for row in range(fmc.num_stds):
-        assert fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values'][row] \
-               == check_fmc['1: Mass Sets']['Standard']['mass values'][row]
+        for j, col in enumerate(fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values'][row]):
+            assert col == check_fmc['1: Mass Sets']['Standard']['mass values'][row][j]
 
     assert "0 groups, 1 datasets, 4 metadata" in repr(fmc.finalmasscalc['1: Mass Sets']['Standard'])
 
@@ -200,12 +224,13 @@ def test_save_to_json_file():
 
 
 if __name__ == '__main__':
-    # test_file_structure()
-    # test_import_mass_lists()
-    # test_parse_inputdata_to_matrices()
-    # test_least_squares()
-    # test_check_residuals()
-    # test_cal_rel_unc()
-    # test_make_summary_table()
+    test_file_structure()
+    test_filter_masses()
+    test_import_mass_lists()
+    test_parse_inputdata_to_matrices()
+    test_least_squares()
+    test_check_residuals()
+    test_cal_rel_unc()
+    test_make_summary_table()
     test_add_data_to_root()
     test_save_to_json_file()

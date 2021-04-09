@@ -17,17 +17,22 @@ def num_to_eng_format(num):
             return eng_num
 
 
-def filter_IDs(ID_list, inputdata):
-    # TODO: update to carry more information through in the client weight set dictionary
-    relevant_IDs = []
-    for item in ID_list:
-        if item in inputdata['+ weight group'] or item in inputdata['- weight group']:
-            relevant_IDs.append(item)
+def filter_mass_set(masses, inputdata):
+    """Takes a set of masses and returns a copy with only the masses included in the data which will be
+    input into the final mass calculation.
+    Uses Set type key to determine which other keys are present in the masses dictionary.
 
-    return relevant_IDs
-
-
-def filter_stds(std_masses, inputdata):
+    Parameters
+    ----------
+    masses : dict
+        mass set as stored in the Configuration class object (from AdminDetails)
+    inputdata : numpy structured array
+        use format np.asarray(<data>, dtype =[('+ weight group', object), ('- weight group', object),
+                                ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
+    Returns
+    -------
+    dict of only the masses which appear in inputdata
+    """
     weightgroups = []
     for i in np.append(inputdata['+ weight group'], inputdata['- weight group']):
         if '+' in i:
@@ -36,21 +41,28 @@ def filter_stds(std_masses, inputdata):
         else:
             weightgroups.append(i)
 
-    # create copy of std_masses with empty mass lists
-    std_masses_new = dict()
-    for key, val in std_masses.items():
-        std_masses_new[key] = val
-    to_append = ['Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)', 'u_drift']
-    for key in to_append:
-        std_masses_new[key] = []
+    # create copy of masses with empty mass lists
+    masses_new = dict()
+    for key, val in masses.items():
+        masses_new[key] = val
+    if masses['Set type'] == 'Standard' or masses['Set type'] == 'Check':
+        to_append = ['Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)', 'u_drift']
+    elif masses['Set type'] == 'Client':
+        to_append = ['Weight ID', 'Nominal (g)', 'Shape/Mark', 'Container',
+                     'u_mag (' + MU_STR + 'g)', 'Density (kg/m3)', 'u_density (kg/m3)']
+    else:
+        log.error("Mass Set type not recognised: must be 'std' or 'client'")
+        return None
 
-    # add info for included masses  only
-    for i, item in enumerate(std_masses['Weight ID']):
+    for key in to_append:
+        masses_new[key] = []
+    # add info for included masses only
+    for i, item in enumerate(masses['Weight ID']):
         if item in weightgroups:
             for key in to_append:
-                std_masses_new[key].append(std_masses[key][i])
+                masses_new[key].append(masses[key][i])
 
-    return std_masses_new
+    return masses_new
 
 
 class FinalMassCalc(object):
@@ -96,6 +108,7 @@ class FinalMassCalc(object):
         self.finalmasscalc = JSONWriter(metadata=metadata)
         self.structure_jsonfile()
 
+        self.client_masses = client_masses
         self.client_wt_IDs = client_masses["Weight ID"]
         self.check_masses = check_masses
         self.std_masses = std_masses
@@ -319,7 +332,6 @@ class FinalMassCalc(object):
         # det_varcovar_nbc = np.linalg.det(psi_nbc_hadamard)
         # det_varcovar_b = np.linalg.det(psi_b)
 
-
     def make_summary_table(self, ):
         if self.std_uncert_b is None:
             self.cal_rel_unc()
@@ -376,11 +388,11 @@ class FinalMassCalc(object):
         leastsq_data.create_dataset('Input data with least squares residuals', data=self.inputdatares,
                                     metadata={'headers':
                                                   ['+ weight group', '- weight group', 'mass difference (g)',
-                                                   'balance uncertainty (ug)', 'residual (ug)']})
+                                                   'balance uncertainty (' + MU_STR + 'g)', 'residual (' + MU_STR + 'g)']})
         leastsq_data.create_dataset('Mass values from least squares solution', data=self.summarytable,
                                     metadata={'headers':
                                                   ['Nominal (g)', 'Weight ID', 'Set ID',
-                                                   'Mass value (g)', 'Uncertainty (ug)', '95% CI', 'Cov',
+                                                   'Mass value (g)', 'Uncertainty (' + MU_STR + 'g)', '95% CI', 'Cov',
                                                    "Reference value (g)",
                                                    ]})
 

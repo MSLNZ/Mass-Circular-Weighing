@@ -2,7 +2,7 @@ import pytest
 import os
 
 from mass_circular_weighing.configuration import Configuration
-from mass_circular_weighing.constants import MU_STR, config_default, save_folder_default, client_default, job_default
+from mass_circular_weighing.constants import MU_STR, client_default, job_default
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 admin_for_test = os.path.join(ROOT_DIR, r'tests\samples\admin_for_testing.xlsx')
@@ -45,8 +45,8 @@ def test_admin_details():
 
     assert cfg.config_xml in config_for_test
 
-    assert cfg.std_set == "CUSTOM"
-    assert cfg.check_set is None
+    assert cfg.std_set == 'Mettler A'
+    assert cfg.check_set == 'Mettler B'
     assert cfg.all_client_wts
     assert len(cfg.client_wt_IDs) == cfg.ds['E13'].value == 13
 
@@ -61,6 +61,37 @@ def test_admin_details():
         ['1000 1KMA 1KMB', '1000', 'AX10005', '10'],
         ['5000 5KMA 5KMB', '5000', 'AX10005', '10']
     ]
+
+
+def test_load_mass_set():
+    cfg = Configuration(admin_for_test)     # uses Mettler A and B as for FMC
+    cfg.init_ref_mass_sets()
+
+    assert cfg.massref_path == cfg.all_stds['MASSREF file'] == r"tests\samples\MASSREF4tests.xlsx"
+    assert cfg.all_stds['Set name'] == 'Mettler 11'
+    assert cfg.all_stds['Sheet name'] == 'Mettler A'
+    assert cfg.all_stds['Set type'] == 'Standard'
+    assert cfg.all_stds['Set identifier'] == 'MA'
+    assert cfg.all_stds['Nominal (g)'][0] == 10000
+    assert '10KMA' in cfg.all_stds['Weight ID']
+    assert len(cfg.all_stds['Weight ID']) == len(cfg.all_stds['Nominal (g)']) \
+        == len(cfg.all_stds['mass values (g)']) == len(cfg.all_stds['uncertainties (' + MU_STR + 'g)']) == 22
+
+    assert cfg.all_checks['Set name'] == 'Mettler 11'
+    assert cfg.all_checks['Sheet name'] == 'Mettler B'
+    assert cfg.all_checks['Set type'] == 'Check'
+    assert cfg.all_checks['Set identifier'] == 'MB'
+    assert cfg.all_checks['Nominal (g)'][0] == 10000
+    assert '10KMB' in cfg.all_checks['Weight ID']
+    assert len(cfg.all_checks['Weight ID']) == len(cfg.all_checks['Nominal (g)']) \
+        == len(cfg.all_checks['mass values (g)']) == len(cfg.all_checks['uncertainties (' + MU_STR + 'g)']) == 22
+
+    cfg = Configuration(admin_no_details)   # uses Custom and None
+    cfg.init_ref_mass_sets()
+    assert cfg.massref_path == cfg.all_stds['MASSREF file'] == r"tests\samples\MASSREF4tests.xlsx"
+    assert cfg.all_stds['Set identifier'] == "CUSTOM"
+    assert cfg.all_stds['Nominal (g)'][0] == 10000
+    assert cfg.all_checks is None
 
 
 def test_acceptance_criteria():
@@ -82,15 +113,3 @@ def test_acceptance_criteria():
     ac = cfg.acceptance_criteria('MDE-demo', 500)
     assert ac['Max stdev from CircWeigh ('+MU_STR+'g)'] == 20.
     assert ac['Stdev for balance ('+MU_STR+'g)'] == 15.
-
-    with pytest.raises(AttributeError) as err:
-        cfg.init_ref_mass_sets()
-    assert 'NoneType' in str(err.value)
-
-
-def test_check_scheme():
-    pass
-
-
-if __name__ == '__main__':
-    test_acceptance_criteria()

@@ -8,7 +8,7 @@ from msl.qt import Qt, QtWidgets, Button, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
 
 from ...constants import MU_STR, NBC
-from ...routine_classes.final_mass_calc_class import FinalMassCalc, filter_IDs, filter_stds
+from ...routine_classes.final_mass_calc_class import FinalMassCalc, filter_mass_set
 from ...routines.report_results import export_results_summary
 
 
@@ -163,17 +163,17 @@ class CalcWorker(Worker):
     def process(self):
         # collate and sort metadata
         inputdata = self.cw_data_table.get_checked_rows()
-        client_wt_IDs = filter_IDs(self.cfg.client_wt_IDs, inputdata)
+        client_masses = filter_mass_set(self.cfg.all_client_wts, inputdata)
         if self.cfg.all_checks is not None:
-            check_masses = filter_stds(self.cfg.all_checks, inputdata)
+            check_masses = filter_mass_set(self.cfg.all_checks, inputdata)
         else:
             check_masses = None
-        std_masses = filter_stds(self.cfg.all_stds, inputdata)
+        std_masses = filter_mass_set(self.cfg.all_stds, inputdata)
         # send relevant information to matrix least squares mass calculation algorithm
         self.fmc = FinalMassCalc(
             self.cfg.folder,
             self.cfg.client,
-            client_wt_IDs,
+            client_masses,
             check_masses,
             std_masses,
             inputdata,
@@ -250,14 +250,14 @@ class MassCalcThread(Thread):
         inc_datasets = self.inputdata_table.included_datasets
 
         if self.cfg.all_checks:
-            check_set = self.cfg.all_checks['Set file']
+            check_set = f"Sheet {self.cfg.all_checks['Sheet name']} in {self.cfg.massref_path}"
         else:
             check_set = None
 
         export_results_summary(
             self.cfg,
             check_set,
-            self.cfg.all_stds['Set file'],
+            f"Sheet {self.cfg.all_stds['Sheet name']} in {self.cfg.massref_path}",
             inc_datasets,
         )
 

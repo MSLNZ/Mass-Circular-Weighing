@@ -9,15 +9,11 @@ class DoWeighing(Service):
     def __init__(self):
         super().__init__(max_clients=1, name='Do single circular weighing')
 
-    def do_new_weighing(self, cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
-                        timed=False, drift='quadratic drift'):
-        done = do_new_weighing(cfg, client, bal_alias, folder, filename, scheme_entry, nominal_mass,
-                               timed, drift)
+    @staticmethod
+    def do_new_weighing(cfg, bal_alias, scheme_entry, nominal_mass):
+        done = do_new_weighing(cfg, bal_alias, scheme_entry, nominal_mass,)
 
         return done
-
-    def select_folder(self):
-        return prompt.folder()
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@
     },
     "Standard": {
       "Number of masses": 22,
-      "Set Identifier": "MA",
+      "Set identifier": "MA",
       "Calibrated": "2013-14",
       "Weight ID": ["10KMA","5KMA","2KMA","1KMA","500MA","200MA","100MA","50MA","20MA","10MA","5MA","2MA","1MA","0.5MA","0.2MA","0.1MA","0.05MA","0.02MA","0.01MA","0.005MA","0.002MA","0.001MA"],
       "mass values": {

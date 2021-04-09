@@ -16,7 +16,7 @@
 
     <!-- Specify where to find acceptance limits for circular weighing data. -->
     <acceptance_criteria>
-          <path>tests\samples\Balance register.xlsx</path>
+          <path>Balance register.xlsx</path>
           <sheet>AcceptanceCriteria</sheet>
           <EXCL>3</EXCL> <!-- criterion for excluding a single weighing within an automatic weighing sequence
                             from the final averaging (and from any tally of happy weighings).
@@ -32,12 +32,12 @@
     <!-- Specify the Equipment-Register Databases to load equipment records from. -->
     <registers>
       <register team="M&amp;P" user_defined="unit, ambient_monitoring, weighing_mode, stable_wait, resolution">
-          <path>tests\samples\Balance register.xlsx</path>
+          <path>Balance register.xlsx</path>
           <sheet>Balances</sheet>
       </register>
 
       <register team="M&amp;P">
-          <path>tests\samples\Equipment register.xlsx</path>
+          <path>Equipment register.xlsx</path>
           <sheet>Equipment</sheet>
       </register>
     </registers>
@@ -45,7 +45,7 @@
     <!-- Specify the Connections Databases to load connection records from. -->
     <connections>
       <connection>
-        <path>tests\samples\Equipment register.xlsx</path>
+        <path>Equipment register.xlsx</path>
         <sheet>LenovoX260</sheet>
       </connection>
     </connections>
