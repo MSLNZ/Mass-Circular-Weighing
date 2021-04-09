@@ -122,7 +122,7 @@ class MassValuesTable(QtWidgets.QTableWidget):
         super(MassValuesTable, self).__init__()
         self.header = [
             "Nominal (g)", "Weight ID", "Set ID",
-            "Mass value (g)", "Uncertainty (ug)", "95% CI", "Cov", "Reference value (g)",
+            "Mass value (g)", "Uncertainty (µg)", "95% CI", "Cov", "Reference value (g)",
         ]
         self.setColumnCount(len(self.header))
         self.setHorizontalHeaderLabels(self.header)

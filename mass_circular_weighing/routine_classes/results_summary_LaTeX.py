@@ -134,10 +134,10 @@ class LaTexDoc(object):
         if masscol == 2:  # Input data table
             col_type_str = "ll S[round-mode=places,round-precision=9] S S"
             headerstr = " {+ weight group} & {- weight group} & {mass difference (g)} & " \
-                        "{balance uncertainty (ug)} & {residual (ug)} \\\\"
+                        "{balance uncertainty ($\\mu$g)} & {residual ($\\mu$g)} \\\\"
         elif masscol == 3:  # MSL data table
             col_type_str = "S ll S[round-mode=places,round-precision=9] S S S l"
-            headerstr = " {Nominal (g)} & {Weight ID} & {Set ID} & {Mass value (g)} & {Uncertainty (ug)} & " \
+            headerstr = " {Nominal (g)} & {Weight ID} & {Set ID} & {Mass value (g)} & {Uncertainty ($\\mu$g)} & " \
                         "{95\% CI} & {Cov} & {c.f. Reference value (g)} \\\\"
         else:
             log.error("Unknown data table type")
@@ -221,7 +221,7 @@ class LaTexDoc(object):
                 str(meta['Relative uncertainty for no buoyancy correction (ppm)'])
         )
         self.make_normal_text(
-            "Sum of residues squared ($\\mu^2$) = " + str(meta['Sum of residues squared ('+MU_STR+'g^2)'])
+            "Sum of residues squared ($\\mug^2$) = " + str(meta['Sum of residues squared ('+MU_STR+'g^2)'])
         )
         self.fp.write("\\end{landscape}\n")
 

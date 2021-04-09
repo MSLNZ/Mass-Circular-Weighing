@@ -5,7 +5,7 @@ Modify default folder paths as necessary
 
 import os
 
-MU_STR = 'u'                    # ALT+0181 or 'µ'. use 'u' if running into issues
+MU_STR = 'µ'                    # ALT+0181 or 'µ'. use 'u' if running into issues
 SIGMA_STR = 'σ'                 # \u03C3 for sigma sign
 DELTA_STR = 'Δ'                 # \u0394 for capital delta sign
 SQUARED_STR = '²'

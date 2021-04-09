@@ -171,7 +171,7 @@ class FinalMassCalc(object):
         designmatrix = np.zeros((self.num_obs, self.num_unknowns))
         rowcounter = 0
 
-        log.debug('Input data: \n+ weight group, - weight group, mass difference (g), balance uncertainty (ug)'
+        log.debug('Input data: \n+ weight group, - weight group, mass difference (g), balance uncertainty (' + MU_STR + 'g)'
                   '\n' + str(self.inputdata))
         for entry in self.inputdata:
             log.debug("{} {} {} {}".format(entry[0], entry[1], entry[2], entry[3]))
@@ -255,7 +255,7 @@ class FinalMassCalc(object):
 
         r0 = (self.differences - np.dot(x, self.b))*1e6               # residuals, converted from g to ug
         sum_residues_squared = np.dot(r0, r0)
-        self.leastsq_meta['Sum of residues squared (ug^2)'] = np.round(sum_residues_squared, 6)
+        self.leastsq_meta['Sum of residues squared (' + MU_STR + 'g^2)'] = np.round(sum_residues_squared, 6)
         log.debug('Residuals:\n'+str(np.round(r0, 4)))       # also save as column with input data for checking
 
         inputdata = self.inputdata
@@ -362,7 +362,7 @@ class FinalMassCalc(object):
             summarytable[i, 6] = cov
 
         log.info('Found least squares solution')
-        log.debug('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (ug), 95% CI\n' + str(
+        log.debug('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (' + MU_STR + 'g), 95% CI\n' + str(
             summarytable))
 
         self.summarytable = summarytable

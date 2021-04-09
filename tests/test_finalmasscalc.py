@@ -134,7 +134,7 @@ def test_parse_inputdata_to_matrices():
                == fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values']['mass values (g)'][j] \
                == check_fmc["2: Matrix Least Squares Analysis"]["Input data with least squares residuals"][len(collated) + j][2]
         assert fmc.uncerts[len(collated) + j] \
-               == fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values']['std uncertainties (ug)'][j] \
+               == fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values']['std uncertainties (' + MU_STR + 'g)'][j] \
                == check_fmc["2: Matrix Least Squares Analysis"]["Input data with least squares residuals"][len(collated) + j][3]
 
 
@@ -145,7 +145,7 @@ def test_least_squares():
         assert fmc.b[i] == \
                pytest.approx(check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][3])
 
-    assert fmc.leastsq_meta['Sum of residues squared (ug^2)'] == 471.478324
+    assert fmc.leastsq_meta['Sum of residues squared (' + MU_STR + 'g^2)'] == 471.478324
 
     for row in range(len(collated)):
         for col in range(5):
