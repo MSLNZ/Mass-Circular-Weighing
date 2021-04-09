@@ -203,13 +203,13 @@ class LaTexDoc(object):
         input_data = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
         h1 = input_data.metadata.get('metadata')['headers']
         self.make_table_massdata(input_data, h1, 2)
-        save_mls_excel(input_data, folder, client, sheet_name="Differences")
+        # save_mls_excel(input_data, folder, client, sheet_name="Differences")
 
         self.make_heading2('Mass values from Least Squares solution')
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
         h2 = mvals.metadata.get('metadata')['headers']
         self.make_table_massdata(mvals, h2, 3)
-        save_mls_excel(mvals, folder, client, sheet_name="Mass_Values")
+        # save_mls_excel(mvals, folder, client, sheet_name="Mass_Values")
         meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
         self.make_normal_text(
                 "Number of observations = " + str(meta['Number of observations']) +
