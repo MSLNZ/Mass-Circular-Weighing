@@ -33,7 +33,7 @@ class MCWGui(QtWidgets.QWidget):
         self.setWindowTitle('Mass Calibration Program (version {}): Main Window'.format(__version__))
 
         self.housekeeping = Housekeeping()
-        self.housekeeping.load_from_admin()
+        # self.housekeeping.load_from_admin()
         lhs_panel_group = self.housekeeping.lhs_panel_group()
         self.schemetable = SchemeTable()
         central_panel_group = self.make_table_panel()
