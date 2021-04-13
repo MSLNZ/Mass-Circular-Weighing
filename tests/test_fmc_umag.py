@@ -12,52 +12,51 @@ from mass_circular_weighing.gui.threads.masscalc_popup import filter_mass_set
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-admin_for_test = os.path.join(ROOT_DIR, r'tests\samples\admin_fmc.xlsx')
-input_data_file_for_test = os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc\LeastSquaresInputData_All.xlsx')
+admin_for_test = os.path.join(ROOT_DIR, r'tests\samples\admin_umag.xlsx')
+# input_data_file_for_test is in admin_for_test
 
 # test data
-data_table = read_table(input_data_file_for_test, sheet='Sheet1')
+data_table = read_table(admin_for_test, sheet='InputData')
 
 collated = np.empty(len(data_table),
                     dtype=[('+ weight group', object), ('- weight group', object),
                            ('mass difference (g)', 'float64'), ('balance uncertainty (' + MU_STR + 'g)', 'float64')])
-collated['+ weight group'] = data_table[:,0]
-collated['- weight group'] = data_table[:,1]
+collated['+ weight group'] = data_table[:, 0]
+collated['- weight group'] = data_table[:, 1]
 for i in range(len(data_table)):
-    collated['mass difference (g)'][i] = float(data_table[i,2])
+    collated['mass difference (g)'][i] = float(data_table[i, 2])
     collated['balance uncertainty (' + MU_STR + 'g)'][i] = float(data_table[i, 3])
 
-check_fmc = read(os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc\samplefinalmasscalc.json'))
+check_fmc = read(os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc\samplefinalmasscalcumag.json'))
 
 cfg = Configuration(admin_for_test)
 cfg.init_ref_mass_sets()
 
-# client_wt_ids = cfg.client_wt_IDs
+client_wts = filter_mass_set(cfg.all_client_wts, collated)
 checks = filter_mass_set(cfg.all_checks, collated)
+stds = filter_mass_set(cfg.all_stds, collated)
 
-fmc = FinalMassCalc(cfg.folder, cfg.client, cfg.all_client_wts, checks, cfg.all_stds, collated, nbc=True, corr=None)
+fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts, checks, stds, collated, nbc=True, corr=None)
 
 
 def test_filter_masses():
-    # Here all standards are used so stds should be unchanged
+    # Here only one of the three standards is used
     stds = filter_mass_set(cfg.all_stds, collated)
-    for key, value in cfg.all_stds.items():
-        if value is None:
-            assert stds[key] is None
-        else:
-            assert len(stds[key]) == len(value)
-            assert stds[key][0] == value[0]
-            assert stds[key][-1] == value[-1]
+    assert len(cfg.all_stds['Weight ID']) > 1
+    assert len(stds['Weight ID']) == 1
+    assert 5000 in cfg.all_stds['Nominal (g)']
+    assert 5000 not in stds['Nominal (g)']
+    print(stds['mass values (g)'])
 
-    # Here all client weights are used so also should be unchanged
-    stds = filter_mass_set(cfg.all_client_wts, collated)
+    # Here all client weights are used so should be unchanged
+    client_wts = filter_mass_set(cfg.all_client_wts, collated)
     for key, value in cfg.all_client_wts.items():
         if value is None:
-            assert stds[key] is None
+            assert client_wts[key] is None
         else:
-            assert len(stds[key]) == len(value)
-            assert stds[key][0] == value[0]
-            assert stds[key][-1] == value[-1]
+            assert len(client_wts[key]) == len(value)
+            assert client_wts[key][0] == value[0]
+            assert client_wts[key][-1] == value[-1]
 
 
 def test_file_structure():
@@ -71,48 +70,45 @@ def test_file_structure():
 def test_import_mass_lists():
     fmc.import_mass_lists()
     # check client info
-    assert fmc.num_client_masses == 30 \
+    assert fmc.num_client_masses == 10 \
            == fmc.finalmasscalc['1: Mass Sets']['Client'].metadata['Number of masses'] \
            == check_fmc['1: Mass Sets']['Client'].metadata['Number of masses']
     for i in range(fmc.num_client_masses):
         assert fmc.client_wt_IDs[i] == [
-            '10000', '10000d', '5000', '2000', '2000d', '1000', '500', '200', '200d', '100', '50', '20', '20d', '10', '5',
-            '2', '2d', '1', '0.5', '0.2', '0.2d', '0.1', '0.05', '0.02', '0.02d', '0.01', '0.005', '0.002', '0.002d', '0.001'
+            '10000KE', '10000KF', '10000KG', '10000KH', '10000KI', '10000NE', '10000NF', '10000NG', '10000NH', '10000NI'
         ][i] \
                == fmc.finalmasscalc['1: Mass Sets']['Client'].metadata['Weight ID'][i] \
                == check_fmc['1: Mass Sets']['Client'].metadata['Weight ID'][i]
 
     # check check info
-    assert fmc.num_check_masses == 13 \
+    assert fmc.num_check_masses == 1 \
            == fmc.finalmasscalc['1: Mass Sets']['Check'].metadata['Number of masses'] \
            == check_fmc['1: Mass Sets']['Check'].metadata['Number of masses']
     for i in range(fmc.num_check_masses):
-        assert fmc.check_masses['Weight ID'][i] == [
-            '10KMB', '5KMB', '2KMB', '1KMB', '500MB', '200MB', '100MB', '50MB', '20MB', '10MB', '5MB', '0.1MB', '0.001MB'
-        ][i] \
+        assert fmc.check_masses['Weight ID'][i] == ['10KMB'][i] \
                == fmc.finalmasscalc['1: Mass Sets']['Check'].metadata['Weight ID'][i] \
                == check_fmc['1: Mass Sets']['Check'].metadata['Weight ID'][i]
 
     assert fmc.finalmasscalc['1: Mass Sets']['Check']['mass values']
-    assert fmc.num_check_masses == 13 \
-           == fmc.finalmasscalc['1: Mass Sets']['Check'].metadata['Number of masses'] \
-           == check_fmc['1: Mass Sets']['Check'].metadata['Number of masses']
+    for row in range(fmc.num_check_masses):
+        for j, col in enumerate(fmc.finalmasscalc['1: Mass Sets']['Check']['mass values'][row]):
+            assert col == check_fmc['1: Mass Sets']['Check']['mass values'][row][j]
     assert "0 groups, 1 datasets, 4 metadata" in repr(fmc.finalmasscalc['1: Mass Sets']['Check'])
 
     # check std info
-    assert fmc.num_stds == 22 \
+    assert fmc.num_stds == 1 \
            == fmc.finalmasscalc['1: Mass Sets']['Standard'].metadata['Number of masses'] \
            == check_fmc['1: Mass Sets']['Standard'].metadata['Number of masses']
     for i in range(fmc.num_stds):
         assert fmc.std_masses['Weight ID'][i] == [
-            '10KMA', '5KMA', '2KMA', '1KMA', '500MA', '200MA', '100MA', '50MA', '20MA', '10MA', '5MA', '2MA', '1MA',
-            '0.5MA', '0.2MA', '0.1MA', '0.05MA', '0.02MA', '0.01MA', '0.005MA', '0.002MA', '0.001MA'
+            '10KMA',
         ][i] \
                == fmc.finalmasscalc['1: Mass Sets']['Standard'].metadata['Weight ID'][i] \
                == check_fmc['1: Mass Sets']['Standard'].metadata['Weight ID'][i]
 
     for row in range(fmc.num_stds):
         for j, col in enumerate(fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values'][row]):
+            assert True
             assert col == check_fmc['1: Mass Sets']['Standard']['mass values'][row][j]
 
     assert "0 groups, 1 datasets, 4 metadata" in repr(fmc.finalmasscalc['1: Mass Sets']['Standard'])
@@ -124,21 +120,16 @@ def test_import_mass_lists():
 
     assert [
         fmc.allmassIDs[i] == [
-        '10000', '10000d', '5000', '2000', '2000d', '1000', '500', '200', '200d', '100',
-        '50', '20', '20d', '10', '5', '2', '2d', '1', '0.5', '0.2', '0.2d', '0.1', '0.05',
-        '0.02', '0.02d', '0.01', '0.005', '0.002', '0.002d', '0.001', '10KMB', '5KMB',
-        '2KMB', '1KMB', '500MB', '200MB', '100MB', '50MB', '20MB', '10MB', '5MB', '0.1MB',
-        '0.001MB', '10KMA', '5KMA', '2KMA', '1KMA', '500MA', '200MA', '100MA', '50MA',
-        '20MA', '10MA', '5MA', '2MA', '1MA', '0.5MA', '0.2MA', '0.1MA', '0.05MA', '0.02MA',
-        '0.01MA', '0.005MA', '0.002MA', '0.001MA'
-    ][i]
-        for i in range(len(fmc.allmassIDs))
+            '10000KE', '10000KF', '10000KG', '10000KH', '10000KI',
+            '10000NE', '10000NF', '10000NG', '10000NH', '10000NI',
+            '10KMB', '10KMA'
+        ][i] for i in range(len(fmc.allmassIDs))
     ]
 
-    assert fmc.nbc == True
-    assert fmc.corr == None
+    assert fmc.nbc is True
+    assert fmc.corr is None
 
-    assert fmc.leastsq_meta =={'Number of observations': 98, 'Number of unknowns': 65, 'Degrees of freedom': 33}
+    assert fmc.leastsq_meta =={'Number of observations': 16, 'Number of unknowns': 12, 'Degrees of freedom': 4}
 
 
 def test_parse_inputdata_to_matrices():
@@ -165,11 +156,14 @@ def test_parse_inputdata_to_matrices():
 def test_least_squares():
     fmc.do_least_squares()
 
-    for i in range(fmc.num_unknowns):
+    for i in range(fmc.num_unknowns):  # check that the mass values are consistent to within a ng
         assert fmc.b[i] == \
-               pytest.approx(check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][3])
+               pytest.approx(
+                   check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][3],
+                   abs=1e-9
+                )
 
-    assert fmc.leastsq_meta['Sum of residues squared (' + MU_STR + 'g^2)'] == 471.478324
+    assert fmc.leastsq_meta['Sum of residues squared (' + MU_STR + 'g^2)'] == 128.83941
 
     for row in range(len(collated)):
         for col in range(5):
@@ -211,12 +205,9 @@ def test_add_data_to_root():
 
 def test_save_to_json_file():
     test_folder = os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc')
-    test_client = 'test'
-    test_file_path = os.path.join(test_folder, test_client + '_finalmasscalc.json')
+    test_file_path = os.path.join(test_folder, cfg.client + '_finalmasscalc.json')
     fmc.save_to_json_file(
         filesavepath=test_file_path,
-        folder=test_folder,
-        client=test_client
     )
     assert os.path.isfile(test_file_path)
 

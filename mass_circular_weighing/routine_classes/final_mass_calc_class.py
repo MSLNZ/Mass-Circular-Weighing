@@ -49,7 +49,7 @@ def filter_mass_set(masses, inputdata):
         to_append = ['Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)', 'u_drift']
     elif masses['Set type'] == 'Client':
         to_append = ['Weight ID', 'Nominal (g)', 'Shape/Mark', 'Container',
-                     'u_mag (' + MU_STR + 'g)', 'Density (kg/m3)', 'u_density (kg/m3)']
+                     'u_mag (mg)', 'Density (kg/m3)', 'u_density (kg/m3)']
     else:
         log.error("Mass Set type not recognised: must be 'std' or 'client'")
         return None
@@ -299,35 +299,52 @@ class FinalMassCalc(object):
             self.leastsq_meta['Residuals greater than 2 balance uncerts'] = flag
 
     def cal_rel_unc(self, ):
-        # TODO: allow for magnetic uncertainty (if present) and buoyancy
         if self.b is None:
             self.do_least_squares()
 
+        # Note: the 'psi' variables in this method are variance-covariance matrices
+
+        ### Uncertainty due to buoyancy ###
+        psi_buoy = np.zeros((self.num_unknowns, self.num_unknowns))
         # uncertainty due to no buoyancy correction
         if self.nbc:
             cmx1 = np.ones(self.num_client_masses + self.num_check_masses)  # from above, stds are added last
             cmx1 = np.append(cmx1, np.zeros(self.num_stds))  # 1's for unknowns, 0's for reference stds
 
             reluncert = REL_UNC  # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1
-            unbc = reluncert * self.b * cmx1  # vector of length num_unknowns. TP wrongly has * 1e-6
+            unbc = reluncert * self.b * cmx1  # vector of length num_unknowns, in g. TP has * 1e-6 --> ug?
             uunbc = np.vstack(unbc) * np.hstack(unbc)  # square matrix of dim num_obs
-            rnbc = np.identity(self.num_unknowns)  # add off-diagonals for any correlations
+            rnbc = np.identity(self.num_unknowns)  # TODO: add off-diagonals for any correlations
 
-            psi_nbc_hadamard = np.zeros((self.num_unknowns, self.num_unknowns))
+            # psi_nbc_hadamard = np.zeros((self.num_unknowns, self.num_unknowns))
             for i in range(self.num_unknowns):  # Here the Hadamard product is taking the diagonal of the matrix
                 for j in range(self.num_unknowns):
                     if not rnbc[i, j] == 0:
-                        psi_nbc_hadamard[i, j] = uunbc[i, j] * rnbc[i, j]
+                        psi_buoy[i, j] = uunbc[i, j] * rnbc[i, j]  # psi_nbc_hadamard in TP Mathcad calculation
 
-            psi_b = self.psi_bmeas + psi_nbc_hadamard
-
+        # TODO: buoyancy correction (not currently implemented)
+        # The uncertainty in the buoyancy correction to a measured mass difference due to an
+        # uncertainty uV in the volume of a weight is ρa*uV, where the ambient air density ρa is assumed
+        # to be 1.2 kg m-3 for the purposes of the uncertainty calculation. TP9, p7, item 4
         else:
-            psi_b = self.psi_bmeas
             reluncert = 0
 
         self.leastsq_meta['Relative uncertainty for no buoyancy correction (ppm)'] = reluncert
 
-        self.std_uncert_b = np.sqrt(np.diag(psi_b))
+        ### Uncertainty due to magnetic effects ###
+        # magnetic uncertainty
+        psi_mag = np.zeros((self.num_unknowns, self.num_unknowns))
+        for i, umag in enumerate(self.client_masses['u_mag (mg)']):
+            if umag is not None:
+                psi_mag[i, i] = (umag*1000)**2       # std uncertainty is in ug but u_mag is in mg
+                log.info(f"Uncertainty for {self.client_wt_IDs[i]} includes magnetic uncertainty of {umag} mg")
+
+        ### Total uncertainty ###
+        # Add all the squared uncertainty components and square root them to get the final std uncertainty
+        psi_b = self.psi_bmeas + psi_buoy + psi_mag
+        self.std_uncert_b = np.sqrt(np.diag(psi_b))  # there should only be diagonal components anyway
+        # (TODO: check if valid with correlations)
+
         # det_varcovar_bmeas = np.linalg.det(psi_bmeas)
         # det_varcovar_nbc = np.linalg.det(psi_nbc_hadamard)
         # det_varcovar_b = np.linalg.det(psi_b)
@@ -378,7 +395,6 @@ class FinalMassCalc(object):
             summarytable))
 
         self.summarytable = summarytable
-
 
     def add_data_to_root(self, ):
         if self.summarytable is None:

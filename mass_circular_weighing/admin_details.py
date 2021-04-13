@@ -151,7 +151,7 @@ class AdminDetails(object):
         dict
             keys:
                 'Set identifier', 'Client', 'Weight ID', 'Nominal (g)', 'Shape/Mark', 'Container',
-                'u_mag (ug)', 'Density (kg/m3)', 'u_density (kg/m3)'
+                'u_mag (mg)', 'Density (kg/m3)', 'u_density (kg/m3)'
         """
         header_row = 14
         wt_dict = {
@@ -162,7 +162,7 @@ class AdminDetails(object):
 
         col_name_keys = {
             "weight id": 'Weight ID', "nom": 'Nominal (g)', 'mark': 'Shape/Mark', "container": 'Container',
-            'u_mag': 'u_mag (' + MU_STR + 'g)', 'density': 'Density (kg/m3)', 'u_dens': 'u_density (kg/m3)'
+            'u_mag': 'u_mag (mg)', 'density': 'Density (kg/m3)', 'u_dens': 'u_density (kg/m3)'
         }   # warning: 'u_density' contains 'density' so always use 'u_dens' in xlsx file instead.
 
         for i in string.ascii_lowercase[:7]:  # go across a row ;)
