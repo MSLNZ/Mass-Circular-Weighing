@@ -311,8 +311,9 @@ class FinalMassCalc(object):
             cmx1 = np.ones(self.num_client_masses + self.num_check_masses)  # from above, stds are added last
             cmx1 = np.append(cmx1, np.zeros(self.num_stds))  # 1's for unknowns, 0's for reference stds
 
-            reluncert = REL_UNC  # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1
-            unbc = reluncert * self.b * cmx1  # vector of length num_unknowns, in g. TP has * 1e-6 --> ug?
+            reluncert = REL_UNC  # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1 (ppm)
+            unbc = reluncert * self.b * cmx1  # weighing uncertainty in ug as vector of length num_unknowns.
+            # Note: TP has * 1e-6 for ppm which would give the uncertainty in g
             uunbc = np.vstack(unbc) * np.hstack(unbc)  # square matrix of dim num_obs
             rnbc = np.identity(self.num_unknowns)  # TODO: add off-diagonals for any correlations
 
@@ -336,7 +337,7 @@ class FinalMassCalc(object):
         psi_mag = np.zeros((self.num_unknowns, self.num_unknowns))
         for i, umag in enumerate(self.client_masses['u_mag (mg)']):
             if umag is not None:
-                psi_mag[i, i] = (umag*1000)**2       # std uncertainty is in ug but u_mag is in mg
+                psi_mag[i, i] = (umag*1000)**2       # convert u_mag from mg to ug
                 log.info(f"Uncertainty for {self.client_wt_IDs[i]} includes magnetic uncertainty of {umag} mg")
 
         ### Total uncertainty ###

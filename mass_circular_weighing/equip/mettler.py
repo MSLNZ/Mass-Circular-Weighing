@@ -90,7 +90,7 @@ class MettlerToledo(Balance):
                 try:
                     c = self.connection.read().split()
                     if c[1] == 'A':
-                        cal_time = perf_counter() - t0
+                        cal_time = int(perf_counter() - t0)
                         print(f'Balance self-calibration completed successfully in {cal_time} seconds')
                         log.info(f'Balance self-calibration completed successfully in {cal_time} seconds')
                         self._is_adjusted = True
