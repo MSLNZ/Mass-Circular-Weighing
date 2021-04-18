@@ -3,6 +3,7 @@ An entry point for testing the connection to Emile's LabVIEW server for ambient 
 Note that calibrated values are returned by default.
 """
 import logging
+from time import sleep
 
 from mass_circular_weighing.constants import IN_DEGREES_C
 from mass_circular_weighing.equip import get_t_rh_now, get_aliases
@@ -28,6 +29,15 @@ def poll_omega_logger(logger=None):
     if logger:
         for sensor in [1, 2]:
             print('Collecting current ambient conditions from {}, sensor {}...'.format(logger, sensor))
-            date_start, t_start, rh_start = get_t_rh_now(logger, sensor=sensor)
-            print("Temperature: {:.2f}{}, Relative humidity: {:.2f} %".format(t_start, IN_DEGREES_C, rh_start))
+            date_start, t_start, rh_start = None, None, None
 
+            for i in range(15):  # in case the connection gets aborted by the software in the host machine
+                date_start, t_start, rh_start = get_t_rh_now(logger, sensor=sensor)
+                if t_start is not None:
+                    print("Temperature: {:.2f}{}, Relative humidity: {:.2f} %".format(t_start, IN_DEGREES_C, rh_start))
+                    break
+                else:
+                    sleep(1)
+
+            if t_start is None:
+                print(f"Unable to get ambient conditions from {logger}, sensor {sensor}")
