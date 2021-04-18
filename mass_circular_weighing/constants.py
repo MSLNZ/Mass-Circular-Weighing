@@ -5,7 +5,7 @@ Modify default folder paths as necessary
 
 import os
 
-MU_STR = 'u'                    # ALT+0181 or 'µ'. use 'u' if running into issues
+MU_STR = 'µ'                    # ALT+0181 or 'µ'. use 'u' if running into issues
 SIGMA_STR = 'σ'                 # \u03C3 for sigma sign
 DELTA_STR = 'Δ'                 # \u0394 for capital delta sign
 SQUARED_STR = '²'
@@ -20,16 +20,17 @@ REL_UNC = 0.03              # relative uncertainty in ppm for no buoyancy correc
 
 local_backup = r'C:\CircularWeighingData'
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-config_default = os.path.join(ROOT_DIR, r'examples\sample_config.xml')
+admin_default = os.path.join(ROOT_DIR, r'examples\Admin.xlsx')
+config_default = os.path.join(ROOT_DIR, r'examples\default_config.xml')
 
 save_folder_default = r'G:\My Drive'
 sample_data_folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
 mass_folder = r'I:\MSL\Private\Mass'
 mydrive = r'G:\My Drive'
 
-job_default = ""
-client_default = ""
-client_wt_IDs_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000 10000'
+job_default = "J00000"
+client_default = "Client"
+client_wt_IDs_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000 10000'.split()
 
 MAX_BAD_RUNS = 6            # limit for aborting circular weighing due to multiple bad runs
 

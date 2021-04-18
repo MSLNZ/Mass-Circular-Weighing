@@ -4,7 +4,7 @@ Class for a Mettler Toledo balance with a computer interface
 from time import perf_counter
 
 from msl.equipment import MSLTimeoutError, MSLConnectionError
-from msl.qt import prompt, application
+from msl.qt import application
 
 from ..log import log
 from ..constants import SUFFIX
@@ -45,7 +45,8 @@ class MettlerToledo(Balance):
                 break
 
             except MSLConnectionError:
-                ok = prompt.ok_cancel("Please connect balance to continue")
+                self._pt.show('ok_cancel', "Please connect balance to continue")
+                ok = self._pt.wait_for_prompt_reply()
 
     @property
     def mode(self):
@@ -90,7 +91,7 @@ class MettlerToledo(Balance):
                 try:
                     c = self.connection.read().split()
                     if c[1] == 'A':
-                        cal_time = perf_counter() - t0
+                        cal_time = int(perf_counter() - t0)
                         print(f'Balance self-calibration completed successfully in {cal_time} seconds')
                         log.info(f'Balance self-calibration completed successfully in {cal_time} seconds')
                         self._is_adjusted = True
@@ -109,7 +110,10 @@ class MettlerToledo(Balance):
 
     def tare_bal(self):
         """Tares balance after checking with user that tare load is correct"""
-        ok = prompt.ok_cancel('Check that the balance has correct tare load, then press enter to continue.')
+
+        self._pt.show('ok_cancel', 'Check that the balance has correct tare load, then press enter to continue.')
+        ok = self._pt.wait_for_prompt_reply()
+
         if ok:
             m = self._query("T").split()
             if m[1] == 'S':

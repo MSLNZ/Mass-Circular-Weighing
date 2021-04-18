@@ -103,8 +103,9 @@ class LaTexDoc(object):
             )
         self.fp.close()
 
-    def init_report(self, job, client, folder):
+    def init_report(self, job, client, operator, folder):
         self.make_title(job + " for " + client)
+        self.fp.write(f"Operator: {operator}\n")
         self.fp.write("Data files saved in \\url{" + folder + '} \n')
 
     def make_table_wts(self, client_wt_IDs, check_wt_IDs, check_set_file_path, std_wt_IDs, std_set_file_path):
@@ -133,10 +134,10 @@ class LaTexDoc(object):
         if masscol == 2:  # Input data table
             col_type_str = "ll S[round-mode=places,round-precision=9] S S"
             headerstr = " {+ weight group} & {- weight group} & {mass difference (g)} & " \
-                        "{balance uncertainty (ug)} & {residual (ug)} \\\\"
+                        "{balance uncertainty ($\\mu$g)} & {residual ($\\mu$g)} \\\\"
         elif masscol == 3:  # MSL data table
             col_type_str = "S ll S[round-mode=places,round-precision=9] S S S l"
-            headerstr = " {Nominal (g)} & {Weight ID} & {Set ID} & {Mass value (g)} & {Uncertainty (ug)} & " \
+            headerstr = " {Nominal (g)} & {Weight ID} & {Set ID} & {Mass value (g)} & {Uncertainty ($\\mu$g)} & " \
                         "{95\% CI} & {Cov} & {c.f. Reference value (g)} \\\\"
         else:
             log.error("Unknown data table type")
@@ -168,15 +169,15 @@ class LaTexDoc(object):
         )
 
     def add_weighing_scheme(self, scheme, fmc_root, check_file, std_file):
-        client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("weight ID"))
+        client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("Weight ID"))
         if check_file:
             checks = {
-                'weight ID': list_to_csstr(fmc_root["1: Mass Sets"]["Check"].metadata.get("weight ID")),
+                'Weight ID': list_to_csstr(fmc_root["1: Mass Sets"]["Check"].metadata.get("Weight ID")),
                 'Set file': check_file
             }
         else:
             checks = None
-        std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("weight ID"))
+        std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("Weight ID"))
 
         self.fp.write("\\begin{landscape}\n")
         self.make_heading1('Weighing Scheme')
@@ -186,7 +187,7 @@ class LaTexDoc(object):
         self.make_normal_text("")
 
         if checks is not None:
-            self.make_table_wts(client_wt_IDs, checks['weight ID'], checks['Set file'], std_wts, std_file)
+            self.make_table_wts(client_wt_IDs, checks['Weight ID'], checks['Set file'], std_wts, std_file)
         else:
             self.make_table_wts_nochecks(client_wt_IDs, std_wts, std_file)
         self.fp.write("\\end{landscape}\n")
@@ -202,13 +203,13 @@ class LaTexDoc(object):
         input_data = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
         h1 = input_data.metadata.get('metadata')['headers']
         self.make_table_massdata(input_data, h1, 2)
-        save_mls_excel(input_data, folder, client, sheet_name="Differences")
+        # save_mls_excel(input_data, folder, client, sheet_name="Differences")
 
         self.make_heading2('Mass values from Least Squares solution')
         mvals = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
         h2 = mvals.metadata.get('metadata')['headers']
         self.make_table_massdata(mvals, h2, 3)
-        save_mls_excel(mvals, folder, client, sheet_name="Mass_Values")
+        # save_mls_excel(mvals, folder, client, sheet_name="Mass_Values")
         meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
         self.make_normal_text(
                 "Number of observations = " + str(meta['Number of observations']) +
@@ -220,7 +221,7 @@ class LaTexDoc(object):
                 str(meta['Relative uncertainty for no buoyancy correction (ppm)'])
         )
         self.make_normal_text(
-            "Sum of residues squared ($\\mu^2$) = " + str(meta['Sum of residues squared ('+MU_STR+'g^2)'])
+            "Sum of residues squared ($\\mug^2$) = " + str(meta['Sum of residues squared ('+MU_STR+'g^2)'])
         )
         self.fp.write("\\end{landscape}\n")
 
@@ -457,22 +458,15 @@ class LaTexDoc(object):
 
     def add_weighing_datasets(self, client, folder, scheme, cfg, incl_datasets, ):
         self.make_heading1("Circular Weighing Data")
-        if len(scheme.shape) == 1:
-            se = scheme[0]
-            nom = scheme[1]
+        for row in scheme:
+            se = row[0]
+            nom = row[1]
             cw_file = os.path.join(folder, client + '_' + nom + '.json')
-            self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
-            self.add_collated_data(cw_file, se)
-        else:
-            for row in scheme:
-                se = row[0]
-                nom = row[1]
-                cw_file = os.path.join(folder, client + '_' + nom + '.json')
-                if not os.path.isfile(cw_file):
-                    log.warning('No data yet collected for ' + se)
-                else:
-                    self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
-                    self.add_collated_data(cw_file, se)
+            if not os.path.isfile(cw_file):
+                log.warning('No data yet collected for ' + se)
+            else:
+                self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
+                self.add_collated_data(cw_file, se)
 
         self.make_heading2("Overall ambient conditions for included weighings")
         if self.collate_ambient["T" + IN_DEGREES_C]:

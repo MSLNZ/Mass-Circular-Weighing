@@ -1,13 +1,12 @@
 """
-Configure the weighing program according to the config.xml file provided.
-Gets connection information for all balances in the config.xml file, including weight handlers,
+Configure the weighing program according to the admin.xlsx file provided.
+This file must include a working link to a configuration file, config.xml.
+Configuration loads and stores connection information for all balances in the config.xml file, including weight handlers,
 as well as ambient logger details and acceptance criteria for each balance.
-Loads and stores mass set file information.
 """
 import os
-import numpy as np
 
-from msl.equipment import Config
+from msl.equipment import Config, utils
 from msl.io import read_table
 
 from .equip import Balance, MettlerToledo, AWBalCarousel, AWBalLinear
@@ -15,21 +14,41 @@ from .equip import Vaisala
 
 from .constants import MU_STR
 from .log import log
+from .admin_details import AdminDetails
 
 
-class Configuration(object):
+class Configuration(AdminDetails):
 
-    def __init__(self, config, ):
-        """Initialise the calibration configuration from a config file following msl.equipment rules.
-        Assumes specific tags exist in the config file - TODO: make asserts here that the tags exist?
+    def __init__(self, adminxlsx):
+        """Initialise the equipment configuration from an admin.xlsx and a config file following msl.equipment rules.
+        Assumes that the admin.xlsx file follows the template, and that specific tags exist in the config.xml file.
 
         Parameters
         ----------
-        config : path to config.xml file containing relevant parameters
+        adminxlsx : path
+            to admin.xlsx file which contains administrative calibration details including path to config.xml file
         """
+        super().__init__(adminxlsx)
 
-        self.cfg = Config(config)               # loads cfg file
-        self.db = self.cfg.database()           # loads database
+        self.cfg = Config(self.config_xml)      # loads cfg file
+
+        try:
+            self.db = self.cfg.database()       # loads database
+        except ValueError as e:                 # can't find the named sheet
+            log.debug(e)
+            # update root with name of the computer running this Python script
+            root = self.cfg.root
+            root.find('connections/connection/sheet').text = os.environ['COMPUTERNAME']
+
+            # save config to the folder specified in AdminDetails
+            new_config = os.path.join(self.folder, self.job + '_config.xml')
+            with open(new_config, mode='w', encoding='utf-8') as fp:
+                fp.write(utils.convert_to_xml_string(root))
+            self.config_xml = new_config
+
+            self.cfg = Config(self.config_xml)  # reload cfg file
+            self.db = self.cfg.database()       # loads database
+
         self.equipment = self.db.equipment      # loads subset of database with equipment being used
 
         self.bal_class = {
@@ -40,64 +59,6 @@ class Configuration(object):
         }
 
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
-
-        self.folder = self.cfg.root.find('save_folder').text
-        self.job = self.cfg.root.find('job').text
-        self.client = self.cfg.root.find('client').text
-        self.client_wt_IDs = self.cfg.root.find('client_masses').text
-
-        self.drift_text = self.cfg.root.find('drift').text
-        self.timed_text = self.cfg.root.find('use_times').text
-        self.correlations = self.cfg.root.find('correlations').text
-
-        self.all_stds = None
-        self.all_checks = None
-        self.std_set = self.cfg.root.find('std_set').text
-        self.check_set_text = self.cfg.root.find('check_set').text
-
-    @property
-    def check_set(self):
-        if self.check_set_text == 'None':
-            return None
-        return self.check_set_text
-
-    @property
-    def drift(self):
-        if self.drift_text == 'auto select':
-            return None
-        return self.drift_text
-
-    @property
-    def timed(self):
-        if self.timed_text == 'NO':
-            return False
-        return True
-
-    def init_ref_mass_sets(self):
-        ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-        p_std = self.cfg.root.find('standards/'+self.std_set).text
-        if os.path.isfile(p_std):
-            self.all_stds = load_stds_from_set_file(p_std, 'std')
-        elif os.path.isfile(os.path.join(ROOT_DIR,p_std)):
-            self.all_stds = load_stds_from_set_file(os.path.join(ROOT_DIR,p_std), 'std')
-        else:
-            log.error("Standard set file does not exist at specified path: {}".format(p_std))
-            return
-        self.all_stds['Set name'] = self.std_set
-
-        if self.check_set is not None:
-            p_check = self.cfg.root.find('standards/'+self.check_set).text
-            if os.path.isfile(p_check):
-                self.all_checks = load_stds_from_set_file(p_check, 'check')
-            elif os.path.isfile(os.path.join(ROOT_DIR,p_check)):
-                self.all_checks = load_stds_from_set_file(os.path.join(ROOT_DIR,p_check), 'check')
-            else:
-                log.error("Check set file does not exist at specified path: {}".format(p_check))
-                return
-            self.all_checks['Set name'] = self.check_set
-        else:
-            self.all_checks = None
 
     def get_bal_instance(self, alias, strict=True, **kwargs):
         """Selects balance class and returns balance instance.
@@ -255,96 +216,3 @@ class Configuration(object):
                 }
 
         raise ValueError('Nominal mass out of range of balance')
-
-
-def load_stds_from_set_file(path, wtset):
-    """Collects relevant weight info from SET file for all weights in set
-
-    Parameters
-    ----------
-    path : path
-        location of where to find set file (e.g. cfg.root.find('standards/path').text)
-    wtset: str
-        specify if std or check weights
-
-    Returns
-    -------
-    dict
-        keys: 'Set Identifier', 'Calibrated', 'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (ug)'
-    """
-
-    stds = {'Set file': path}
-    for key in {'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties ('+MU_STR+'g)'}:
-        stds[key] = []
-
-    with open(path, 'r') as fp:
-        if "WeightSetFile" in fp.readline():
-            set_name = fp.readline().strip('\n').strip('\"').split()
-            if set_name[0] == 'Mettler':
-                stds['Set Identifier'] = 'M'+set_name[1]
-            else:
-                stds['Set Identifier'] = set_name[0]
-            log.info(wtset + ' masses use identifier ' + stds['Set Identifier'])
-            stds['Calibrated'] = set_name[-1]
-            log.info(wtset + ' masses were last calibrated in ' + stds['Calibrated'])
-            fp.readline()
-
-            headerline = fp.readline().strip('\n')
-            if not headerline == '" nominal (g) "," weight identifier "," value(g) "," uncert (ug) ",' \
-                                 '"cov factor","density","dens uncert"':
-                log.warn('File format has changed; data sorting may be incorrect')
-                log.debug(headerline)
-
-            line = fp.readline()
-            while line:
-                line = line.strip('\n').split(',')
-                for i, key in enumerate(['nominal (g)', 'weight ID', 'mass values (g)', 'uncertainties ('+MU_STR+'g)']):
-                    value = line[i].strip()
-                    if key == 'weight ID':
-                        id = value.strip('\"')
-                        trunc_val = '{:g}'.format((float(stds['nominal (g)'][-1])))
-                        if float(trunc_val) > 999:
-                            trunc_val = '{:g}'.format(float(trunc_val)/1000) + 'K'
-                        if stds['Set Identifier'] == 'CUSTOM':
-                            stds[key].append(trunc_val + id)
-                        else:
-                            stds[key].append(trunc_val + id + stds['Set Identifier'])
-                    elif key == 'uncertainties ('+MU_STR+'g)':
-                        stds[key].append(np.float(value)) # /SUFFIX[MU_STR+'g']
-                    else:
-                        stds[key].append(np.float(value))
-
-                line = fp.readline()
-        else:
-            log.error('Weight set file must begin WeightSetFile')
-
-    fp.close()
-    return stds
-
-# def get_std_info_excel(path, sheet=None, set_ID=""):
-#     std_set_table = read_table_excel(path, sheet=sheet)
-#
-#     std_set = {'Set file': path}
-#     for key in {'weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (' + MU_STR + 'g)'}:
-#         std_set[key] = []
-#
-#     for r in range(len(std_set_table)):
-#         nom = std_set_table[r,0]
-#         trunc_val = '{:g}'.format((float(nom)))
-#         if float(trunc_val) > 999:
-#             trunc_val = '{:g}'.format(float(trunc_val) / 1000) + 'k'
-#         if std_set_table[r,1] is
-#         std_set['nominal (g)'].append(nom)
-#         std_set['weight ID'].append(trunc_val + id + set_ID)
-#         std_set['mass values (g)'].append(float(std_set_table[r,2]))
-#         std_set['uncertainties (' + MU_STR + 'g)'].append(float(std_set_table[r,2]))
-#
-#     return std_set
-
-
-# std_set_path = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\TradingStandards2015\StandardSets.xlsx'
-# check_set = get_std_info_excel(std_set_path, sheet='MET13B', set_ID='MB')
-# std_set = get_std_info_excel(std_set_path, sheet = 'MET13A', set_ID='MA')
-
-# print(check_set)
-# print(std_set)

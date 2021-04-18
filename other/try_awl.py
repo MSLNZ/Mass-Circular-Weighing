@@ -3,12 +3,12 @@ import sys
 from msl.qt import application, excepthook
 
 from mass_circular_weighing.configuration import Configuration
+from mass_circular_weighing.constants import admin_default
 
 sys.excepthook = excepthook
 gui = application()
 
-config = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\examples\sample_config.xml'  # change this of course!
-cfg = Configuration(config)
+cfg = Configuration(admin_default)
 
 bal_alias = 'XPE505C'
 bal, mode = cfg.get_bal_instance(bal_alias)

@@ -1,34 +1,36 @@
 """
-An interactive display of the metadata needed for a mass calibration, as stored in the config.xml file
+An interactive display of the metadata needed for a mass calibration, as stored in the admin.xlsx and config.xml files
 """
 import os
 
 from msl.qt import QtWidgets, Button, Signal
 
 from ...log import log
-from ...constants import config_default, save_folder_default, job_default, client_default, client_wt_IDs_default
+from ...constants import save_folder_default, job_default, client_default, client_wt_IDs_default
 from ...configuration import Configuration
 from .browse import Browse, label
-from ..threads.configedit_thread import ConfigEditorThread
-cfe = ConfigEditorThread()
+# from ..threads.configedit_thread import ConfigEditorThread
+# cfe = ConfigEditorThread()
 
 
 class Housekeeping(QtWidgets.QWidget):
 
     balance_list = Signal(list)
     scheme_file = Signal(str)
+    scheme_info = Signal(list, list)
 
     def __init__(self):
         super(Housekeeping, self).__init__()
 
-        self.config_io = Browse(config_default, QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.xml')
-        self.config_io.textbox.textChanged.connect(self.load_from_config)
-        self.edit_config_but = Button(text='Edit config file', left_click=self.edit_config)
+        self.admin_io = Browse("", QtWidgets.QStyle.SP_DialogOpenButton, find='file', pattern='*.xlsx')
+        self.admin_io.textbox.textChanged.connect(self.load_from_admin)
+        self.config_lbl = label("")
+        # self.edit_config_but = Button(text='Edit config file', left_click=self.edit_config)
 
         self.folder_io = label(save_folder_default)
         self.job_io = label(job_default)
         self.client_io = label(client_default)
-        self.client_masses_io = label(client_wt_IDs_default)
+        self.client_masses_io = label(', '.join(client_wt_IDs_default))
         self.stds = ['None']
         self.checks = ['None']
 
@@ -46,26 +48,20 @@ class Housekeeping(QtWidgets.QWidget):
         formGroup = QtWidgets.QGroupBox()
         formlayout = QtWidgets.QFormLayout()
 
-        config_box = self.arrange_config_box()
-        formlayout.setWidget(0, 2, config_box)
-        formlayout.addRow(label('Folder for saving data'), self.folder_io)
-        formlayout.addRow(label('Job'), self.job_io)
+        # config_box = self.arrange_config_box()
+        formlayout.addRow('Admin file (.xlsx)', label(""))
+        formlayout.setWidget(1, 2, self.admin_io) #0, 2, config_box)
+        formlayout.addRow('Config file', self.config_lbl)
+        # could add revised config editor back in here if needed
+        formlayout.addRow('Folder for saving data', self.folder_io)
+        formlayout.addRow('Job', self.job_io)
         formlayout.addRow(label('Client'), self.client_io)
-        formlayout.addRow(label('List of client masses'), self.client_masses_io)
+        formlayout.addRow(label('Client masses'), self.client_masses_io)
         formlayout.addRow(label('Standard mass set'), self.cb_stds_io)
         formlayout.addRow(label('Check mass set'), self.cb_checks_io)
         formGroup.setLayout(formlayout)
 
         return formGroup
-
-    def arrange_config_box(self):
-        configbox = QtWidgets.QGroupBox('Configuration File')
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.config_io)#, 0, 0, 1, 2)
-        # layout.addWidget(self.load_from_config_but, 1, 0)
-        layout.addWidget(self.edit_config_but)#, 1, 1)
-        configbox.setLayout(layout)
-        return configbox
 
     def arrange_options_box(self):
         self.optionsGroup = QtWidgets.QGroupBox('Options for analysis')
@@ -90,13 +86,16 @@ class Housekeeping(QtWidgets.QWidget):
 
         return lhs_panel_group
 
-    def load_from_config(self):
-        if os.path.isfile(self.config_io.textbox.text()):
-            self.cfg = Configuration(self.config_io.textbox.text())
+    def load_from_admin(self):
+        if not self.admin_io.path == self.admin_io.textbox.text():
+            log.info(f"Loading from {self.admin_io.path}")
+        if os.path.isfile(self.admin_io.path):
+            self.cfg = Configuration(self.admin_io.path)
+            self.config_lbl.setText(self.cfg.config_xml)
             self.folder_io.setText(self.cfg.folder)
             self.job_io.setText(self.cfg.job)
             self.client_io.setText(self.cfg.client)
-            self.client_masses_io.setText(self.cfg.client_wt_IDs)
+            self.client_masses_io.setText(', '.join(self.cfg.client_wt_IDs))
 
             self.cb_stds_io.setText(self.cfg.std_set)
             self.cb_checks_io.setText(self.cfg.check_set_text)
@@ -106,28 +105,32 @@ class Housekeeping(QtWidgets.QWidget):
             self.corr_io.setText(self.cfg.correlations)
 
         else:
-            log.error('Config file does not exist at {!r}'.format(self.config_io.textbox.text()))
+            log.error('File does not exist at {!r}'.format(self.admin_io.path))
 
-    def edit_config(self):
-        cfe.show(self.config_io.textbox.text())
-        newconfig = cfe.wait_for_prompt_reply()
-        self.config_io.textbox.setText(newconfig)
-        self.load_from_config()
+    # def edit_config(self):
+    #     cfe.show(self.cfg)
+    #     newconfig = cfe.wait_for_prompt_reply()
+    #     self.cfg.config_xml = newconfig
+    #     self.config_lbl.setText(f'Config file: {self.cfg.config_xml}')
 
     def initialise_cfg(self):
         """Set and log values for configuration variables; initialise next phase of calibration"""
         self.cfg.init_ref_mass_sets()
 
-        log.info('Config file: '+ self.config_io.textbox.text())
-        log.info('Save folder: ' + self.cfg.folder)
-        log.info('Job: ' + self.cfg.job)
-        log.info('Client: ' + self.cfg.client)
-        log.info('Client masses: ' + self.cfg.client_wt_IDs)
-        log.info('Standard mass set: ' + self.cfg.std_set)
-        log.info('Check mass set: ' + str(self.cfg.check_set))
-        log.debug('Drift correction: ' + self.cfg.drift_text)
-        log.debug('Use measurement times? ' + str(self.cfg.timed))
-        log.debug('Correlations between standards? ' + self.cfg.correlations)
+        log.info(f'Admin file: {self.cfg.path}')  # self.admin_io.textbox.text()
+        log.info(f'Config file: {self.cfg.config_xml}')
+        log.info(f'Save folder: {self.cfg.folder}')
+        log.info(f'Job: {self.cfg.job}')
+        log.info(f'Client: {self.cfg.client}')
+        log.info(f'Client masses: {self.cfg.client_wt_IDs}')
+        log.info(f'Standard mass set: {self.cfg.std_set}')
+        log.info(f'Check mass set: {self.cfg.check_set}')
+        log.info(f'Drift correction: {self.cfg.drift_text}')
+        log.info(f'Use measurement times? {self.cfg.timed}')
+        log.info(f'Correlations between standards? {self.cfg.correlations}')
+
+        # save details to Admin sheet in (client)_admin.xlsx in save folder
+        self.cfg.save_admin()
 
         bal_list = []
         # NOTE: This script only adds Mettler Toledo or Sartorius balances to the drop-down list
@@ -139,11 +142,14 @@ class Housekeeping(QtWidgets.QWidget):
         self.balance_list.emit(bal_list)
 
         # trigger automatic loading of weighing scheme
-        if os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')):
-            scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')
-            self.scheme_file.emit(scheme_path)
-        elif os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')):
-            scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')
-            self.scheme_file.emit(scheme_path)
+        if self.cfg.scheme:
+            self.scheme_info.emit(self.cfg.scheme[0], self.cfg.scheme[1])
+        else:
+            if os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')):
+                scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xlsx')
+                self.scheme_file.emit(scheme_path)
+            elif os.path.isfile(os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')):
+                scheme_path = os.path.join(self.cfg.folder, self.cfg.client + '_Scheme.xls')
+                self.scheme_file.emit(scheme_path)
 
         return True

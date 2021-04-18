@@ -1,7 +1,7 @@
 """
-Test communications with a balance listed in sample_config.xml
+Test communications with a balance listed in default_config.xml
 """
-from ..constants import config_default
+from ..constants import admin_default
 from ..configuration import Configuration
 
 
@@ -13,7 +13,7 @@ def find_balance(bal_alias=None):
     balance instance, which can be used for further interactions
     such as loading, unloading, scale adjust, and mass readings
     """
-    app = Configuration(config_default)
+    app = Configuration(admin_default)
 
     # determine known balances
     bal_list = []

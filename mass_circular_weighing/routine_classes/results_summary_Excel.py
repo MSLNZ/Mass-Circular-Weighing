@@ -22,55 +22,35 @@ def list_to_csstr(idlst):
 
 class ExcelSummaryWorkbook(object):
 
-    def __init__(self):
-        self.wb = None
-        self.first_scheme_entry_row = 2
+    def __init__(self, cfg):
+        """Collate all adminstrative information, weighing data and calculated values into one spreadsheet
+
+        Parameters
+        ----------
+        cfg : Config object
+            Configuration class instance created using Admin.xlsx and config.xml files
+        """
+        # Load the Admin Details workbook which contains Admin and Scheme sheets
+        self.wb = load_workbook(os.path.join(cfg.folder, cfg.client + '_Admin.xlsx'))
+        if "Admin" not in self.wb.sheetnames:
+            log.error(f"Admin worksheet does not exist in {cfg.path}! Please confirm settings before continuing.")
+        if "Scheme" not in self.wb.sheetnames:
+            log.error(f'Scheme worksheet does not exist in {cfg.path}! Please save scheme before continuing.')
+
+        self.first_scheme_entry_row = 3
         self.collate_ambient = {'T' + IN_DEGREES_C: [], 'RH (%)': []}
 
-    def load_scheme_file(self, scheme_file_name, fmc_root, check_file, std_file, job, client, folder):
-        "Begins the summary file with the weighing scheme, as saved from the main gui"
-        wb = load_workbook(scheme_file_name)
-        self.wb = wb
+    def format_scheme_file(self):
+        "Format the weighing scheme, as saved from the main gui"
         scheme_sheet = self.wb["Scheme"]
         for cell in scheme_sheet[1]:
             cell.font = Font(italic=True)
             cell.alignment = Alignment(horizontal='general', vertical='center', text_rotation=0, wrap_text=True,
                                        shrink_to_fit=False, indent=0)
-        last_row = scheme_sheet.max_row
 
-        scheme_sheet.append(["Summary of weighings"])
-        scheme_sheet.append(["Job", job])
-        scheme_sheet.append(["Client", client])
-        scheme_sheet.append(["Folder of weighing data", folder])
-        scheme_sheet.append([])
-        scheme_sheet.append(["Weight sets"])
-
-        client_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Client"].metadata.get("weight ID"))
-        scheme_sheet.append(['Client weights', client_wt_IDs])
-
-        num_new_rows = 12
-
-        if check_file:
-            check_wt_IDs = list_to_csstr(fmc_root["1: Mass Sets"]["Check"].metadata.get("weight ID"))
-            scheme_sheet.append(['Check weights', check_wt_IDs])
-            scheme_sheet.append(["", check_file])
-            num_new_rows += 1
-        else:
-            scheme_sheet.append(['Check weights', "None"])
-
-        std_wts = list_to_csstr(fmc_root["1: Mass Sets"]["Standard"].metadata.get("weight ID"))
-        scheme_sheet.append(['Standard weights', std_wts])
-        scheme_sheet.append(["", std_file])
-        scheme_sheet.append([])
-        scheme_sheet.append(["Weighing scheme"])
-
-        scheme_sheet.insert_rows(0, num_new_rows)
-        scheme_sheet.move_range("A"+str(last_row+num_new_rows+1)+":C"+str(last_row+num_new_rows*2), -(last_row+num_new_rows))
-        self.first_scheme_entry_row = num_new_rows + 2
-
+        scheme_sheet.insert_rows(0, 1)
+        scheme_sheet["a1"] = "Weighing scheme"
         scheme_sheet['A1'].font = Font(bold=True)
-        scheme_sheet['A6'].font = Font(bold=True)
-        scheme_sheet['A'+str(num_new_rows)].font = Font(bold=True)
         scheme_sheet.column_dimensions["A"].width = 21
 
     def save_array_to_sheet(self, data, sheet_name):
@@ -91,6 +71,22 @@ class ExcelSummaryWorkbook(object):
     def add_mls(self, fmc_root):
         """Adds matrix least squares sections to summary file;
         separates input and output data into two different sheets"""
+
+        # Save input to sheet
+        indata = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
+        self.save_array_to_sheet(indata, sheet_name="MLS Input Data")
+        insheet = self.wb["MLS Input Data"]
+        insheet.insert_rows(0, 2)
+        insheet['A1'] = "Input data for Matrix Least Squares analysis"
+        insheet['A1'].font = Font(bold=True)
+
+        # add custom number formatting
+        for i in range(4, insheet.max_row):
+            insheet["C" + str(i)].number_format = "0.000 000 000"
+        insheet.column_dimensions["A"].width = 15
+        insheet.column_dimensions["B"].width = 15
+        insheet.column_dimensions["C"].width = 16
+        insheet.column_dimensions["D"].width = 19
 
         # Save output to sheet
         outdata = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
@@ -120,33 +116,17 @@ class ExcelSummaryWorkbook(object):
         for i in range(5, mls.max_row):
             mls["D"+str(i)].number_format = "0.000 000 000"
 
-        # Save input to sheet
-        indata = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
-        self.save_array_to_sheet(indata, sheet_name="MLS Input Data")
-        insheet = self.wb["MLS Input Data"]
-        insheet.insert_rows(0, 2)
-        insheet['A1'] = "Input data for Matrix Least Squares analysis"
-        insheet['A1'].font = Font(bold=True)
-
-        # add custom number formatting
-        for i in range(4, insheet.max_row):
-            insheet["C"+str(i)].number_format = "0.000 000 000"
-        insheet.column_dimensions["A"].width = 15
-        insheet.column_dimensions["B"].width = 15
-        insheet.column_dimensions["C"].width = 16
-        insheet.column_dimensions["D"].width = 19
-
     def add_weighing_dataset(self, se, cw_file,  nom, incl_datasets, cfg):
         """Adds relevant from each circular weighing for a given scheme entry
 
-                Parameters
-                ----------
-                se : str
-                cw_file : path
-                nom : str
-                incl_datasets : set
-                cfg : configuration instance
-                """
+            Parameters
+            ----------
+            se : str
+            cw_file : path
+            nom : str
+            incl_datasets : set
+            cfg : configuration instance
+        """
         if not os.path.isfile(cw_file):
             log.warning('No data yet collected for ' + se)
         else:
@@ -285,7 +265,7 @@ class ExcelSummaryWorkbook(object):
 
     def add_all_cwdata(self, cfg, incl_datasets,):
         scheme = self.wb['Scheme']
-        i = self.first_scheme_entry_row  # job/client etc info has been added before scheme
+        i = self.first_scheme_entry_row  # Header rows occur before scheme
 
         while True:
             se = scheme.cell(row=i, column=1).value
@@ -300,7 +280,7 @@ class ExcelSummaryWorkbook(object):
     def add_overall_ambient(self):
         mls = self.wb["MLS Output Data"]
         mls.append([])
-        mls.append(["Overall range of ambient conditions for included datasets"])
+        mls.append(["Overall range of ambient conditions for included datasets (min, max)"])
         mls['A'+str(mls.max_row)].font = Font(italic=True)
         for key, value in self.collate_ambient.items():
             try:
@@ -308,6 +288,20 @@ class ExcelSummaryWorkbook(object):
             except ValueError:
                 mls.append([key, "(no data)"])
 
-    def save_workbook(self, path):
-        self.wb.save(path)
-        log.info('Data saved to {}'.format(path))
+    def save_workbook(self, folder, client):
+        xl_output_file = os.path.join(folder, client + '_Summary.xlsx')
+        # make backup
+        if os.path.isfile(xl_output_file):
+            back_up_folder = os.path.join(folder, "backups")
+            new_index = len(back_up_folder)  # counts number of files in backup folder
+            back_up_file = os.path.join(back_up_folder, client + '_summary_backup{}.xlsx'.format(new_index))
+            os.rename(xl_output_file, back_up_file)  # this moves the file and renames it
+        # protect each sheet
+        for sheet in self.wb.sheetnames:
+            self.wb[sheet].protection.set_password('Mass')
+        self.wb.active = self.wb['Admin']
+        # save the new file
+        self.wb.save(xl_output_file)
+        log.info('Data saved to {}'.format(xl_output_file))
+
+        return xl_output_file

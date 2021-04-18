@@ -2,6 +2,7 @@
 Prepares an easily-checked summarised form of the raw and processed data
 """
 import os
+from stat import S_IREAD, S_IRGRP, S_IROTH
 import numpy as np
 
 from msl.io import read, read_table_excel
@@ -13,12 +14,12 @@ from ..routine_classes.results_summary_Excel import ExcelSummaryWorkbook
 
 
 def export_results_summary(cfg, check_file, std_file, incl_datasets):
-    """Export results summaries to Word, Excel and LaTeX
+    """Export results summaries to LaTeX and Excel
 
     Parameters
     ----------
     cfg : Config object
-        Configuration from config.xml file
+        Configuration class instance created using Admin.xlsx and config.xml files
     check_file : path or None
         path to reference mass set file for checks, if used
     std_file : path
@@ -32,33 +33,17 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     Excel data contains mass differences and final mass values.
     Word and LaTeX docs contain tables of all relevant data, along with tables of metadata.
     """
-
-    # gather relevant files
-    if os.path.isfile(os.path.join(cfg.folder, cfg.client + '_Scheme.xlsx')):
-        scheme_path = os.path.join(cfg.folder, cfg.client + '_Scheme.xlsx')
-        scheme = read_table_excel(scheme_path)
-    elif os.path.isfile(os.path.join(cfg.folder, cfg.client + '_Scheme.xls')):
-        scheme_path = os.path.join(cfg.folder, cfg.client + '_Scheme.xls')
-        scheme = read_table_excel(scheme_path)
-        log.warning("Tell Rebecca to fix this")
-    else:
-        log.error('Please save scheme and then continue')
-        return None
+    # load scheme in cfg object
+    headers, scheme = cfg.load_scheme()
+    # note that scheme is returned as a list of lists here
 
     # get balance model numbers instead of balance aliases
-    if len(scheme.shape) == 1:    # catch for if only one entry in scheme
-        mod_scheme = np.ndarray((1, 4), dtype=type(scheme.data))
-        mod_scheme[0][0] = ' - '.join(scheme.data[0].split())
-        mod_scheme[0][1] = scheme.data[1]
-        mod_scheme[0][2] = cfg.equipment[scheme.data[2]].model
-        mod_scheme[0][3] = scheme.data[3]
-    else:
-        mod_scheme = np.ndarray(np.shape(scheme.data), dtype=type(scheme.data))
-        for row in range(len(mod_scheme)):
-            mod_scheme[row][0] = ' - '.join(scheme.data[row][0].split())
-            mod_scheme[row][1] = scheme.data[row][1]
-            mod_scheme[row][2] = cfg.equipment[scheme.data[row][2]].model
-            mod_scheme[row][3] = scheme.data[row][3]
+    mod_scheme = np.ndarray(np.shape(scheme), dtype=object)
+    for row in range(len(mod_scheme)):
+        mod_scheme[row][0] = ' - '.join(scheme[row][0].split())
+        mod_scheme[row][1] = float(scheme[row][1])
+        mod_scheme[row][2] = cfg.equipment[scheme[row][2]].model
+        mod_scheme[row][3] = int(scheme[row][3])
 
     finalmasscalc_file = os.path.join(cfg.folder, cfg.client +'_finalmasscalc.json')
     fmc_root = read(finalmasscalc_file)
@@ -66,7 +51,7 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     # Make LaTeX Output file
     latex_file = os.path.join(cfg.folder, cfg.client + '_Summary.tex')
     ld = LaTexDoc(latex_file)
-    ld.init_report(cfg.job, cfg.client, cfg.folder)
+    ld.init_report(cfg.job, cfg.client, cfg.operator, cfg.folder)
     ld.add_weighing_scheme(mod_scheme, fmc_root, check_file, std_file, )
     ld.add_mls(fmc_root, cfg.folder, cfg.client)
     ld.add_weighing_datasets(cfg.client, cfg.folder, scheme, cfg, incl_datasets)
@@ -74,13 +59,15 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     log.info("LaTeX file saved to {}".format(latex_file))
 
     # make Excel summary file
-    xl_output_file = os.path.join(cfg.folder, cfg.client + '_Summary.xlsx')
-    xl = ExcelSummaryWorkbook()
-    xl.load_scheme_file(scheme_path, fmc_root, check_file, std_file, cfg.job, cfg.client, cfg.folder)
+    # xl_output_file = os.path.join(cfg.folder, cfg.client + '_Summary.xlsx')
+    xl = ExcelSummaryWorkbook(cfg)
+    xl.format_scheme_file()
     xl.add_mls(fmc_root)
     xl.add_all_cwdata(cfg, incl_datasets)
     xl.add_overall_ambient()
-    xl.save_workbook(xl_output_file)
+    xl_output_file = xl.save_workbook(cfg.folder, cfg.client)
+    # set Excel output to read_only
+    os.chmod(xl_output_file, S_IREAD | S_IRGRP | S_IROTH)
 
     # Make Word Output file - not in use at present
     # wd = WordDoc()

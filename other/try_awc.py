@@ -6,13 +6,12 @@ import sys
 from msl.qt import application, excepthook
 
 from mass_circular_weighing.configuration import Configuration
+from mass_circular_weighing.constants import admin_default
 
 sys.excepthook = excepthook
 gui = application()
 
-config = r"C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\examples\sample_config.xml"
-# config = r'C:\Users\r.hawke\Documents\20200324 useful files backup\2020python\vaisala_config.xml'  # change this of course!
-cfg = Configuration(config)
+cfg = Configuration(admin_default)
 
 bal_alias = 'AX10005'
 # bal_alias = 'AX1006'

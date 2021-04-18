@@ -1,0 +1,101 @@
+#File created with: MSL JSONWriter version 1.0
+{
+  "metadata": {
+    "Program Version": "0.1.1.dev0",
+    "Timestamp": "2021-04-12 17:33",
+    "Client": "Umag"
+  },
+  "1: Mass Sets": {
+    "Client": {
+      "Number of masses": 10,
+      "Weight ID": ["10000KE","10000KF","10000KG","10000KH","10000KI","10000NE","10000NF","10000NG","10000NH","10000NI"]
+    },
+    "Check": {
+      "Number of masses": 1,
+      "Set identifier": "MB",
+      "Calibrated": "2019/",
+      "Weight ID": ["10KMB"],
+      "mass values": {
+        "dtype": [
+          ["Weight ID","object"],
+          ["Nominal (g)","float64"],
+          ["mass values (g)","float64"],
+          ["std uncertainties (\u00b5g)","float64"]
+        ],
+        "data": [
+          ["10KMB",10000.0,10000.00503,294.614]
+        ]
+      }
+    },
+    "Standard": {
+      "Number of masses": 1,
+      "Set identifier": "MA",
+      "Calibrated": "2019/",
+      "Weight ID": ["10KMA"],
+      "mass values": {
+        "dtype": [
+          ["Weight ID","object"],
+          ["Nominal (g)","float64"],
+          ["mass values (g)","float64"],
+          ["std uncertainties (\u00b5g)","float64"]
+        ],
+        "data": [
+          ["10KMA",10000.0,10000.003261553,294.614]
+        ]
+      }
+    }
+  },
+  "2: Matrix Least Squares Analysis": {
+    "metadata": {
+      "Number of observations": 16,
+      "Number of unknowns": 12,
+      "Degrees of freedom": 4,
+      "Sum of residues squared (\u00b5g^2)": 128.83941,
+      "Relative uncertainty for no buoyancy correction (ppm)": 0.03
+    },
+    "Input data with least squares residuals": {
+      "metadata": {
+        "headers": ["+ weight group","- weight group","mass difference (g)","balance uncertainty (\u00b5g)","residual (\u00b5g)"]
+      },
+      "dtype": "|O",
+      "data": [
+        ["10000NE","10KMA",0.013238097,26.0,0.0],
+        ["10KMA","10000NF",0.029076542,26.0,-1.991],
+        ["10000NF","10KMB",-0.030811903,26.0,-1.991],
+        ["10000NG","10KMA",0.039097021,26.0,0.0],
+        ["10KMA","10000NH",-0.115829201,26.0,0.044],
+        ["10000NH","10KMB",0.11409791,26.0,0.044],
+        ["10000NI","10KMA",0.035127347,26.0,0.0],
+        ["10KMA","10000KE",-0.082610208,26.0,-5.519],
+        ["10000KE","10KMB",0.080867792,26.0,-5.519],
+        ["10000KF","10KMA",0.040836667,26.0,0.0],
+        ["10KMA","10000KG",-0.012726667,26.0,4.763],
+        ["10000KG","10KMB",0.011004815,26.0,4.763],
+        ["10000KH","10KMA",0.147252755,26.0,0.0],
+        ["10KMA","10000KI",0.100496088,26.0,2.703],
+        ["10000KI","10KMB",-0.10222206,26.0,2.703],
+        ["10KMA",null,10000.003261553,294.614,0.002]
+      ]
+    },
+    "Mass values from least squares solution": {
+      "metadata": {
+        "headers": ["Nominal (g)","Weight ID","Set ID","Mass value (g)","Uncertainty (\u00b5g)","95% CI","Cov","Reference value (g)"]
+      },
+      "dtype": "|O",
+      "data": [
+        ["10000","10000KE","Client",10000.08586624,420.957,841.913,2,""],
+        ["10000","10000KF","Client",10000.044098218,421.277,842.554,2,""],
+        ["10000","10000KG","Client",10000.015992981,425.187,850.374,2,""],
+        ["10000","10000KH","Client",10000.150514306,32093.013,64186.026,2,""],
+        ["10000","10000KI","Client",9999.902768166,420.953,841.906,2,""],
+        ["10000","10000NE","Client",10000.016499648,14407.233,28814.467,2,""],
+        ["10000","10000NF","Client",9999.974183018,420.954,841.909,2,""],
+        ["10000","10000NG","Client",10000.042358572,21918.143,43836.285,2,""],
+        ["10000","10000NH","Client",10000.119090796,10134.62,20269.239,2,""],
+        ["10000","10000NI","Client",10000.038388898,10421.254,20842.508,2,""],
+        ["10000","10KMB","Check",10000.00499293,420.794,841.589,2,"10000.00503 g; \u0394 37.07 \u00b5g"],
+        ["10000","10KMA","Standard",10000.003261551,294.614,589.228,2,"10000.003261553 g; \u0394 1.777 ng"]
+      ]
+    }
+  }
+}

@@ -5,14 +5,15 @@ import sys
 
 from msl.qt import application, excepthook
 
-from mass_circular_weighing.constants import config_default
+from mass_circular_weighing.constants import admin_default
 from mass_circular_weighing.configuration import Configuration
 from mass_circular_weighing.gui.threads.circweigh_popup import WeighingThread
 
 sys.excepthook = excepthook
 
-cfg = Configuration(config_default)
 gui = application()
+
+cfg = Configuration(admin_default)  # this needs to come after application() in case a prompt is used=
 
 se_row_data = {}
 se_row_data['row'] = 1

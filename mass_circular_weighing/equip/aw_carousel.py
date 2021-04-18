@@ -11,12 +11,13 @@ from msl.qt import application
 from ..log import log
 from .mettler import MettlerToledo, ERRORCODES
 
-from ..gui.threads import AllocatorThread, PromptThread
-allocator = AllocatorThread()
-prompt_thread = PromptThread()
+from ..gui.threads import AllocatorThread
 
 
 class AWBalCarousel(MettlerToledo):
+
+    allocator = AllocatorThread()
+
     def __init__(self, record, reset=False, ):
         """Initialise Mettler Toledo Balance,
         with automatic weight loading in carousel configuration,
@@ -167,9 +168,9 @@ class AWBalCarousel(MettlerToledo):
         self._weight_groups = wtgrps
 
         # allocate weight groups to positions, and specify which to centre
-        allocator.show(self.num_pos, wtgrps)
+        self.allocator.show(self.num_pos, wtgrps)
         self._positions, self.pos_to_centre, repeats, self.cal_pos \
-            = allocator.wait_for_prompt_reply()
+            = self.allocator.wait_for_prompt_reply()
         self.repeats = int(repeats)
 
         if self.positions is None:
@@ -196,8 +197,8 @@ class AWBalCarousel(MettlerToledo):
         self.move_to(pos)
         # these balances are loaded in the top position
         message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
-        prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
-        reply = prompt_thread.wait_for_prompt_reply()
+        self._pt.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
+        reply = self._pt.wait_for_prompt_reply()
 
         return reply
 

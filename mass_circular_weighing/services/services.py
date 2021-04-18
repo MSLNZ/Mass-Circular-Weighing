@@ -8,7 +8,7 @@ from ..constants import NBC
 from other.do_new_weighing import do_new_weighing
 from ..routines.run_circ_weigh import analyse_old_weighing, analyse_all_weighings_in_file
 from ..routines.collate_data import *
-from ..routine_classes.final_mass_calc_class import FinalMassCalc, filter_IDs, filter_stds
+from ..routine_classes.final_mass_calc_class import FinalMassCalc, filter_mass_set
 
 
 class DoWeighing(Service):
@@ -63,17 +63,17 @@ class FinalMassCalcService(Service):
 
     def final_mass_calc(self, config, inputdata,):
         cfg = Configuration(config)
-        client_wt_IDs = filter_IDs(cfg.client_wt_IDs.split(), inputdata)
+        client_masses = filter_mass_set(cfg.all_client_wts, inputdata)
         if cfg.all_checks is not None:
-            check_masses = filter_stds(cfg.all_checks, inputdata)
+            check_masses = filter_mass_set(cfg.all_checks, inputdata)
         else:
             check_masses = None
-        std_masses = filter_stds(cfg.all_stds, inputdata)
+        std_masses = filter_mass_set(cfg.all_stds, inputdata)
         # send relevant information to matrix least squares mass calculation algorithm
         fmc = FinalMassCalc(
             cfg.folder,
             cfg.client,
-            client_wt_IDs,
+            client_masses,
             check_masses,
             std_masses,
             inputdata,
