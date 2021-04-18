@@ -7,10 +7,6 @@ from time import sleep
 from . import AWBalCarousel
 from ..log import log
 
-from ..gui.threads import AllocatorThread, PromptThread
-allocator = AllocatorThread()
-prompt_thread = PromptThread()
-
 
 class AWBalLinear(AWBalCarousel):
     def __init__(self, record, reset=False, ):
@@ -128,8 +124,8 @@ class AWBalLinear(AWBalCarousel):
         self.move_to(pos)
         self.loading_position(pos)
         message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
-        prompt_thread.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
-        reply = prompt_thread.wait_for_prompt_reply()
+        self._pt.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
+        reply = self._pt.wait_for_prompt_reply()
 
         return reply
 

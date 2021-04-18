@@ -6,10 +6,10 @@ import string
 
 from openpyxl import load_workbook
 
-from msl.qt import prompt
-
 from .log import log
 from .constants import config_default, client_default, job_default, MU_STR
+from .gui.threads.prompt_thread import PromptThread
+pt = PromptThread()
 
 
 class AdminDetails(object):
@@ -68,7 +68,9 @@ class AdminDetails(object):
             # look for a config file in the same folder as the Admin.xlsx file
             xml_files = [f for f in os.listdir(self.folder) if f.endswith(".xml")]
             if xml_files:
-                config_xml = prompt.item("Select your config.xml file if present", xml_files)
+                pt = PromptThread()
+                pt.show('item', "Select your config.xml file if present", xml_files)
+                config_xml = pt.wait_for_prompt_reply()
                 if config_xml:
                     self.config_xml = os.path.join(self.folder, config_xml)
                     log.warning(f"No config.xml file path specified in {self.path}.")
@@ -93,9 +95,10 @@ class AdminDetails(object):
         self.massref_path = self.ds['B9'].value
         if not os.path.isfile(self.massref_path):
             # open a browser to find the MASSREF file
-            self.massref_path = prompt.filename(
-                title="Please select a valid MASSREF file", filters='XLSX files (*.xlsx)', multiple=False
-            )
+            pt = PromptThread()
+            pt.show('filename', title="Please select a valid MASSREF file", filters='XLSX files (*.xlsx)', multiple=False)
+            self.massref_path = pt.wait_for_prompt_reply()
+
             if not os.path.isfile(self.massref_path):
                 raise FileNotFoundError(f"Cannot find the MASSREF file at {self.massref_path}.")
         log.info(f"Found MassRef file at {self.massref_path}")

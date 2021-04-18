@@ -20,7 +20,6 @@ from ..widgets import label
 from .prompt_thread import PromptThread
 pt = PromptThread()
 from .wait_until_time_thread import WaitThread
-wt = WaitThread()
 
 check_box_style = '''
 QCheckBox {
@@ -285,6 +284,7 @@ class WeighingThread(Thread):
         self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.cfg, self.bal)
 
     def start_weighing_at(self):
+        wt = WaitThread()
         wt.show(message=f"Delayed start for weighing for {self.scheme_entry.text()}.", loop_delay=1000,)
         go = wt.wait_for_prompt_reply()
         if go:

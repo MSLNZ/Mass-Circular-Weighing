@@ -11,7 +11,7 @@ from ..constants import SUFFIX, FONTSIZE
 from ..log import log
 
 from ..gui.threads.prompt_thread import PromptThread
-prompt_thread = PromptThread()
+# prompt_thread = PromptThread()
 
 
 class Balance(object):
@@ -28,6 +28,7 @@ class Balance(object):
             get via Application(config).equipment[alias]
             Requires an MSL.equipment config.xml file
         """
+        self._pt = PromptThread()
         self.record = record
         self._ambient_instance = None
         self._ambient_details = None
@@ -127,9 +128,9 @@ class Balance(object):
         :class:`str`
             'µg', 'mg', 'g', or 'kg'
         """
-        prompt_thread.show('item', 'Please select unit', ['µg', 'mg', 'g', 'kg'], font=FONTSIZE,
+        self._pt.show('item', 'Please select unit', ['µg', 'mg', 'g', 'kg'], font=FONTSIZE,
                            title='Balance Preparation')
-        self._unit = prompt_thread.wait_for_prompt_reply()
+        self._unit = self._pt.wait_for_prompt_reply()
         if not self._unit:
             self._want_abort = True
         return self._unit
@@ -137,36 +138,37 @@ class Balance(object):
     def zero_bal(self):
         """Prompts user to zero balance with no mass on balance"""
         if not self.want_abort:
-            prompt_thread.show('ok_cancel', "Zero balance with no load.", font=FONTSIZE,
+            self._pt.show('ok_cancel', "Zero balance with no load.", font=FONTSIZE,
                                title='Balance Preparation')
-            zeroed = prompt_thread.wait_for_prompt_reply()
+            zeroed = self._pt.wait_for_prompt_reply()
             if not zeroed:
                 self._want_abort = True
 
     def scale_adjust(self):
         """Prompts user to adjust scale using internal weights"""
         if not self.want_abort:
-            prompt_thread.show('ok_cancel', "Perform internal balance calibration.", font=FONTSIZE,
+            self._pt.show('ok_cancel', "Perform internal balance calibration.", font=FONTSIZE,
                                title='Balance Preparation')
-            self._is_adjusted = prompt_thread.wait_for_prompt_reply()
+            self._is_adjusted =  self._pt.wait_for_prompt_reply()
             # if not self._is_adjusted:
             #     self._want_abort = True
 
     def tare_bal(self):
         """Prompts user to tare balance with correct tare load"""
         if not self.want_abort:
-            prompt_thread.show('ok_cancel', 'Check that the balance has correct tare load, then tare balance.',
+            # prompt_thread = PromptThread()
+            self._pt.show('ok_cancel', 'Check that the balance has correct tare load, then tare balance.',
                                font=FONTSIZE, title='Balance Preparation')
-            tared = prompt_thread.wait_for_prompt_reply()
+            tared = self._pt.wait_for_prompt_reply()
             if not tared:
                 self._want_abort = True
 
     def load_bal(self, mass, pos):
         """Prompts user to load balance with specified mass"""
         if not self.want_abort:
-            prompt_thread.show('ok_cancel', 'Load mass <b>'+mass+'</b><br><i>(position '+str(pos)+')</i>',
+            self._pt.show('ok_cancel', 'Load mass <b>'+mass+'</b><br><i>(position '+str(pos)+')</i>',
                                font=FONTSIZE, title='Circular Weighing')
-            loaded = prompt_thread.wait_for_prompt_reply()
+            loaded = self._pt.wait_for_prompt_reply()
             if not loaded:
                 self._want_abort = True
             return loaded
@@ -188,9 +190,9 @@ class Balance(object):
         reading = 0
         while not self.want_abort:
             try:
-                prompt_thread.show('double', "Enter balance reading: ", font=FONTSIZE, decimals=self.dp,
+                self._pt.show('double', "Enter balance reading: ", font=FONTSIZE, decimals=self.dp,
                                    title='Circular Weighing')
-                reading = prompt_thread.wait_for_prompt_reply()
+                reading = self._pt.wait_for_prompt_reply()
                 if not reading and not reading == 0:
                      self._want_abort = True
             except ValueError:
