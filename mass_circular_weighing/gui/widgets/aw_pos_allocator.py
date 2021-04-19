@@ -34,7 +34,7 @@ class AllocatorDialog(QtWidgets.QDialog):
 
         self.pos_list = QtWidgets.QListWidget()
         self.pos_list.addItems([f'Position {i+1}' for i in range(num_pos)])
-        self.pos_list.setMaximumWidth(1.25*self.pos_list.sizeHintForColumn(0))
+        self.pos_list.setMaximumWidth(self.pos_list.sizeHintForColumn(0) + 6)
         max_list_height = 1.25 * num_pos * self.pos_list.sizeHintForRow(0)
         self.pos_list.setMaximumHeight(max_list_height)
 
@@ -50,7 +50,7 @@ class AllocatorDialog(QtWidgets.QDialog):
             item = QtWidgets.QListWidgetItem(self.centre_list)
             ch = QtWidgets.QCheckBox()
             self.centre_list.setItemWidget(item, ch)
-        self.centre_list.setMaximumWidth(1.5*self.centre_list.sizeHintForColumn(0))
+        self.centre_list.setMaximumWidth(self.centre_list.sizeHintForColumn(0) + 5)
         self.centre_list.setMaximumHeight(max_list_height)
 
         lists = QtWidgets.QWidget()
