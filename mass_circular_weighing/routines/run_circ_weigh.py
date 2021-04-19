@@ -80,7 +80,7 @@ def check_bal_initialised(bal, wtgrps):
         # to check that the balance has been initialised correctly
         positions = bal.initialise_balance(wtgrps)
         log.debug(str(positions))
-        if positions is None:
+        if positions is None:  # consequence of exit from initialise_balance for any number of reasons
             log.error("Balance initialisation was not completed")
             return None
     else:
@@ -134,6 +134,10 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     if positions is None:
         log.error("Balance initialisation not complete")
         return None
+    if 'aw' in bal.mode:  # balance has been initialised so we know bal.move_time exists
+        circweightime = weighing.num_wtgrps * (bal.move_time + bal.stable_wait) * weighing.num_cycles  # total t in s
+        circweighmins = int(circweightime/60) + 1
+        log.info(f'Each circular weighing will take approximately {circweighmins} minutes')
 
     positionstr = ''
     positiondict = {}
