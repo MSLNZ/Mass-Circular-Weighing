@@ -199,10 +199,10 @@ class WeighingThread(Thread):
     def make_layout(self):
 
         layout = QtWidgets.QGridLayout()
-        layout.addWidget(self.status, 0, 0)
-        layout.addWidget(self.controls, 1, 0)
-        layout.addWidget(self.initialise_controls, 0, 1)
-        layout.addWidget(self.start_panel, 1, 1)
+        layout.addWidget(self.status, 0, 0, 3, 1)
+        layout.addWidget(self.controls, 0, 1)
+        layout.addWidget(self.initialise_controls, 1, 1)
+        layout.addWidget(self.start_panel, 2, 1)
 
         return layout
 
