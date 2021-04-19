@@ -126,11 +126,11 @@ class SchemeTable(QtWidgets.QTableWidget):
         self.make_rows(len(rows))
         for i, row in enumerate(rows):
             se = row[index_map['weight']]
-            self.cellWidget(i, 0).setText(se)
+            self.cellWidget(i, 0).setText(str(se))
             nom = row[index_map['nominal']]
-            self.cellWidget(i, 1).setText(nom)
+            self.cellWidget(i, 1).setText(str(nom))
             self.cellWidget(i, 2).setCurrentIndex(self.cellWidget(i, 2).findText(row[index_map['balance']]))
-            self.cellWidget(i, 3).setValue(float(row[index_map['runs']]))
+            self.cellWidget(i, 3).setValue(int(row[index_map['runs']]))
 
             self.check_good_runs_in_file.emit(i)
             # updates status of number of collected runs
