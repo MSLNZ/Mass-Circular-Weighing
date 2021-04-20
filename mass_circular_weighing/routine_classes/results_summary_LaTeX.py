@@ -461,7 +461,7 @@ class LaTexDoc(object):
         for row in scheme:
             se = row[0]
             nom = row[1]
-            cw_file = os.path.join(folder, client + '_' + nom + '.json')
+            cw_file = os.path.join(folder, f'{client}_{nom}.json')
             if not os.path.isfile(cw_file):
                 log.warning('No data yet collected for ' + se)
             else:

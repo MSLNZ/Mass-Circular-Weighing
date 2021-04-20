@@ -271,7 +271,7 @@ class ExcelSummaryWorkbook(object):
             se = scheme.cell(row=i, column=1).value
             nom = scheme.cell(row=i, column=2).value
             try:
-                cw_file = os.path.join(cfg.folder, cfg.client + '_' + nom + '.json')
+                cw_file = os.path.join(cfg.folder,  f'{cfg.client}_{nom}.json')
             except TypeError:
                 break
             self.add_weighing_dataset(se, cw_file, nom, incl_datasets, cfg)
