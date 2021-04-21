@@ -318,6 +318,5 @@ class AWBalLinear(AWBalCarousel):
     def close_connection(self):
         self.connection.disconnect()
         print(self.arduino.query("END"))
-        # TODO: check that this closes connection to Arduino and leaves in Sleep mode
         self.arduino.disconnect()
 

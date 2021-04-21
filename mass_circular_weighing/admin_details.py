@@ -27,6 +27,7 @@ class AdminDetails(object):
         self.path = path
 
         self.wb = load_workbook(path, data_only=True)
+        log.info(f"Found Admin file at {self.path}")
 
         self.ds = self.wb["Admin"]  # note that this will raise an error if the sheet Admin doesn't exist
 
