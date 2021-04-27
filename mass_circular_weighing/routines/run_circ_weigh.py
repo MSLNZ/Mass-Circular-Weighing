@@ -39,7 +39,7 @@ def check_for_existing_weighdata(folder, url, se):
         log.debug(back_up_folder)
         if not os.path.exists(back_up_folder):
             os.makedirs(back_up_folder)
-        new_index = len(back_up_folder)  # counts number of files in backup folder
+        new_index = len(os.listdir(back_up_folder))  # counts number of files in backup folder
         new_file = os.path.join(back_up_folder, se + '_backup{}.json'.format(new_index))
         existing_root.is_read_only = False
         log.debug('Existing root is '+repr(existing_root))

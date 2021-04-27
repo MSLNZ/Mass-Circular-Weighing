@@ -293,7 +293,7 @@ class ExcelSummaryWorkbook(object):
         # make backup
         if os.path.isfile(xl_output_file):
             back_up_folder = os.path.join(folder, "backups")
-            new_index = len(back_up_folder)  # counts number of files in backup folder
+            new_index = len(os.listdir(back_up_folder))  # counts number of files in backup folder
             back_up_file = os.path.join(back_up_folder, client + '_summary_backup{}.xlsx'.format(new_index))
             os.rename(xl_output_file, back_up_file)  # this moves the file and renames it
         # protect each sheet

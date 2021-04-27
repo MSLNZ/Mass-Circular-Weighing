@@ -436,7 +436,7 @@ def make_backup(folder, client, filesavepath, ):
         log.debug(back_up_folder)
         if not os.path.exists(back_up_folder):
             os.makedirs(back_up_folder)
-        new_index = len(back_up_folder)  # counts number of files in backup folder
+        new_index = len(os.listdir(back_up_folder))  # counts number of files in backup folder
         new_file = os.path.join(back_up_folder, client + '_finalmasscalc_backup{}.json'.format(new_index))
         existing_root.is_read_only = False
         root = JSONWriter()
