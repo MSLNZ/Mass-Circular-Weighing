@@ -128,7 +128,7 @@ class ExcelSummaryWorkbook(object):
             cfg : configuration instance
         """
         if not os.path.isfile(cw_file):
-            log.warning('No data yet collected for ' + se)
+            log.warning(f'No data yet collected for {se}')
         else:
             if len(se) > 30:
                 # MS Excel has a limit of 31 characters in tab name
@@ -138,15 +138,15 @@ class ExcelSummaryWorkbook(object):
             wt_grps = se.split()
 
             root = read(cw_file)
-            log.info("Adding data for " + se + " from " + cw_file)
-            sheet.append(["Circular weighings for "+se])
+            log.info(f"Adding data for {se} from {cw_file}")
+            sheet.append([f'Circular weighings for {se}'])
             sheet['A1'].font = Font(bold=True)
-            sheet.append(['Source file: '+cw_file])
+            sheet.append([f'Source file: {cw_file}'])
 
             try:
                 root['Circular Weighings'][se]
             except KeyError:
-                log.warning('No data yet collected for '+se)
+                log.warning(f'No data yet collected for {se}')
                 return
 
             first_dataset = True
@@ -202,7 +202,7 @@ class ExcelSummaryWorkbook(object):
                             "Included?"
                         ]
                         for row in analysisdata:
-                            header.append("("+row[0] + ") - (" + row[1]+")")
+                            header.append(f"({row[0]}) - ({row[1]})")
                         header += [
                             'Drift type',
                             'Residual Std. Dev.',

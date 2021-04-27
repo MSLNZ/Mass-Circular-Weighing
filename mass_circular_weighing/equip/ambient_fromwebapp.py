@@ -147,7 +147,7 @@ def get_t_rh_during(ithx_name, sensor="", start=None, end=None):
                 error = 'No data in the database for iTHX={!r}, start={}, end={}.'.format(ithx_name, start, end)
 
                 if end is None:
-                    log.warning(error + ' Collecting current ambient conditions instead.')
+                    log.warning(f'{error} Collecting current ambient conditions instead.')
                     date_now, t_now, rh_now = get_t_rh_now(ithx_name, sensor=sensor)
                     temperatures, humidities = [t_now], [rh_now]
 

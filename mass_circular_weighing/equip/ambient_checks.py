@@ -26,8 +26,10 @@ def check_ambient_pre(ambient_instance, ambient_details):
         {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
     """
     if ambient_details["Type"] == "OMEGA":
-        log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger '+ambient_details['Alias'] + ' sensor ' + str(ambient_details['Sensor']))
-
+        log.info(
+            f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']} "
+            f"sensor {ambient_details['Sensor']}"
+        )
         date_start, t_start, rh_start = None, None, None
         for i in range(15):  # in case the connection gets aborted by the software in the host machine
             date_start, t_start, rh_start = get_t_rh_now(str(ambient_details['Alias']), sensor=ambient_details['Sensor'])
@@ -40,7 +42,7 @@ def check_ambient_pre(ambient_instance, ambient_details):
             t_start, rh_start = prompt_t_rh(timepoint=None)
 
     elif ambient_details["Type"] == "Vaisala":
-        log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger ' + ambient_details['Alias'])
+        log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
 
         ambient_instance.open_comms()
         date_start, t_start, rh_start, p_start = ambient_instance.get_readings()
@@ -62,9 +64,8 @@ def check_ambient_pre(ambient_instance, ambient_details):
     if ambient_details["Type"] == "Vaisala":
         ambient_pre["P_pre (hPa)"] = p_start
 
-    log.info('Ambient conditions: ' +
-             'Temperature'+IN_DEGREES_C+': '+str(ambient_pre['T_pre'+IN_DEGREES_C])+
-             '; Humidity (%): '+str(ambient_pre['RH_pre (%)']))
+    log.info(f"Ambient conditions: Temperature{IN_DEGREES_C}: {ambient_pre['T_pre'+IN_DEGREES_C]}; "
+             f"Humidity (%): {ambient_pre['RH_pre (%)']}")
 
     if ambient_details['MIN_T'] < ambient_pre['T_pre'+IN_DEGREES_C] < ambient_details['MAX_T']:
         log.info('Ambient temperature OK for weighing')
@@ -100,8 +101,10 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
         dict has key-value pairs {'T_post'+IN_DEGREES_C: list of floats, 'RH_post (%)': list of floats, 'Ambient OK?': bool}
     """
     if ambient_details["Type"] == "OMEGA":
-        log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger '+ambient_details['Alias'] + ' sensor ' + str(ambient_details['Sensor']))
-
+        log.info(
+            f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']} "
+            f"sensor {ambient_details['Sensor']}"
+        )
         t_data, rh_data = get_t_rh_during(
             str(ambient_details['Alias']),
             sensor=ambient_details['Sensor'],
@@ -115,7 +118,7 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
             rh_data = [rh_data]
 
     elif ambient_details["Type"] == "Vaisala":
-        log.info('COLLECTING AMBIENT CONDITIONS from ambient_logger ' + ambient_details['Alias'])
+        log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
 
         ambient_instance.open_comms()
         date_post, t, rh, p_post = ambient_instance.get_readings()

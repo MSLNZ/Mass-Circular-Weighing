@@ -223,7 +223,7 @@ class FinalMassCalc(object):
             for r in range(self.num_obs):
                 sum += self.designmatrix[r, i] ** 2
             if not sum:
-                log.error("No comparisons in design matrix for " + self.allmassIDs[i])
+                log.error(f"No comparisons in design matrix for {self.allmassIDs[i]}")
                 error_tally += 1
 
         if error_tally > 0:
@@ -250,7 +250,7 @@ class FinalMassCalc(object):
                 for mass2 in self.std_masses['Weight ID']:
                     j = np.where(self.std_masses['Weight ID'] == mass2)
                     rmeas[len(self.inputdata)+i[0], len(self.inputdata)+j[0]] = self.corr[i, j]
-            log.debug('rmeas matrix includes correlations for stds:\n'+str(rmeas[:, len(self.inputdata)-self.num_obs:]))
+            log.debug(f'rmeas matrix includes correlations for stds:\n{rmeas[:, len(self.inputdata)-self.num_obs:]}')
 
         psi_y_hadamard = np.zeros((self.num_obs, self.num_obs))       # Hadamard product is element-wise multiplication
         for i in range(self.num_obs):
@@ -293,7 +293,7 @@ class FinalMassCalc(object):
         for entry in self.inputdatares:
             if np.absolute(entry[4]) > 2 * entry[3]:
                 flag.append(str(entry[0]) + ' - ' + str(entry[1]))
-                log.warn("A residual for " + str(entry[0]) + ' - ' + str(entry[1]) + " is too large")
+                log.warn(f"A residual for {entry[0]} - {entry[1]} is too large")
 
         if flag:
             self.leastsq_meta['Residuals greater than 2 balance uncerts'] = flag
@@ -467,7 +467,7 @@ def make_stds_dataset(set_type, masses_dict, scheme):
 
     scheme.create_dataset('mass values', data=masses_dataarray)
 
-    log.info(set_type + ' '+str(masses_dict['Weight ID']))
+    log.info(f"{set_type}: {masses_dict['Weight ID']}")
 
     return num_masses
 

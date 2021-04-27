@@ -306,9 +306,9 @@ def load_stds_from_set_file(path, wtset):
                 stds['Set identifier'] = 'M'+set_name[1]
             else:
                 stds['Set identifier'] = set_name[0]
-            log.info(wtset + ' masses use identifier ' + stds['Set identifier'])
+            log.info(f"{wtset} masses use identifier {stds['Set identifier']}")
             stds['Calibrated'] = set_name[-1]
-            log.info(wtset + ' masses were last calibrated in ' + stds['Calibrated'])
+            log.info(f"{wtset} masses were last calibrated in {stds['Calibrated']}")
             fp.readline()
 
             headerline = fp.readline().strip('\n')
