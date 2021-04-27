@@ -10,6 +10,7 @@ from msl.qt.threading import Thread, Worker
 from ...constants import MU_STR, NBC
 from ...routine_classes.final_mass_calc_class import FinalMassCalc, filter_mass_set
 from ...routines.report_results import export_results_summary
+from .prompt_thread import PromptThread
 
 
 def label(name):
@@ -151,6 +152,8 @@ class MassValuesTable(QtWidgets.QTableWidget):
 
 class CalcWorker(Worker):
 
+    pt = PromptThread()
+
     def __init__(self, parent, table, cfg, mass_vals_table):
         super(CalcWorker, self).__init__()
         self.parent = parent
@@ -163,6 +166,11 @@ class CalcWorker(Worker):
     def process(self):
         # collate and sort metadata
         inputdata = self.cw_data_table.get_checked_rows()
+        if len(inputdata) == 0:
+            self.pt.show('warning', "No comparisons selected!\n\n"
+                                        "Use checkboxes to select comparisons for calculation")
+            self.pt.wait_for_prompt_reply()
+            return
         client_masses = filter_mass_set(self.cfg.all_client_wts, inputdata)
         if self.cfg.all_checks is not None:
             check_masses = filter_mass_set(self.cfg.all_checks, inputdata)

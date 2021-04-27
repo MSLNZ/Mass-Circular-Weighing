@@ -5,9 +5,11 @@ import os
 from stat import S_IREAD, S_IRGRP, S_IROTH
 import numpy as np
 
-from msl.io import read, read_table_excel
+from msl.io import read
 
 from ..log import log
+from ..gui.threads.prompt_thread import PromptThread
+pt = PromptThread()
 # from ..routine_classes.results_summary_Word import WordDoc
 from ..routine_classes.results_summary_LaTeX import LaTexDoc
 from ..routine_classes.results_summary_Excel import ExcelSummaryWorkbook
@@ -81,5 +83,5 @@ def export_results_summary(cfg, check_file, std_file, incl_datasets):
     # log.info("Word file saved to {}".format(save_file))
 
     log.info("File export complete")
-
-
+    pt.show('information', "File export complete")
+    pt.wait_for_prompt_reply()
