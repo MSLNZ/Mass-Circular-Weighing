@@ -52,4 +52,4 @@ The documentation for **Mass-Circular-Weighing** can be found here_.
 .. _openpyxl: https://pypi.org/project/openpyxl/
 .. _tabulate: https://pypi.org/project/tabulate/
 
-.. _here: https://github.com/MSLNZ/Mass-Circular-Weighing/blob/master/docs/index.rst
+.. _here: https://github.com/MSLNZ/Mass-Circular-Weighing/blob/main/docs/index.rst

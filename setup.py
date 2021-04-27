@@ -131,9 +131,9 @@ def get_version():
 
 # specify the packages that mass-circular-weighing depends on
 install_requires = [
-    'msl-equipment @ https://github.com/MSLNZ/msl-equipment/archive/master.tar.gz',
-    'msl-qt @ https://github.com/MSLNZ/msl-qt/archive/master.tar.gz',
-    'msl-io @ https://github.com/MSLNZ/msl-io/archive/master.tar.gz',
+    'msl-equipment @ https://github.com/MSLNZ/msl-equipment/archive/main.tar.gz',
+    'msl-qt @ https://github.com/MSLNZ/msl-qt/archive/main.tar.gz',
+    'msl-io @ https://github.com/MSLNZ/msl-io/archive/main.tar.gz',
     'msl-loadlib',  # used in Word file creation
     'msl-network',  # demo in services
     'PyQt5',     # if not already installed with msl-qt
