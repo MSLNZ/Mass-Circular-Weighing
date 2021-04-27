@@ -110,7 +110,8 @@ def collate_a_data_from_json(url, scheme_entry):
         exclude = dataset.metadata.get('Exclude?')
 
         if dname[0][-8:] == "Collated":
-            root.remove(schemefolder.name + "/Collated")
+            log.info(f"Weighings have been collated previously for {scheme_entry}")
+            # root.remove(schemefolder.name + "/Collated")  # currently breaking
 
         elif str(dname[2]) == "1":
             pass  # the first run is ignored as it is considered to be warming up the balance

@@ -270,6 +270,8 @@ class ExcelSummaryWorkbook(object):
         while True:
             se = scheme.cell(row=i, column=1).value
             nom = scheme.cell(row=i, column=2).value
+            if nom is None:
+                break
             try:
                 cw_file = os.path.join(cfg.folder,  f'{cfg.client}_{nom}.json')
             except TypeError:
