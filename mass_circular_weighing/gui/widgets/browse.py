@@ -36,6 +36,7 @@ class Browse(QtWidgets.QWidget):
         self.pattern = pattern
         self.path = None
         self.setAcceptDrops(True)
+        self.textbox.setAcceptDrops(False)  # QLineEdit has drops accepting by default which causes problems here
 
         self.button = Button(icon=icon, left_click=self.display_browse)
 

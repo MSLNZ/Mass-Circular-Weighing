@@ -353,15 +353,15 @@ class LaTexDoc(object):
         se : str
         """
         if not os.path.isfile(cw_file):
-            log.warning('No data yet collected for '+se)
+            log.warning(f'No data yet collected for {se}')
         else:
-            log.debug('Reading '+cw_file)
+            log.debug(f'Reading {cw_file}')
             root = read(cw_file)
 
             try:
                 root['Circular Weighings'][se]
             except KeyError:
-                log.warning('No data yet collected for '+se)
+                log.warning(f'No data yet collected for {se}')
                 return
 
             for dataset in root['Circular Weighings'][se].datasets():
@@ -392,18 +392,18 @@ class LaTexDoc(object):
         cfg : configuration instance
         """
         if not os.path.isfile(cw_file):
-            log.warning('No data yet collected for '+se)
+            log.warning(f'No data yet collected for {se}')
         else:
             self.make_heading2(se)
             wt_grps = se.split()
 
-            log.debug('Reading '+cw_file)
+            log.debug(f'Reading {cw_file}')
             root = read(cw_file)
 
             try:
                 root['Circular Weighings'][se]
             except KeyError:
-                log.warning('No data yet collected for '+se)
+                log.warning(f'No data yet collected for {se}')
                 return
 
             for dataset in root['Circular Weighings'][se].datasets():
@@ -461,9 +461,9 @@ class LaTexDoc(object):
         for row in scheme:
             se = row[0]
             nom = row[1]
-            cw_file = os.path.join(folder, client + '_' + nom + '.json')
+            cw_file = os.path.join(folder, f'{client}_{nom}.json')
             if not os.path.isfile(cw_file):
-                log.warning('No data yet collected for ' + se)
+                log.warning(f'No data yet collected for {se}')
             else:
                 self.add_weighing_dataset(cw_file, se, nom, incl_datasets, cfg)
                 self.add_collated_data(cw_file, se)

@@ -87,10 +87,10 @@ class Housekeeping(QtWidgets.QWidget):
         return lhs_panel_group
 
     def load_from_admin(self):
-        if not self.admin_io.path == self.admin_io.textbox.text():
-            log.info(f"Loading from {self.admin_io.path}")
-        if os.path.isfile(self.admin_io.path):
-            self.cfg = Configuration(self.admin_io.path)
+        filepath = self.admin_io.textbox.text()
+        # self.admin_io.path = filepath       # can add if desired but not necessary now
+        if os.path.isfile(filepath):
+            self.cfg = Configuration(self.admin_io.textbox.text())
             self.config_lbl.setText(self.cfg.config_xml)
             self.folder_io.setText(self.cfg.folder)
             self.job_io.setText(self.cfg.job)
@@ -105,7 +105,7 @@ class Housekeeping(QtWidgets.QWidget):
             self.corr_io.setText(self.cfg.correlations)
 
         else:
-            log.error('File does not exist at {!r}'.format(self.admin_io.path))
+            log.error('File does not exist at {!r}'.format(filepath))
 
     # def edit_config(self):
     #     cfe.show(self.cfg)

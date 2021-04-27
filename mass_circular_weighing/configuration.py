@@ -56,6 +56,7 @@ class Configuration(AdminDetails):
             'mw': MettlerToledo,
             'aw_c': AWBalCarousel,
             'aw_l': AWBalLinear,
+            'aw_d': Balance,
         }
 
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)

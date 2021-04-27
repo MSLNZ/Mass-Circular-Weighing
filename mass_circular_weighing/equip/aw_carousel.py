@@ -65,6 +65,11 @@ class AWBalCarousel(MettlerToledo):
         """Returns a list of weight groups in the order the groups appear in the scheme entry."""
         return self._weight_groups
 
+    @property
+    def move_time(self):
+        """Longest time taken to move between positions in circular weighing. Integer value, in seconds, or None."""
+        return self._move_time
+
     def identify_handler(self):
         """Reports handler model and software version.
         string returned of form: H1006, serial number #xxxx, software V x.xx. ready
@@ -131,9 +136,9 @@ class AWBalCarousel(MettlerToledo):
                 return None
 
         # check sensible weights loaded
-        if not self._move_time:
+        if not self.move_time:
             self.check_loading()
-        if not self._move_time:
+        if not self.move_time:
             log.error("Loading check was not completed")
             return None
 
@@ -218,7 +223,7 @@ class AWBalCarousel(MettlerToledo):
         times = []
         for pos in np.roll(self.positions, -1):   # puts first position at end
             if self.want_abort:
-                return self._move_time
+                return self.move_time
             t0 = perf_counter()
             self.move_to(pos)
             # note that move_to has a buffer time of 5 s by default (unless wait=False)
@@ -231,10 +236,10 @@ class AWBalCarousel(MettlerToledo):
 
         self._move_time = np.ceil(max(times))
         print("Times: "+str(times))
-        print("Longest time: "+str(self._move_time))
+        print("Longest time: "+str(self.move_time))
         log.info("Balance loading check complete")
 
-        return self._move_time
+        return self.move_time
 
     def centring(self, pos_to_centre, repeats):
         """Performs a centring routine
