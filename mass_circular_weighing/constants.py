@@ -2,7 +2,6 @@
 A repository for constants and symbols used in the mass weighing program
 Modify default folder paths as necessary
 """
-
 import os
 
 MU_STR = 'µ'                    # ALT+0181 or 'µ'. use 'u' if running into issues
@@ -19,9 +18,9 @@ NBC = True                  #
 REL_UNC = 0.03              # relative uncertainty in ppm for no buoyancy correction: typically 0.03 or 0.1
 
 local_backup = r'C:\CircularWeighingData'
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-admin_default = os.path.join(ROOT_DIR, r'examples\Admin.xlsx')
-config_default = os.path.join(ROOT_DIR, r'examples\default_config.xml')
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+admin_default = os.path.join(ROOT_DIR, r'utils\default_admin.xlsx')
+config_default = os.path.join(ROOT_DIR, r'utils\default_config.xml')
 
 save_folder_default = r'G:\My Drive'
 sample_data_folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
