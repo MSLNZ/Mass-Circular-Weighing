@@ -184,8 +184,8 @@ setup(
     entry_points={
         'console_scripts': [
             'show-gui = mass_circular_weighing.gui.gui:show_gui',
-            'poll-omega-logger = mass_circular_weighing.utils.poll_omega_logger:poll_omega_logger'
-            'balance-comms = mass_circular_weighing.utils.poll_balance: find_balance'
+            'poll-omega-logger = mass_circular_weighing.utils.poll_omega_logger:poll_omega_logger',
+            'balance-comms = mass_circular_weighing.utils.poll_balance:find_balance'
         ],
     },
 )
