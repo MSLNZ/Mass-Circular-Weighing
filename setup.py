@@ -2,8 +2,11 @@ import os
 import re
 import sys
 import subprocess
-from distutils.cmd import Command
-from setuptools import setup, find_packages
+from setuptools import (
+    setup,
+    find_packages,
+    Command,
+)
 
 
 class ApiDocs(Command):
@@ -175,7 +178,7 @@ setup(
     tests_require=tests_require,
     install_requires=install_requires,
     cmdclass={'docs': BuildDocs, 'apidocs': ApiDocs},
-    packages=['mass_circular_weighing'],
+    packages=find_packages(include=('mass_circular_weighing*',)),
     include_package_data=True,  # includes all files specified in MANIFEST.in when building the distribution
     package_dir={'mass-circular-weighing': 'mass_circular_weighing'},
     entry_points={
