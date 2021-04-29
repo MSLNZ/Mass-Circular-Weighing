@@ -177,6 +177,11 @@ class CalcWorker(Worker):
         else:
             check_masses = None
         std_masses = filter_mass_set(self.cfg.all_stds, inputdata)
+        if len(std_masses['Weight ID']) == 0:
+            self.pt.show('warning', "No standard masses included!\n\n"
+                                    "Check mass sets are correct.")
+            self.pt.wait_for_prompt_reply()
+            return
         # send relevant information to matrix least squares mass calculation algorithm
         self.fmc = FinalMassCalc(
             self.cfg.folder,
