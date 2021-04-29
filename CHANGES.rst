@@ -2,5 +2,7 @@
 Release Notes
 =============
 
-Version 0.1.0.dev0
-==================
+Version 1.0.0 (29/04/2021)
+==========================
+
+Initial release
