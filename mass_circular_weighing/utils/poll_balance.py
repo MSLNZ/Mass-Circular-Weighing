@@ -1,19 +1,37 @@
 """
 Test communications with a balance listed in default_config.xml
 """
+import sys
+
 from ..constants import admin_default
 from ..configuration import Configuration
 
 
-def find_balance(bal_alias=None):
+def find_balance(admin=None, bal_alias=None):
     """Gets a balance instance from the list of known balances and checks the connection is valid
+
+    Parameters
+    ----------
+    admin : path (optional)
+       path to the admin.xlsx file
+    bal_alias : str (optional)
+       alias of balance to connect to, as set in the config.xml file
 
     Returns
     -------
     balance instance, which can be used for further interactions
     such as loading, unloading, scale adjust, and mass readings
     """
-    app = Configuration(admin_default)
+    if admin is None:
+        admin = input("Please enter the path to the admin.xlsx file or press entry to use default.")
+    if not admin:
+        admin = admin_default
+    try:
+        app = Configuration(admin)
+        default = input("Press enter to continue")  # needed in case config pop-up appears
+    except IOError as e:
+        print(f'{e.__class__.__name__}: {e}', file=sys.stderr)
+        return None
 
     # determine known balances
     bal_list = []
