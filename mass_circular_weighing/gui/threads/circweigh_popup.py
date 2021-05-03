@@ -284,6 +284,14 @@ class WeighingThread(Thread):
         self.start(self.update_run_no, self.update_cyc_pos, self.update_reading, self.se_row_data, self.cfg, self.bal)
 
     def start_weighing_at(self):
+        if 'aw' in self.bal.mode:
+            self.bal.want_adjust = False    # so that any scale adjustment occurs immediately before weighing
+            # check that the balance has been initialised correctly (except for scale adjustment)
+            positions = self.bal.initialise_balance(self.scheme_entry.text().split())
+            log.debug(str(positions))
+            if positions is None:           # consequence of exit from initialise_balance for any number of reasons
+                log.error("Balance initialisation was not completed")
+                return
         wt = WaitThread()
         wt.show(message=f"Delayed start for weighing for {self.scheme_entry.text()}.", loop_delay=1000,)
         go = wt.wait_for_prompt_reply()
