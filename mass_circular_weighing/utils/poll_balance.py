@@ -23,7 +23,7 @@ def find_balance(admin=None, bal_alias=None):
     such as loading, unloading, scale adjust, and mass readings
     """
     if admin is None:
-        admin = input("Please enter the path to the admin.xlsx file or press entry to use default.")
+        admin = input("Please enter the path to the admin.xlsx file or press enter to use default.")
     if not admin:
         admin = admin_default
     try:
