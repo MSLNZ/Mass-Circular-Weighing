@@ -1,0 +1,2 @@
+include mass_circular_weighing/utils/default_admin.xlsx
+include mass_circular_weighing/utils/default_config.xml
