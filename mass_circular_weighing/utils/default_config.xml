@@ -12,6 +12,7 @@
     <equipment alias="XPE505C" manufacturer="Mettler Toledo" model="XPE505C"/>
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
     <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
+    <equipment alias="XPR6U" manufacturer="Mettler Toledo" model="XPR6U"/>
     <equipment alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
 
     <!-- Specify Arduino information -->
