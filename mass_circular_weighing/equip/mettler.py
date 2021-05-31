@@ -24,7 +24,6 @@ class MettlerToledo(Balance):
             True if reset balance desired
         """
         super().__init__(record)
-        self.intcaltimeout = self.record.connection.properties.get('intcaltimeout', 30)
 
         ok = True
         while ok:
@@ -35,7 +34,8 @@ class MettlerToledo(Balance):
                     self.reset()
                 while True:
                     log.debug("...talking to balance...")
-                    r = self._query("")
+                    r = self._query("X")  # 'X' is not recognised by any of the Mettler balances we have, such that an
+                    # error string ES is returned.  Sending an empty string causes the AT106 to repeat the last valid command.
                     log.debug(f'...received {r}...')
                     if r.strip("\r") == "ES":
                         break
@@ -47,6 +47,8 @@ class MettlerToledo(Balance):
             except MSLConnectionError:
                 self._pt.show('ok_cancel', "Please connect balance to continue")
                 ok = self._pt.wait_for_prompt_reply()
+
+        self.intcaltimeout = self.record.connection.properties.get('intcaltimeout', 30)
 
     @property
     def mode(self):
@@ -134,6 +136,20 @@ class MettlerToledo(Balance):
             if balance read correctly but error raised
         """
         m = self._query("SI").split()
+        return self.parse_mass_reading(m)
+
+    def parse_mass_reading(self, m):
+        """Handle any errors or return the mass reading as a float
+
+        Returns
+        -------
+        float
+            mass in unit of balance
+        None
+            if serial read error
+        error code
+            if balance read correctly but error raised
+        """
         if self.check_reading(m):
             if m[1] == 'S':
                 return float(m[2])
@@ -141,8 +157,9 @@ class MettlerToledo(Balance):
                 log.info('Reading is nonstable (dynamic) weight value')
                 return float(m[2])
             else:
-                return self._raise_error(m[0]+' '+m[1])
-        return None
+                self._raise_error(m[0]+' '+m[1])
+        else:
+            return None
 
     def get_mass_stable(self, mass):
         """Reads mass from balance when reading is stable.  Returns the average of three readings,
@@ -159,12 +176,9 @@ class MettlerToledo(Balance):
             t0 = perf_counter()
 
             m = self._query("S").split()
-            if self.check_reading(m):
-                if m[1] == 'S':
-                    a = float(m[2])
-                    readings.append(a)
-                else:
-                    return self._raise_error(m[0] + ' ' + m[1])
+            a = self.parse_mass_reading(m)  # handles any errors if not a valid mass value
+            if type(a) == float:
+                readings.append(a)
 
             while perf_counter() - t0 < self.stable_wait:
                 while len(readings) < 3:
@@ -185,14 +199,15 @@ class MettlerToledo(Balance):
 
             self._raise_error('U')
 
-    def check_reading(self, m):
+    def check_reading(self, m, index=3):
+        """Checks that the reading is a valid mass value by determining the unit returned in position index"""
         try:
-            if not m[3] == self.unit:
-                if self._suffix[m[3]]:
-                    log.warning('Balance unit set to ' + self.unit + ' but received ' + m[3] +
-                                '. Unit and resolution are now in ' + m[3]+'.')
-                    self._resolution = SUFFIX[self.unit]/SUFFIX[m[3]]*self.resolution
-                    self._unit = m[3]
+            if not m[index] == self.unit:
+                if self._suffix[m[index]]:
+                    log.warning('Balance unit set to ' + self.unit + ' but received ' + m[index] +
+                                '. Unit and resolution are now in ' + m[index]+'.')
+                    self._resolution = SUFFIX[self.unit]/SUFFIX[m[index]]*self.resolution
+                    self._unit = m[index]
                     return True
                 else:
                     log.warning('Serial error when reading balance OR incorrect unit set')
@@ -209,6 +224,7 @@ class MettlerToledo(Balance):
 
 
 ERRORCODES = {
+    'E L':   'Error received from AT106',
     'Z I':  'Zero setting not performed (balance is currently executing another command, '
             'e.g. taring, or timeout as stability was not reached).',
     'Z +':  'Upper limit of zero setting range exceeded.',
@@ -228,6 +244,9 @@ ERRORCODES = {
             'e.g. taring, or timeout as stability was not reached).',
     'S +':  'Balance in overload range.',
     'S -':  'Balance in underload range.',
+    'SI':   'No valid result can be transmitted at present',
+    'SI+':  'Balance in overload range.',
+    'SI-':  'Balance in underload range.',
     'U':    'Timed out while trying to obtain three close readings from get_mass_stable ',
     'POS':  'Selected position invalid',
     'ET':   'Error Transmission: At least one character of the command has a parity error. The command will be ignored.',

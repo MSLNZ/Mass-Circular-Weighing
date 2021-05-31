@@ -111,5 +111,4 @@ class AT106(MettlerToledo):  # inherit from AWBalLinear when weight changer is r
             else:
                 return self._raise_error(m)  # expect EL, SI, SI+ or SI-
         else:
-            self._raise_error(m)
-
+            return None

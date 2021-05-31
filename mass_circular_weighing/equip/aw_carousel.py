@@ -614,9 +614,8 @@ class AWBalCarousel(MettlerToledo):
             log.info("Unloading {} from balance position {}".format(mass, pos))
             self.lift_to('top', hori_pos=pos)
 
-    def get_mass_instant(self):
-        """Reads instantaneous mass from balance.
-        Includes a check that the balance has been read correctly.
+    def parse_mass_reading(self, m):
+        """Checks that the balance has been read correctly.
         Makes sure to unload the balance before raising any error.
 
         Returns
@@ -627,7 +626,6 @@ class AWBalCarousel(MettlerToledo):
             if serial read error
         OR raises an error via customised _raise_error_loaded method
         """
-        m = self._query("SI").split()
         if self.check_reading(m):
             if m[1] == 'S':
                 return float(m[2])
