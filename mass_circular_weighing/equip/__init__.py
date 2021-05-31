@@ -8,3 +8,4 @@ from .mdebalance import Balance
 from .mettler import MettlerToledo
 from .aw_carousel import AWBalCarousel
 from .aw_linear import AWBalLinear
+from .at106 import AT106

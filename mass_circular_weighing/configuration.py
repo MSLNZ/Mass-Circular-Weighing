@@ -9,7 +9,7 @@ import os
 from msl.equipment import Config, utils
 from msl.io import read_table
 
-from .equip import Balance, MettlerToledo, AWBalCarousel, AWBalLinear
+from .equip import Balance, MettlerToledo, AWBalCarousel, AWBalLinear, AT106
 from .equip import Vaisala
 
 from .constants import MU_STR
@@ -56,6 +56,7 @@ class Configuration(AdminDetails):
             'mw': MettlerToledo,
             'aw_c': AWBalCarousel,
             'aw_l': AWBalLinear,
+            'at106': AT106,
             'aw_d': Balance,
         }
 
