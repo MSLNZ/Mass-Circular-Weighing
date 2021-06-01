@@ -135,7 +135,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         log.error("Balance initialisation not complete")
         return None
     if 'aw' in bal.mode:  # balance has been initialised so we know bal.move_time exists
-        circweightime = weighing.num_wtgrps * (bal.move_time + bal.stable_wait) * weighing.num_cycles  # total t in s
+        circweightime = bal.cycle_duration * weighing.num_cycles  # total t in s
         circweighmins = int(circweightime/60) + 1
         log.info(f'Each circular weighing will take approximately {circweighmins} minutes')
 

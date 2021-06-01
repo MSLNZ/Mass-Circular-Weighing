@@ -47,6 +47,7 @@ class AWBalCarousel(MettlerToledo):
         self.hori_pos = None    # horizontal position (string of integer)
 
         self._move_time = False
+        self.cycle_duration = 0
         self._is_centred = False
 
         self.handler = None
@@ -221,6 +222,7 @@ class AWBalCarousel(MettlerToledo):
             self.move_to(self.positions[0])
 
         times = []
+        lifting = []
         for pos in np.roll(self.positions, -1):   # puts first position at end
             if self.want_abort:
                 return self.move_time
@@ -233,6 +235,10 @@ class AWBalCarousel(MettlerToledo):
             m = self.get_mass_instant()
             log.info("Mass value: {} {}".format(m, self.unit))
             self.lift_to('top', hori_pos=pos)
+            lifting.append(perf_counter() - t0)
+
+        self.cycle_duration = np.ceil(len(self.positions)*max(lifting))
+        # here cycle_duration includes waits at top and bottom as well as getting the mass value
 
         self._move_time = np.ceil(max(times))
         print("Times: "+str(times))
@@ -604,7 +610,7 @@ class AWBalCarousel(MettlerToledo):
             self.move_to(pos, wait=False)
 
             # wait for some time to make all moves same
-            self.wait_for_elapse(self._move_time + 5, start_time=t0)
+            self.wait_for_elapse(self._move_time, start_time=t0)
 
             return self.lift_to('weighing', hori_pos=pos)  # this raises an error if it fails to get to the weighing position
 
