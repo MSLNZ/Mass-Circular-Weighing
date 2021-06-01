@@ -121,7 +121,7 @@ class AWBalLinear(AWBalCarousel):
         pos : int
             integer of position where mass is to be placed
         """
-        self.move_to(pos)
+        self.move_to(pos, wait=False)
         self.loading_position(pos)
         message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
         self._pt.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
