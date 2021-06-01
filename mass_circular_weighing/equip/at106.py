@@ -66,7 +66,7 @@ class AT106(MettlerToledo):  # inherit from AWBalLinear when weight changer is r
         if ok:
             r = self._query("T")
             if r:
-                self._raise_error(r)
+                self.parse_mass_reading(r)
             log.info('Balance tared')
 
     def scale_adjust(self):
@@ -88,10 +88,12 @@ class AT106(MettlerToledo):  # inherit from AWBalLinear when weight changer is r
                         log.info(f'Balance self-calibration completed successfully in {cal_time} seconds')
                         self._is_adjusted = True
                         return True
-                    elif c[1] == 'I':
-                        log.error('The calibration was aborted as, e.g. stability not attained or the procedure was aborted with the C key.')
+                    elif c[1] == 'STOP':
+                        log.warning('The calibration was aborted by the operator.')
                         return False
-                        # self._raise_error('CAL C')
+                    elif c[1] == 'ERROR':
+                        log.error('The calibration cycle was aborted as result of an error condition.')
+                        return False
                 except MSLTimeoutError:
                     if perf_counter() - t0 > self.intcaltimeout:
                         raise TimeoutError(f"Internal calibration took longer than {self.intcaltimeout} seconds.")
@@ -109,6 +111,6 @@ class AT106(MettlerToledo):  # inherit from AWBalLinear when weight changer is r
                 log.info('Reading is nonstable (dynamic) weight value')
                 return float(m[1])
             else:
-                return self._raise_error(m)  # expect EL, SI, SI+ or SI-
+                return self._raise_error(m[0])  # expect EL, SI, SI+ or SI- as first
         else:
             return None
