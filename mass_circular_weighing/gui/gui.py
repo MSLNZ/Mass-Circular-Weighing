@@ -7,6 +7,8 @@ import os
 from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot
 from msl.io import read
 
+sys.excepthook = excepthook
+
 from ..log import log
 from .. import __version__
 from ..routines.run_circ_weigh import analyse_all_weighings_in_file
@@ -16,10 +18,7 @@ from ..gui.widgets.scheme_table import SchemeTable
 from .threads.circweigh_popup import WeighingThread
 from .threads.masscalc_popup import MassCalcThread
 
-
 all_my_threads = []
-
-sys.excepthook = excepthook
 
 
 class MCWGui(QtWidgets.QWidget):
@@ -109,14 +108,17 @@ class MCWGui(QtWidgets.QWidget):
                         existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
                         ok = existing_analysis.metadata.get('Acceptance met?')
                         if ok:
-                            # print('Weighing accepted')
+                            log.info(f'Weighing {i+1} for {scheme_entry} accepted')
                             good_runs += 1
-                        elif not existing_analysis.metadata.get('Exclude?'):
-                            # print('Weighing outside acceptance but allowed')
+                        elif not existing_analysis.metadata.get('Exclude'):
+                            log.info(f'Weighing {i+1} for {scheme_entry} outside acceptance but allowed')
                             good_runs += 1
-                    except:
-                        pass
-                        # print('Weighing not accepted')
+                        else:
+                            log.warning(f'Weighing {i+1} for {scheme_entry} outside acceptance')
+                    except KeyError:
+                        log.warning(f'Weighing {i+1} for {scheme_entry} missing analysis')
+                else:
+                    log.warning(f'Weighing {i+1} for {scheme_entry} incomplete')
             except KeyError:
                 break
             i += 1
