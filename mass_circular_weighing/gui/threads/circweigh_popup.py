@@ -7,10 +7,8 @@ import sys
 import numpy as np
 import winsound
 
-from msl.qt import QtGui, QtWidgets, Button, excepthook, Signal, Logger
+from msl.qt import QtGui, QtWidgets, Button, Signal, Logger
 from msl.qt.threading import Thread, Worker
-
-sys.excepthook = excepthook
 
 from ...log import log
 from ...constants import MAX_BAD_RUNS, FONTSIZE
