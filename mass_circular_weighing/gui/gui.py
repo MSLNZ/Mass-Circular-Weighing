@@ -11,7 +11,7 @@ sys.excepthook = excepthook
 
 from ..log import log
 from .. import __version__
-from ..routines.run_circ_weigh import analyse_all_weighings_in_file
+from ..routines.run_circ_weigh import analyse_all_weighings_in_file, check_existing_runs
 from ..routines.collate_data import collate_all_weighings
 from ..gui.widgets.housekeeping import Housekeeping
 from ..gui.widgets.scheme_table import SchemeTable
@@ -97,33 +97,8 @@ class MCWGui(QtWidgets.QWidget):
         scheme_entry = self.schemetable.cellWidget(row, 0).text()
         root = read(url)
 
-        i = 0
-        good_runs = 0
-        while True:
-            run_id = 'run_' + str(i + 1)
-            try:
-                existing_mmt = root['Circular Weighings'][scheme_entry]['measurement_' + run_id]
-                if existing_mmt.metadata.get('Weighing complete'):
-                    try:
-                        existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
-                        ok = existing_analysis.metadata.get('Acceptance met?')
-                        if ok:
-                            log.info(f'Weighing {i+1} for {scheme_entry} accepted')
-                            good_runs += 1
-                        elif not existing_analysis.metadata.get('Exclude'):
-                            log.info(f'Weighing {i+1} for {scheme_entry} outside acceptance but allowed')
-                            good_runs += 1
-                        else:
-                            log.warning(f'Weighing {i+1} for {scheme_entry} outside acceptance')
-                    except KeyError:
-                        log.warning(f'Weighing {i+1} for {scheme_entry} missing analysis')
-                else:
-                    log.warning(f'Weighing {i+1} for {scheme_entry} incomplete')
-            except KeyError:
-                break
-            i += 1
+        good_runs, run_1_no = check_existing_runs(root, scheme_entry)
 
-        run_1_no = int(run_id.strip('run_'))
         self.schemetable.update_status(row, str(good_runs)+' from '+str(run_1_no-1))
 
     def check_good_run_status(self, ):

@@ -394,29 +394,28 @@ def check_existing_runs(root, scheme_entry):
     i = 0
     good_runs = 0
     while True:
-        run_id = 'run_' + str(i+1)
+        run_id = 'run_' + str(i + 1)
         try:
             existing_mmt = root['Circular Weighings'][scheme_entry]['measurement_' + run_id]
-            # print(run_id, 'complete?', existing_mmt.metadata.get('Weighing complete'))
             if existing_mmt.metadata.get('Weighing complete'):
                 try:
                     existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
-                    ok = existing_analysis.metadata.get('Acceptance met?')
-                    aw_bad = existing_analysis.metadata.get('Exclude?')
-                    if ok:
-                        # print('Weighing accepted')
+                    if existing_analysis.metadata.get('Acceptance met?'):
+                        log.info(f'Weighing {i+1} for {scheme_entry} accepted')
                         good_runs += 1
-                    elif not aw_bad:
-                        # print('Weighing outside acceptance but allowed')
+                    elif not existing_analysis.metadata.get('Exclude'):
+                        log.info(f'Weighing {i+1} for {scheme_entry} outside acceptance but allowed')
                         good_runs += 1
+                    else:
+                        log.warning(f'Weighing {i+1} for {scheme_entry} outside acceptance')
                 except KeyError:
-                    pass
-                    # print('Weighing not accepted')
+                    log.warning(f'Weighing {i+1} for {scheme_entry} missing analysis')
+            else:
+                log.warning(f'Weighing {i+1} for {scheme_entry} incomplete')
         except KeyError:
             break
         i += 1
 
     run_1_no = int(run_id.strip('run_'))
 
-    return good_runs, run_1_no # returns integers for each
-
+    return good_runs, run_1_no  # returns integers for each
