@@ -97,7 +97,7 @@ class MCWGui(QtWidgets.QWidget):
         scheme_entry = self.schemetable.cellWidget(row, 0).text()
         root = read(url)
 
-        good_runs, run_1_no = check_existing_runs(root, scheme_entry)
+        good_runs, run_1_no = check_existing_runs(root, scheme_entry, display_message=True)
 
         self.schemetable.update_status(row, str(good_runs)+' from '+str(run_1_no-1))
 

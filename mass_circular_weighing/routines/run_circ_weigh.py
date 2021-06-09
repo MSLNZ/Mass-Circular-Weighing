@@ -376,7 +376,7 @@ def analyse_all_weighings_in_file(cfg, filename, se):
             break
 
 
-def check_existing_runs(root, scheme_entry):
+def check_existing_runs(root, scheme_entry, display_message=False):
     """Counts the number of runs on file that are acceptable for use in the final mass calculation
 
     Parameters
@@ -401,17 +401,22 @@ def check_existing_runs(root, scheme_entry):
                 try:
                     existing_analysis = root['Circular Weighings'][scheme_entry]['analysis_' + run_id]
                     if existing_analysis.metadata.get('Acceptance met?'):
-                        log.info(f'Weighing {i+1} for {scheme_entry} accepted')
+                        if display_message:
+                            log.info(f'Weighing {i+1} for {scheme_entry} accepted')
                         good_runs += 1
                     elif not existing_analysis.metadata.get('Exclude'):
-                        log.info(f'Weighing {i+1} for {scheme_entry} outside acceptance but allowed')
+                        if display_message:
+                            log.info(f'Weighing {i+1} for {scheme_entry} outside acceptance but allowed')
                         good_runs += 1
                     else:
-                        log.warning(f'Weighing {i+1} for {scheme_entry} outside acceptance')
+                        if display_message:
+                            log.warning(f'Weighing {i+1} for {scheme_entry} outside acceptance')
                 except KeyError:
-                    log.warning(f'Weighing {i+1} for {scheme_entry} missing analysis')
+                    if display_message:
+                        log.warning(f'Weighing {i+1} for {scheme_entry} missing analysis')
             else:
-                log.warning(f'Weighing {i+1} for {scheme_entry} incomplete')
+                if display_message:
+                    log.warning(f'Weighing {i+1} for {scheme_entry} incomplete')
         except KeyError:
             break
         i += 1
