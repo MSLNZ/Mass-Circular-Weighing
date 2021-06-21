@@ -17,6 +17,7 @@
 
     <!-- Specify Arduino information -->
     <equipment alias="Arduino-XPE505C" manufacturer="Arduino" model="MEGA2560" serial="95730333238351F0A011"/>
+    <equipment alias="Arduino-AT106" manufacturer="Arduino" model="MEGA2560" serial="5573132313635190E1B1"/>
 
     <!-- Specify Vaisala ambient monitoring equipment available for weighings. -->
     <equipment alias="AX10005-Vaisala-K1510011" manufacturer="Vaisala" model="PTU303" serial="K1510011"/>

@@ -175,10 +175,11 @@ class MettlerToledo(Balance):
             readings = []
             t0 = perf_counter()
 
-            m = self._query("S").split()
-            a = self.parse_mass_reading(m)  # handles any errors if not a valid mass value
-            if type(a) == float:
-                readings.append(a)
+            m = self._query("S")
+            if m:
+                a = self.parse_mass_reading(m.split())  # handles any errors if not a valid mass value
+                if type(a) == float:
+                    readings.append(a)
 
             while perf_counter() - t0 < self.stable_wait:
                 while len(readings) < 3:
@@ -191,9 +192,9 @@ class MettlerToledo(Balance):
                         return b
 
                 if max(readings) - min(readings) < 2*self.resolution:
-                    return sum(readings)/3
+                    return sum(readings)/len(readings)
                 else:
-                    log.warning("First collected readings not self consistent")
+                    log.warning(f"First collected readings not self consistent: {readings}")
                     readings = []
                     continue
 
@@ -244,7 +245,7 @@ ERRORCODES = {
             'e.g. taring, or timeout as stability was not reached).',
     'S +':  'Balance in overload range.',
     'S -':  'Balance in underload range.',
-    'SI':   'No valid result can be transmitted at present',
+    'SI':   'No valid result can be transmitted at present',  # specific to AT106
     'SI+':  'Balance in overload range.',
     'SI-':  'Balance in underload range.',
     'U':    'Timed out while trying to obtain three close readings from get_mass_stable ',
