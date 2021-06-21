@@ -32,7 +32,10 @@ class AllocatorDialog(QtWidgets.QDialog):
         self.want_adjust = True
 
         self.pos_list = QtWidgets.QListWidget()
-        self.pos_list.addItems([f'Position {i+1}' for i in range(num_pos)])
+        if num_pos > 9:
+            self.pos_list.addItems([f'Position {i}' for i in range(num_pos)])
+        else:
+            self.pos_list.addItems([f'Position {i+1}' for i in range(num_pos)])
         self.pos_list.setMaximumWidth(int(1.5*self.pos_list.sizeHintForColumn(0)))
         self.pos_list.setMinimumWidth(self.pos_list.sizeHintForColumn(0))
 
@@ -93,7 +96,10 @@ class AllocatorDialog(QtWidgets.QDialog):
                 self.pos_to_centre.append(int(pos_str))
 
         for grp in self.wtgrps:
-            self.positions.append(loading.index(grp)+1)
+            if self.num_pos > 9:  # start numbering from 0
+                self.positions.append(loading.index(grp))
+            else:
+                self.positions.append(loading.index(grp) + 1)
 
         self.centrings = int(self.num_centrings.text())
 
