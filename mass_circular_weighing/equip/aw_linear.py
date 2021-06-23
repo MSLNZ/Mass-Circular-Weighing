@@ -46,7 +46,6 @@ class AWBalLinear(AWBalCarousel):
         self.arduino.serial.flush()
         self.arduino.write(command)
         reply = self.wait_for_reply(cxn=self.arduino)
-        print("query reply:", reply)
         return reply
 
     def parse_reply(self, reply):
@@ -62,7 +61,7 @@ class AWBalLinear(AWBalCarousel):
         Bool of whether the status has been updated (and therefore the string was parsed) or not
         """
         status = reply.split()
-        print("parsing", status)
+        log.debug(f"parsing {status}")
         if "idle" in status[0].lower():
             self.hori_pos = status[1][:-1]
             self.lift_pos = status[1][-1]
@@ -70,9 +69,8 @@ class AWBalLinear(AWBalCarousel):
         else:
             self.hori_pos = None
             self.lift_pos = None
-            print(reply)
             for i in range(8):
-                print(self.arduino.read())
+                log.warning(self.arduino.read())
 
             raise ValueError("Error at Arduino: {}".format(reply))
 
@@ -95,7 +93,7 @@ class AWBalLinear(AWBalCarousel):
         self.arduino = self.handler.connect()
         log.info("Connecting to Arduino.........")
         self.wait_for_elapse(20)  # need to allow time for the Arduino to initialise
-        print(self.query_arduino("START"))
+        log.debug(self.query_arduino("START"))
         # sleep(1)
         # print(self.arduino.read())
         # sleep(1)
@@ -175,7 +173,6 @@ class AWBalLinear(AWBalCarousel):
         log.info("Moving to position " + str(pos))
 
         move_str = 'MOVE TO '+str(pos)+'U'   # Leaves handler in the unloaded position after move
-        print(move_str)
         self.arduino.write(move_str)
         sleep(1)
         reply = self.wait_for_reply(cxn=self.arduino)
@@ -215,7 +212,6 @@ class AWBalLinear(AWBalCarousel):
 
         log.info("Sinking mass to weighing position")
         move_str = 'MOVE TO '+str(self.hori_pos)+'W'
-        print(move_str)
         self.arduino.write(move_str)
         sleep(1)
         return self.handle_lift_reply('W')
@@ -240,7 +236,6 @@ class AWBalLinear(AWBalCarousel):
 
         log.info("Lifting mass")
         move_str = 'MOVE TO ' + str(pos) + 'U'
-        print(move_str)
         self.arduino.write(move_str)
         sleep(1)
         return self.handle_lift_reply('U')
@@ -266,7 +261,6 @@ class AWBalLinear(AWBalCarousel):
 
         log.info("Going to loading lift position")
         move_str = 'MOVE TO ' + str(pos) + 'L'
-        print(move_str)
         self.arduino.write(move_str)
         sleep(1)
         return self.handle_lift_reply('L')
@@ -311,12 +305,11 @@ class AWBalLinear(AWBalCarousel):
             log.info("Handler in position {}, {} position".format(self.hori_pos, self.lift_pos))
             if not self.lift_pos == lift_pos:
                 for i in range(8):
-                    print(self.arduino.read())
+                    log.warning(self.arduino.read())
                 raise ValueError(f"Failed to get to {lift_pos} lift position")
             return True
 
     def close_connection(self):
         self.connection.disconnect()
-        print(self.arduino.query("END"))
+        self.arduino.query("END")
         self.arduino.disconnect()
-

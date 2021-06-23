@@ -141,6 +141,11 @@ class MettlerToledo(Balance):
     def parse_mass_reading(self, m):
         """Handle any errors or return the mass reading as a float
 
+        Parameters
+        ----------
+        m : list
+            from string returned from balance
+
         Returns
         -------
         float
