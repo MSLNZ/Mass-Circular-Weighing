@@ -235,6 +235,10 @@ class AT106(AWBalLinear):
             return False
 
         if not self.want_abort:
+            # load first mass, adjust electronic weight load, then continue to regular check_loading routine
+            self.move_to(self.positions[0], wait=False)
+            self.lift_to('weighing', hori_pos=self.positions[0], wait=False)
+            self.wait_for_elapse(10)
             self.add_int_weights(self.internal_weights)
 
             super().check_loading()
