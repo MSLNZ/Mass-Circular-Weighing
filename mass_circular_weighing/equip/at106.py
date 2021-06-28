@@ -26,7 +26,6 @@ class AT106(AWBalLinear):
             True if reset balance desired
         """
         super().__init__(record, reset)
-        self.config_bal()
         self.internal_weights = None  # options: 0, 1 or 2; each weight is 10 g
         self.cal_pos = 0
 
@@ -67,6 +66,20 @@ class AT106(AWBalLinear):
         self._write("CA 0")  # turns off automatic calibration
         self._write("RG F")  # sets fine range (max number of decimal places)
         self._write("MZ 0")  # turns off auto zero
+        self._write("MI 1")  # sets vibration-free environment
+        self._write("ML 2")  # sets universal weighing setting
+        # self._write("MS 6")  # sets stability detector; allowed values between 0 and 7
+
+    def ask_internal_weights(self):
+        # ask how many 10 g internal weights are needed
+        self._pt.show('item', 'Please select internal weights', ['0', '10 g', '20 g'], font=self._fontsize,
+                      title='Balance Preparation')
+        reply = self._pt.wait_for_prompt_reply()
+        if reply is not None:
+            self.internal_weights = reply[0]
+            log.info(f"Internal weights selected: {self.internal_weights}")
+        else:
+            return False
 
     def remove_int_weights(self):
         log.info("(removing any internal weights)")
@@ -74,7 +87,15 @@ class AT106(AWBalLinear):
         self.wait_for_elapse(10)
 
     def add_int_weights(self, num):
+        """Adjusts electronic weights. After removing any electronic weights, sequential %CMS commands are used to
+        toggle through the electronic weight options (Order: 20 g, 10 g (1), 10 g (2), None) to get to the desired
+        loading
 
+        Parameters
+        -------
+        num : int
+            either 0, 1 or 2, of how many 10 g electronic weights are needed
+        """
         log.info(f"Adding {num} internal weight(s)")
         self.remove_int_weights()
         if num == 0:
@@ -118,22 +139,21 @@ class AT106(AWBalLinear):
         if cal_pos is None:
             cal_pos = self.cal_pos
 
-        self._query("%CMR")        # check no electronic weights are loaded for scale adjustment
-
         if not self.hori_pos == str(cal_pos):
             self.move_to(cal_pos)
         if not self.lift_pos == "weighing":
             self.lift_to('weighing', hori_pos=cal_pos)
 
+        self._query("%CMR")        # check no electronic weights are loaded for scale adjustment
         m = self.get_mass_stable("scale adjust prep.")
         log.info("Current mass reading: {}".format(m))
         if type(m) is float:
-            if not -1 < m < 1:  # checks that the mass reading is sensible - should be around zero
+            if not m < 1:  # checks that the mass reading is sensible - should be around zero
                 log.error("Incorrect mass is loaded.")
                 self._want_abort = True
+                return False
 
             self.wait_for_elapse(10)
-
             return True
 
         return False
@@ -167,6 +187,8 @@ class AT106(AWBalLinear):
                         cal_time = int(perf_counter() - t0)
                         log.info(f'Balance self-calibration completed successfully in {cal_time} seconds')
                         self._is_adjusted = True
+                        if self.internal_weights is None:
+                            self.ask_internal_weights()
                         self.add_int_weights(self.internal_weights)  # any internal weights were automatically removed
                         return True
                     elif c[1] == 'STOP':
@@ -220,15 +242,7 @@ class AT106(AWBalLinear):
         Customisation for AT106: asks how many electronic weights should be loaded
         """
         if self.internal_weights is None:
-            # ask how many internal weights are needed
-            self._pt.show('item', 'Please select internal weights', ['0', '10 g', '20 g'], font=self._fontsize,
-                          title='Balance Preparation')
-            reply = self._pt.wait_for_prompt_reply()
-            if reply is not None:
-                self.internal_weights = reply[0]
-                log.info(f"Internal weights selected: {self.internal_weights}")
-            else:
-                return False
+            self.ask_internal_weights()
 
         if self.positions is None:
             log.warning("Weight groups must first be assigned to positions.")
@@ -238,6 +252,7 @@ class AT106(AWBalLinear):
             # load first mass, adjust electronic weight load, then continue to regular check_loading routine
             self.move_to(self.positions[0], wait=False)
             self.lift_to('weighing', hori_pos=self.positions[0], wait=False)
+            self.config_bal()
             self.wait_for_elapse(10)
             self.add_int_weights(self.internal_weights)
 
