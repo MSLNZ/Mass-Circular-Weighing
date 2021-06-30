@@ -23,7 +23,7 @@ admin_default = os.path.join(ROOT_DIR, r'utils\default_admin.xlsx')
 config_default = os.path.join(ROOT_DIR, r'utils\default_config.xml')
 
 save_folder_default = r'G:\My Drive'
-sample_data_folder = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data'
+commercial21_folder = r'I:\MSL\Private\Mass\Commercial Calibrations\2021'
 mass_folder = r'I:\MSL\Private\Mass'
 mydrive = r'G:\My Drive'
 

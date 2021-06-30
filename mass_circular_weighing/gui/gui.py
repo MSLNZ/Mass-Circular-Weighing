@@ -18,7 +18,7 @@ from ..gui.widgets.scheme_table import SchemeTable
 from .threads.circweigh_popup import WeighingThread
 from .threads.masscalc_popup import MassCalcThread
 
-all_my_threads = []
+all_weighing_threads = []
 
 
 class MCWGui(QtWidgets.QWidget):
@@ -27,7 +27,7 @@ class MCWGui(QtWidgets.QWidget):
         """A class for the mass circular weighing main GUI window"""
         super().__init__()
 
-        rect = QtWidgets.QDesktopWidget()
+        # rect = QtWidgets.QDesktopWidget()
         # w.setFixedSize(rect.width(), rect.height()*0.45)
         self.setWindowTitle('Mass Calibration Program (version {}): Main Window'.format(__version__))
 
@@ -138,7 +138,7 @@ class MCWGui(QtWidgets.QWidget):
             return
 
         weigh_thread = WeighingThread()
-        all_my_threads.append(weigh_thread)
+        all_weighing_threads.append(weigh_thread)
 
         weigh_thread.weighing_done.connect(self.check_good_runs_in_file)
         weigh_thread.show(se_row_data, self.housekeeping.cfg)
@@ -180,7 +180,7 @@ def show_gui():
 
 
 def clean_up_thread(self, thread_instance):
-    for i, item in enumerate(all_my_threads):
+    for i, item in enumerate(all_weighing_threads):
         if thread_instance is item:
-            del all_my_threads[i]
+            del all_weighing_threads[i]
             break

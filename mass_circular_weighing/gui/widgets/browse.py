@@ -3,7 +3,7 @@ A custom widget for browsing for files and folders
 """
 from msl.qt import QtWidgets, Button, prompt, utils
 
-from ...constants import sample_data_folder, mass_folder, mydrive
+from ...constants import commercial21_folder, mass_folder, mydrive
 from ...log import log
 
 
@@ -40,9 +40,9 @@ class Browse(QtWidgets.QWidget):
 
         self.button = Button(icon=icon, left_click=self.display_browse)
 
+        self.button.add_menu_item(text='Commercial Cals', triggered=self.commcals_selected)
         self.button.add_menu_item(text='Mass drive', triggered=self.mass_drive_selected)
         self.button.add_menu_item(text='G: drive', triggered=self.mydrive_selected)
-        self.button.add_menu_item(text='Sample data', triggered=self.sampledata_selected)
 
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.textbox)
@@ -65,8 +65,8 @@ class Browse(QtWidgets.QWidget):
         self.textbox.setText(mydrive)
         self.display_browse()
 
-    def sampledata_selected(self):
-        self.textbox.setText(sample_data_folder)
+    def commcals_selected(self):
+        self.textbox.setText(commercial21_folder)
         self.display_browse()
 
     def dragEnterEvent(self, event):
