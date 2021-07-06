@@ -56,8 +56,6 @@ def find_balance(admin=None, bal_alias=None):
         if 'w' in bal.mode:
             print("Balance serial number is {}".format(bal.get_serial()))
 
-        print("Current mass reading: {}".format(bal.get_mass_instant()))
-
         return bal
 
     else:
