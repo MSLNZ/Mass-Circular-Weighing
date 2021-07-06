@@ -676,7 +676,7 @@ class AWBalCarousel(MettlerToledo):
                     self._raise_error_loaded(b)
 
                 if len(readings) >= 3:
-                    if max(readings) - min(readings) > 2*self.resolution:
+                    if max(readings) - min(readings) > 2.25*self.resolution:
                         log.warning("Readings differ by more than twice the balance resolution")
                         log.info("Readings recorded: {}".format(readings))
                     return sum(readings)/3
