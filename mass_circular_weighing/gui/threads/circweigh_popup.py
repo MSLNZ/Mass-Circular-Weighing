@@ -268,7 +268,7 @@ class WeighingThread(Thread):
             ok = self.bal.place_weight(mass, pos)
             if ok is None:
                 log.info("Placing aborted")
-                break
+                return
 
         log.info("All weights placed")
 

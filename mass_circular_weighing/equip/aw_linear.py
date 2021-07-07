@@ -164,7 +164,7 @@ class AWBalLinear(AWBalCarousel):
         pos : int
         wait : bool (optional)
         """
-        if not 0 < pos <= self.num_pos:
+        if not 0 <= pos <= self.num_pos:
             self._raise_error_loaded('POS')
 
         if self.want_abort:
@@ -184,7 +184,7 @@ class AWBalLinear(AWBalCarousel):
 
     def check_pos(self, pos):
         self.get_status()
-        if pos:
+        if pos is not None:
             if self.hori_pos == str(pos):
                 return True
             else:
