@@ -312,7 +312,7 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
     for key, value in weighing.driftcoeffs.items():
         analysis_meta[key] = value
 
-    if not sum(analysis['mass difference']) == 0:
+    if not np.isclose(sum(analysis['mass difference']), 0):
         log.warning('Sum of mass differences is not zero. Analysis not accepted')
         analysis_meta['Acceptance met?'] = False
 

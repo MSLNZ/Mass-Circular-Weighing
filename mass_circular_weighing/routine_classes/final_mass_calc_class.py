@@ -364,7 +364,7 @@ class FinalMassCalc(object):
                 summarytable[i, 7] = ""
             elif i >= self.num_client_masses + self.num_check_masses:
                 summarytable[i, 2] = 'Standard'
-                delta = self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses] - self.b[i]
+                delta = self.b[i] - self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses]
                 summarytable[i, 7] = '{} g; {} {}'.format(
                     self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses],
                     DELTA_STR,
@@ -372,7 +372,7 @@ class FinalMassCalc(object):
                 )
             else:
                 summarytable[i, 2] = 'Check'
-                delta = self.check_masses['mass values (g)'][i - self.num_client_masses] - self.b[i]
+                delta = self.b[i] - self.check_masses['mass values (g)'][i - self.num_client_masses]
                 summarytable[i, 7] = '{} g; {} {}'.format(
                     self.check_masses['mass values (g)'][i - self.num_client_masses],
                     DELTA_STR,
