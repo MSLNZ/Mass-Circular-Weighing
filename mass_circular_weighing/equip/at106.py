@@ -47,7 +47,7 @@ class AT106(AWBalLinear):
 
     def _write(self, command):
         self.connection.write(command)
-        self.wait_for_elapse(1)
+        self.wait_for_elapse(2)
 
     def get_serial(self):
         """Gets serial number of balance. Note that for the AT106, this 'serial number' is a unique seven character
@@ -64,11 +64,28 @@ class AT106(AWBalLinear):
         # Configures AT106; no response from balance expected
         self._write("AD 0")  # turns off the automatic door
         self._write("CA 0")  # turns off automatic calibration
-        self._write("RG F")  # sets fine range (max number of decimal places)
         self._write("MZ 0")  # turns off auto zero
         self._write("MI 1")  # sets vibration-free environment
         self._write("ML 2")  # sets universal weighing setting
         # self._write("MS 6")  # sets stability detector; allowed values between 0 and 7
+        if self.internal_weights is None:
+            self.ask_internal_weights()
+        try:
+            mass = self.get_mass_instant()
+            if not 8 < mass < 10:
+                self.add_int_weights(self.internal_weights)
+        except ValueError:
+            self.add_int_weights(self.internal_weights)
+
+        self.check_fine_range()
+
+    def check_fine_range(self):
+        rg = self._query("RG ?")
+        if "F" not in rg:
+            log.info("Setting fine range")
+            self._write("RG F")  # sets fine range (max number of decimal places)
+        else:
+            log.debug("Fine range already set")
 
     def ask_internal_weights(self):
         # ask how many 10 g internal weights are needed
@@ -98,18 +115,21 @@ class AT106(AWBalLinear):
         """
         log.info(f"Adding {num} internal weight(s)")
         self.remove_int_weights()
-        if num == 0:
+        if int(num) == 0:
+            log.info("Internal weight adjustment complete")
             return
 
         log.info(f"(adding 2 x 10 g internal weights)")
         self._write("%CMS")  # adds both electronic weights to make 20 g
         self.wait_for_elapse(10)
-        if num == 2:
+        if int(num) == 2:
+            log.info("Internal weight adjustment complete")
             return
 
         log.info(f"(removing one to get 10 g internal weight)")
         self._write("%CMS")  # then takes off one electronic weight to get back to 10 g
         self.wait_for_elapse(10)
+        log.info("Internal weight adjustment complete")
 
     def zero_bal(self):
         """Zeroes balance: must ensure no mass on balance"""
@@ -187,6 +207,7 @@ class AT106(AWBalLinear):
                         cal_time = int(perf_counter() - t0)
                         log.info(f'Balance self-calibration completed successfully in {cal_time} seconds')
                         self._is_adjusted = True
+                        self.check_fine_range()
                         if self.internal_weights is None:
                             self.ask_internal_weights()
                         self.add_int_weights(self.internal_weights)  # any internal weights were automatically removed
@@ -253,7 +274,4 @@ class AT106(AWBalLinear):
             self.move_to(self.positions[0], wait=False)
             self.lift_to('weighing', hori_pos=self.positions[0], wait=False)
             self.config_bal()
-            self.wait_for_elapse(10)
-            self.add_int_weights(self.internal_weights)
-
             super().check_loading()
