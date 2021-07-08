@@ -82,7 +82,7 @@ class Configuration(AdminDetails):
         log.debug('Connection information for balance:'
                   '\nBalance mode: {} \nEquip record: {} \nBalance instance: {}'.format(mode, self.equipment[alias], bal))
 
-        if mode == "aw_l" or "aw_106":
+        if "aw" in mode:
             bal.handler = self.get_handler_record(bal_alias=alias)
             bal.identify_handler()
 
