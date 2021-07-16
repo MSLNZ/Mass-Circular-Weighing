@@ -247,7 +247,7 @@ class AWBalCarousel(MettlerToledo):
 
         return self.move_time
 
-    def centring(self, pos_to_centre, repeats):
+    def centring(self, pos_to_centre=None, repeats=None):
         """Performs a centring routine
 
         Parameters
@@ -260,6 +260,11 @@ class AWBalCarousel(MettlerToledo):
         -------
         bool to indicate successful completion
         """
+        if pos_to_centre is None:
+            pos_to_centre = self.pos_to_centre
+        if repeats is None:
+            repeats = self.repeats
+
         if not pos_to_centre:
             log.info("No weight groups selected for centring")
             self._is_centred = True

@@ -274,6 +274,7 @@ class WeighingThread(Thread):
 
     def check_loading(self):
         self.bal.check_loading()
+        self.bal.centring()
 
     def start_weighing(self):
         self.bal.want_adjust = True if self.adjust_ch.checkState() else False
