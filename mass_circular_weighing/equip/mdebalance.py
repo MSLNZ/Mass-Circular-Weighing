@@ -51,6 +51,8 @@ class Balance(object):
         self.stable_wait = record.user_defined['stable_wait']
         # wait time in seconds for balance reading to stabilise
 
+        self.positions = 0
+
     @property
     def mode(self):
         return 'mde'

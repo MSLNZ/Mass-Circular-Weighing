@@ -317,7 +317,7 @@ class WeighingThread(Thread):
 
     def update_cyc_pos(self, c, p, num_cyc, num_pos):
         self.cycle.setText('{} of {}'.format(c, num_cyc))
-        self.position.setText('{} of {}'.format(p, num_pos))
+        self.position.setText('{} of {}'.format(p, self.bal.positions))
 
     def update_reading(self, reading, unit):
         if reading is None:

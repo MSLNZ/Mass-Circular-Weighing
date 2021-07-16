@@ -85,6 +85,7 @@ def check_bal_initialised(bal, wtgrps):
             return None
     else:
         positions = range(1, len(wtgrps) + 1)
+        bal.positions = len(wtgrps)
         bal.adjust_scale_if_needed()
 
     return positions
