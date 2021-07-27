@@ -185,6 +185,7 @@ setup(
         'console_scripts': [
             'mcw-gui = mass_circular_weighing.gui.gui:show_gui',
             'poll-omega-logger = mass_circular_weighing.utils.poll_omega_logger:poll_omega_logger',
+            'circweigh-gui = mass_circular_weighing.utils.circweigh_subprocess:run_circweigh_popup',
         ],
     },
 )

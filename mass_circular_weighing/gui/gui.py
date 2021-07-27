@@ -3,6 +3,7 @@ The main gui window and overall interactive program control
 """
 import sys
 import os
+from subprocess import Popen
 
 from msl.qt import application, QtWidgets, Button, excepthook, Logger, Slot
 from msl.io import read
@@ -137,11 +138,12 @@ class MCWGui(QtWidgets.QWidget):
         if not se_row_data:
             return
 
-        weigh_thread = WeighingThread()
-        all_weighing_threads.append(weigh_thread)
-
-        weigh_thread.weighing_done.connect(self.check_good_runs_in_file)
-        weigh_thread.show(se_row_data, self.housekeeping.cfg)
+        # run circweigh popup as a subprocess that still allows the main gui window to operate
+        Popen(
+            ['circweigh-gui', self.housekeeping.cfg.path, str(se_row_data)],
+            close_fds=True,
+            creationflags=0x00000008  # creates new window as a detached process
+        )
 
     def reanalyse_weighings(self, ):
         row = self.schemetable.currentRow()
