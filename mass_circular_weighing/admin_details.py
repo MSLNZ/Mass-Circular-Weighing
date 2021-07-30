@@ -11,6 +11,8 @@ from .constants import config_default, client_default, job_default, MU_STR
 from .gui.threads.prompt_thread import PromptThread
 pt = PromptThread()
 
+header_row = 14
+
 
 class AdminDetails(object):
 
@@ -157,7 +159,6 @@ class AdminDetails(object):
                 'Set identifier', 'Client', 'Weight ID', 'Nominal (g)', 'Shape/Mark', 'Container',
                 'u_mag (mg)', 'Density (kg/m3)', 'u_density (kg/m3)'
         """
-        header_row = 14
         wt_dict = {
             'Set identifier': None,   # TODO: alter here if decide to add an identifier to client weights
             'Set type': 'Client',
@@ -169,7 +170,7 @@ class AdminDetails(object):
             'u_mag': 'u_mag (mg)', 'density': 'Density (kg/m3)', 'u_dens': 'u_density (kg/m3)'
         }   # warning: 'u_density' contains 'density' so always use 'u_dens' in xlsx file instead.
 
-        for i in string.ascii_lowercase[:7]:  # go across a row ;)
+        for i in string.ascii_uppercase[:7]:  # go across a row ;)
             key = self.ds[i+str(header_row)].value
 
             # do a look up to make sure the column name is a valid key

@@ -40,7 +40,7 @@ def test_admin_details():
     cfg = Configuration(admin_for_test)
 
     assert cfg.operator == 'MCW'
-    assert cfg.client == '1 kg to 1 g weight set'.replace(" ","")
+    assert cfg.client == '1 kg to 1 mg weight set'.replace(" ","")
     assert cfg.job == 'Program Check'
 
     assert cfg.config_xml in config_for_test
@@ -48,7 +48,7 @@ def test_admin_details():
     assert cfg.std_set == 'Mettler A'
     assert cfg.check_set == 'Mettler B'
     assert cfg.all_client_wts
-    assert len(cfg.client_wt_IDs) == cfg.ds['E13'].value == 13
+    assert len(cfg.client_wt_IDs) == cfg.ds['E13'].value == 25  # added weights to make a full set
 
     # Circular Weighing Analysis Parameters
     assert cfg.drift is None
