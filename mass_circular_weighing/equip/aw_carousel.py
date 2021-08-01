@@ -35,7 +35,6 @@ class AWBalCarousel(MettlerToledo):
 
         self.num_pos = record.user_defined['pos']  # num_pos is the total number of available loading positions
         # num_pos should be 4 for the carousel balances
-        self._positions = None
         self._weight_groups = None
 
         self.pos_to_centre = []
@@ -55,11 +54,6 @@ class AWBalCarousel(MettlerToledo):
     @property
     def mode(self):
         return 'aw_c'
-
-    @property
-    def positions(self):
-        """Returns a list of positions for the weight groups in the order the groups appear in the scheme entry."""
-        return self._positions
 
     @property
     def weight_groups(self):
