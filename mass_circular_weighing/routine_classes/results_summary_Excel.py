@@ -3,6 +3,7 @@ Results summary in Excel format
 Called from routines.report_results.py
 """
 import os
+import string
 import json
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment
@@ -201,7 +202,7 @@ class ExcelSummaryWorkbook(object):
                             'Run #',
                             "Included?"
                         ]
-                        for row in analysisdata:
+                        for row in analysisdata:  # get pairwise comparison names
                             header.append(f"({row[0]}) - ({row[1]})")
                         header += [
                             'Drift type',
@@ -226,7 +227,7 @@ class ExcelSummaryWorkbook(object):
                         run_no,
                         incl
                     ]
-                    for row in analysisdata:
+                    for row in analysisdata:  # get pairwise comparison differences
                         data_list.append(row[2])
 
                     drift = analysisdata.metadata.get("Selected drift")
@@ -262,6 +263,30 @@ class ExcelSummaryWorkbook(object):
                 cell.font = Font(italic=True)
                 cell.alignment = Alignment(horizontal='general', vertical='center', text_rotation=0, wrap_text=True,
                                         shrink_to_fit=False, indent=0)
+
+            # determine formulae for mean and std dev of included weighings
+            ave_row = ["", "", "Mean"]
+            stdev_row = ["", "", "Std. Dev."]
+            for col in string.ascii_lowercase[3:3+len(wt_grps)]:  # columns of weighing differences
+                formula_ave = "=AVERAGE("
+                formula_stdev = "=STDEV("
+                for i, cell in enumerate(sheet['C']):
+                    if cell.value == 1:  # included weighing
+                        cell_name = col + str(i+1) + ','  # enumerate starts from 0, rows from 1
+                        formula_ave += cell_name
+                        formula_stdev += cell_name
+                formula_ave = formula_ave.strip(',') + ")"
+                formula_stdev = formula_stdev.strip(',') + ")"
+                ave_row.append(formula_ave)
+                stdev_row.append(formula_stdev)
+
+            sheet.append([])
+            sheet.append(ave_row)
+            for cell in sheet[sheet.max_row]:
+                cell.font = Font(italic=True)
+            sheet.append(stdev_row)
+            for cell in sheet[sheet.max_row]:
+                cell.font = Font(italic=True)
 
     def add_all_cwdata(self, cfg, incl_datasets,):
         scheme = self.wb['Scheme']

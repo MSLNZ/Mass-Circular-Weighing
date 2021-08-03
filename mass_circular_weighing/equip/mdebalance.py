@@ -30,6 +30,7 @@ class Balance(object):
         """
         self._pt = PromptThread()
         self.record = record
+        self._positions = None
         self._ambient_instance = None
         self._ambient_details = None
         self._want_abort = False
@@ -51,11 +52,14 @@ class Balance(object):
         self.stable_wait = record.user_defined['stable_wait']
         # wait time in seconds for balance reading to stabilise
 
-        self.positions = 0
-
     @property
     def mode(self):
         return 'mde'
+
+    @property
+    def positions(self):
+        """Returns the number of weight groups in the scheme entry."""
+        return self._positions
 
     @property
     def ambient_instance(self):

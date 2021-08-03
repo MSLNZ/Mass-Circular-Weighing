@@ -72,7 +72,7 @@ class AT106(AWBalLinear):
             self.ask_internal_weights()
         try:
             mass = self.get_mass_instant()
-            if not 8 < mass < 10:
+            if not 9 < mass < 11:
                 self.add_int_weights(self.internal_weights)
         except ValueError:
             self.add_int_weights(self.internal_weights)
@@ -121,11 +121,12 @@ class AT106(AWBalLinear):
 
         log.info(f"(adding 2 x 10 g internal weights)")
         self._write("%CMS")  # adds both electronic weights to make 20 g
-        self.wait_for_elapse(10)
         if int(num) == 2:
+            self.wait_for_elapse(10)
             log.info("Internal weight adjustment complete")
             return
 
+        self.wait_for_elapse(2)
         log.info(f"(removing one to get 10 g internal weight)")
         self._write("%CMS")  # then takes off one electronic weight to get back to 10 g
         self.wait_for_elapse(10)
