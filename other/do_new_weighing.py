@@ -8,7 +8,7 @@ from mass_circular_weighing.routines.run_circ_weigh import *
 #from mass_circular_weighing.routines.final_mass_calc import final_mass_calc
 
 
-def do_new_weighing(config, bal_alias, scheme_entry, nominal_mass):
+def do_new_weighing(config, bal_alias, nominal_mass, scheme_entry, positions=None, cal_pos=1, self_cal=True):
     """Run a circular weighing without using the gui
 
     Parameters
@@ -33,6 +33,11 @@ def do_new_weighing(config, bal_alias, scheme_entry, nominal_mass):
 
     # get balance instance
     balance, mode = cfg.get_bal_instance(bal_alias)
+    balance._positions = positions
+    balance.cal_pos = cal_pos
+    balance.want_adjust = self_cal
+    check_bal_initialised(bal=balance, wtgrps=scheme_entry.split())
+
     ac = cfg.acceptance_criteria(bal_alias, nominal_mass)
 
     # collect metadata
@@ -62,7 +67,7 @@ if __name__ == "__main__":
 
     # config = r'I:\MSL\Private\Mass\transfer\Balance Software\Sample Data\LUCY\config.xml' #r'I:\MSL\Private\Mass\transfer\Balance Software\LUCY_BuildUp\config.xml'
     admin = admin_default
-    bal_alias = 'MDE-demo'  # codename for balance
+    bal_alias = 'XPE505C'  # codename for balance
 
     scheme_entries = [
         "20KRA 10KMA+10KMB 20KRB 20KRC",
@@ -77,9 +82,13 @@ if __name__ == "__main__":
     nominal_mass = 100  # nominal mass in g
 
     scheme_entry = "100 100MA 100MB" #"100kH 50kH+50kHd 100kHdd"
+    """The following information is needed for aw mode balances"""
+    positions = [2, 3, 4]
+    cal_pos = 2
 
     for i in range(1):
-        do_new_weighing(admin, bal_alias, scheme_entry, nominal_mass)
+        do_new_weighing(admin, bal_alias, nominal_mass, scheme_entry,
+                        positions=positions, cal_pos=cal_pos, self_cal=True)
 
     # analyse_old_weighing(cfg, filename, scheme_entry, 'run_1')
 
