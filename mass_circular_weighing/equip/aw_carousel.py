@@ -11,12 +11,10 @@ from msl.qt import application
 from ..log import log
 from .mettler import MettlerToledo, ERRORCODES
 
-from ..gui.threads import AllocatorThread
+from ..gui.widgets import AllocatorDialog
 
 
 class AWBalCarousel(MettlerToledo):
-
-    allocator = AllocatorThread()
 
     def __init__(self, record, reset=False, ):
         """Initialise Mettler Toledo Balance,
@@ -39,8 +37,6 @@ class AWBalCarousel(MettlerToledo):
 
         self.pos_to_centre = []
         self.repeats = 0
-
-        self.cal_pos = 1
 
         self.lift_pos = None    # vertical position   (string)
         self.hori_pos = None    # horizontal position (string of integer)
@@ -168,10 +164,12 @@ class AWBalCarousel(MettlerToledo):
         self._weight_groups = wtgrps
 
         # allocate weight groups to positions, and specify which to centre
-        self.allocator.show(self.num_pos, wtgrps)
-        self._positions, self.pos_to_centre, repeats, self.cal_pos \
-            = self.allocator.wait_for_prompt_reply()
-        self.repeats = int(repeats)
+        ad = AllocatorDialog(self.num_pos, wtgrps)
+        ad.exec()
+        self._positions = ad.positions
+        self.pos_to_centre = ad.pos_to_centre
+        self.cal_pos = ad.cal_pos
+        self.repeats = int(ad.centrings)
 
         if self.positions is None:
             log.error("Position assignment was not completed")

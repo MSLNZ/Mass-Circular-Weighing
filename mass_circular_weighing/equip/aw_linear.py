@@ -310,6 +310,6 @@ class AWBalLinear(AWBalCarousel):
             return True
 
     def close_connection(self):
-        self.connection.disconnect()
         self.arduino.query("END")
         self.arduino.disconnect()
+        self.connection.disconnect()
