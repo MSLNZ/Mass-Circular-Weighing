@@ -181,6 +181,7 @@ class WeighingWindow(QtWidgets.QWidget):
 
     def alloc_pos(self):
         self.bal.allocate_positions_and_centrings(self.scheme_entry.text().split())
+        self.adjust_ch.setChecked(self.bal.want_adjust)
 
     def place_weights(self):
         if self.bal.positions is None:

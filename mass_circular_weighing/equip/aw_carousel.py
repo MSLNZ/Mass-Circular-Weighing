@@ -170,6 +170,7 @@ class AWBalCarousel(MettlerToledo):
         self.pos_to_centre = ad.pos_to_centre
         self.cal_pos = ad.cal_pos
         self.repeats = int(ad.centrings)
+        self.want_adjust = ad.adjust_ch.isChecked()
 
         if self.positions is None:
             log.error("Position assignment was not completed")
