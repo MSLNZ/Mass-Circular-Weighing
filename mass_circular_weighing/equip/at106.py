@@ -163,9 +163,9 @@ class AT106(AWBalLinear):
         if not self.hori_pos == str(cal_pos):
             self.move_to(cal_pos)
         if not self.lift_pos == "weighing":
-            self.lift_to('weighing', hori_pos=cal_pos)
+            self.lift_to('weighing', hori_pos=cal_pos, wait=2)
 
-        self._query("%CMR")        # check no electronic weights are loaded for scale adjustment
+        self.remove_int_weights()        # check no electronic weights are loaded for scale adjustment
         m = self.get_mass_stable("scale adjust prep.")
         log.info("Current mass reading: {}".format(m))
         if type(m) is float:
