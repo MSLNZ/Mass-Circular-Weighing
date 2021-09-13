@@ -122,14 +122,14 @@ class AT106(AWBalLinear):
         log.info(f"(adding 2 x 10 g internal weights)")
         self._write("%CMS")  # adds both electronic weights to make 20 g
         if int(num) == 2:
-            self.wait_for_elapse(10)
+            self.wait_for_elapse(1)
             log.info("Internal weight adjustment complete")
             return
 
-        self.wait_for_elapse(2)
+        self.wait_for_elapse(1)
         log.info(f"(removing one to get 10 g internal weight)")
         self._write("%CMS")  # then takes off one electronic weight to get back to 10 g
-        self.wait_for_elapse(10)
+        self.wait_for_elapse(1)
         log.info("Internal weight adjustment complete")
 
     def zero_bal(self):
@@ -163,7 +163,7 @@ class AT106(AWBalLinear):
         if not self.hori_pos == str(cal_pos):
             self.move_to(cal_pos)
         if not self.lift_pos == "weighing":
-            self.lift_to('weighing', hori_pos=cal_pos, wait=2)
+            self.lift_to('weighing', hori_pos=cal_pos, wait=False)
 
         self.remove_int_weights()        # check no electronic weights are loaded for scale adjustment
         m = self.get_mass_stable("scale adjust prep.")
@@ -174,7 +174,7 @@ class AT106(AWBalLinear):
                 self._want_abort = True
                 return False
 
-            self.wait_for_elapse(10)
+            self.check_fine_range()
             return True
 
         return False
@@ -208,10 +208,11 @@ class AT106(AWBalLinear):
                         cal_time = int(perf_counter() - t0)
                         log.info(f'Balance self-calibration completed successfully in {cal_time} seconds')
                         self._is_adjusted = True
-                        self.check_fine_range()
                         if self.internal_weights is None:
                             self.ask_internal_weights()
                         self.add_int_weights(self.internal_weights)  # any internal weights were automatically removed
+                        self.lift_to('top', hori_pos=cal_pos)
+                        self.check_fine_range()
                         return True
                     elif c[1] == 'STOP':
                         log.warning('The calibration was aborted by the operator.')
