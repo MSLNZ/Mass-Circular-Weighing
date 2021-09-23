@@ -275,6 +275,17 @@ class WeighingWindow(QtWidgets.QWidget):
 
         log.debug(str(self.cfg))
 
+        # insist that the balance is initialised properly before commencing weighing
+        weighing = CircWeigh(se)
+        positions = check_bal_initialised(bal=self.bal, wtgrps=weighing.wtgrps)
+        if positions is None:
+            log.error("Balance initialisation not complete")
+            return None
+        if 'aw' in self.bal.mode:  # balance has been initialised so we know bal.move_time exists
+            circweightime = self.bal.cycle_duration * weighing.num_cycles  # total t in s
+            circweighmins = int(circweightime / 60) + 1
+            log.info(f'Each circular weighing will take approximately {circweighmins} minutes')
+
         # initialise run numbers
         run = 0
         bad_runs = 0
