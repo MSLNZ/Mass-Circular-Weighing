@@ -3,6 +3,7 @@ A pop-up window to begin the Circular Weighing routine and display progress.
 It has buttons to tare/zero the balance (if applicable), to initialise the balance's self-calibration program,
 and to begin the circular weighing routine.
 """
+import os
 import winsound
 import numpy as np
 
@@ -15,7 +16,9 @@ from ...constants import MAX_BAD_RUNS, FONTSIZE
 from ...gui.widgets import label
 from ...gui.widgets.wait_until_time import WaitUntilTimeDisplay
 
-from ...routines import check_for_existing_weighdata, check_existing_runs, do_circ_weighing, analyse_weighing
+from ...routines import check_for_existing_weighdata, check_existing_runs, check_bal_initialised, do_circ_weighing, analyse_weighing
+from ...routine_classes import CircWeigh
+from ...equip import check_ambient_pre
 
 
 check_box_style = '''
@@ -45,6 +48,7 @@ class WeighingWindow(QtWidgets.QWidget):
         self.setFont(f)
         self.setWindowTitle('Mass Calibration Program (version {}): Circular Weighing Window'.format(__version__))
         self.closeEvent = self.close_comms
+        self.logger = Logger(fmt='%(message)s')
 
         self.scheme_entry = label('scheme_entry')
         self.nominal_mass = label('nominal')
@@ -70,7 +74,7 @@ class WeighingWindow(QtWidgets.QWidget):
         status_layout.addRow(label('Cycle'), self.cycle)
         status_layout.addRow(label('Position'), self.position)
         status_layout.addRow(label('Reading'), self.reading)
-        status_layout.setWidget(6, 2, Logger(fmt='%(message)s'))
+        status_layout.setWidget(6, 2, self.logger)
         status.setLayout(status_layout)
 
         return status
@@ -168,6 +172,8 @@ class WeighingWindow(QtWidgets.QWidget):
             self.setLayout(layout)
             self.resize(self.minimumSizeHint())
 
+            # do a quick check on the ambient conditions
+            check_ambient_pre(self.bal.ambient_instance, self.bal.ambient_details)
             super().show()
 
     def zero_balance(self):
@@ -223,7 +229,7 @@ class WeighingWindow(QtWidgets.QWidget):
 
     def check_for_existing(self):
         filename = self.cfg.client + '_' + self.se_row_data['nominal']  # + '_' + run_id
-        url = self.cfg.folder + "\\" + filename + '.json'
+        url = os.path.join(self.cfg.folder, filename + '.json')
         root = check_for_existing_weighdata(self.cfg.folder, url, self.se_row_data['scheme_entry'])
         good_runs, run_no_1 = check_existing_runs(root, self.se_row_data['scheme_entry'])
         self.se_row_data['url'] = url
@@ -249,6 +255,10 @@ class WeighingWindow(QtWidgets.QWidget):
         self.bal._want_abort = True
         self.bal.close_connection()
         print("Connection closed")
+        logfile = self.cfg.client + '_' + self.se_row_data['nominal'] + '_log.txt'
+        log_save_path = os.path.join(self.cfg.folder, logfile)
+        self.logger.save(log_save_path)
+        print(f"Log saved to {log_save_path}")
 
     def process(self):
         # collating and sorting metadata
