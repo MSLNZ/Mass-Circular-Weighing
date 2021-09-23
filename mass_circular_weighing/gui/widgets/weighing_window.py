@@ -56,6 +56,10 @@ class WeighingWindow(QtWidgets.QWidget):
         self.cycle = label('0')
         self.position = label('0')
         self.reading = label('0')
+        self.num_runs = 0
+
+        self.hori_pos_options = QtWidgets.QSpinBox()
+        self.lift_positions = QtWidgets.QComboBox()
 
         self.status = self.status_panel()
         self.controls = self.mettler_panel()
@@ -99,12 +103,14 @@ class WeighingWindow(QtWidgets.QWidget):
         pos_alloc = Button(text='Allocate weight(s) to positions', left_click=self.alloc_pos, )
         place = Button(text='Place weights in positions', left_click=self.place_weights, )
         check_loading = Button(text='Check loading and centring', left_click=self.check_loading, )
+        gotopos_widget = self.go_to_pos_widget()
 
         controls = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QVBoxLayout()
         controls_layout.addWidget(pos_alloc)
         controls_layout.addWidget(place)
         controls_layout.addWidget(check_loading)
+        controls_layout.addWidget(gotopos_widget)
 
         controls.setLayout(controls_layout)
 
@@ -150,7 +156,7 @@ class WeighingWindow(QtWidgets.QWidget):
 
         self.resize(self.minimumSizeHint())
 
-    def show(self, se_row_data, cfg):
+    def make_labels(self, se_row_data, cfg):
         self.se_row_data = se_row_data
         self.cfg = cfg
         self.bal, self.mode = self.cfg.get_bal_instance(self.se_row_data['bal_alias'])
@@ -158,6 +164,17 @@ class WeighingWindow(QtWidgets.QWidget):
         self.scheme_entry.setText(self.se_row_data['scheme_entry'])
         self.nominal_mass.setText(se_row_data['nominal'])
         self.num_runs = se_row_data['num_runs']         # target number of acceptable runs
+
+        if "aw" in self.mode:
+            self.hori_pos_options.setRange(0, self.bal.num_pos)
+            self.hori_pos_options.setValue(1)
+            if "l" in self.mode:
+                self.lift_positions.addItems(["top", "loading", "weighing"])
+            else:
+                self.lift_positions.addItems(['top', 'panbraking', 'weighing', 'calibration'])
+
+    def show(self, se_row_data, cfg):
+        self.make_labels(se_row_data, cfg)
 
         self.check_for_existing()
         if not self.bal.want_abort:
@@ -188,6 +205,29 @@ class WeighingWindow(QtWidgets.QWidget):
     def alloc_pos(self):
         self.bal.allocate_positions_and_centrings(self.scheme_entry.text().split())
         self.adjust_ch.setChecked(self.bal.want_adjust)
+
+    def go_to_pos_widget(self):
+
+        gotopos_button = Button(text='Go', left_click=self.go_to_pos, )
+
+        go_to_pos_box = QtWidgets.QGroupBox()
+        go_to_pos = QtWidgets.QHBoxLayout()
+        go_to_pos.addWidget(label("Move to"))
+        go_to_pos.addWidget(self.hori_pos_options)
+        go_to_pos.addWidget(self.lift_positions)
+        go_to_pos.addWidget(gotopos_button)
+        go_to_pos_box.setLayout(go_to_pos)
+
+        return go_to_pos_box
+
+    def go_to_pos(self):
+        pos = int(self.hori_pos_options.text())
+        lift = self.lift_positions.currentText()
+        log.info(f"Selected position {pos}, {lift} position")
+        hori_pos, lift_pos = self.bal.get_status()
+        if not str(pos) == hori_pos:
+            self.bal.move_to(pos, wait=False)
+        self.bal.lift_to(lift, hori_pos=pos, wait=False)
 
     def place_weights(self):
         if self.bal.positions is None:
