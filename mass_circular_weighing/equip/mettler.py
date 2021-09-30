@@ -25,28 +25,8 @@ class MettlerToledo(Balance):
         """
         super().__init__(record)
 
-        ok = True
-        while ok:
-            try:
-                self.connection = self.record.connect()
-
-                if reset:
-                    self.reset()
-                while True:
-                    log.debug("...talking to balance...")
-                    r = self._query("X")  # 'X' is not recognised by any of the Mettler balances we have, such that an
-                    # error string ES is returned.  Sending an empty string causes the AT106 to repeat the last valid command.
-                    log.debug(f'...received {r}...')
-                    if r.strip("\r") == "ES":
-                        break
-                assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
-                    "Serial mismatch: expected "+str(self.record.serial)+" but received "+str(self.get_serial())
-                    # prints error if false
-                break
-
-            except MSLConnectionError:
-                self._pt.show('ok_cancel', "Please connect balance to continue")
-                ok = self._pt.wait_for_prompt_reply()
+        self.connection = None
+        self.connect_bal(reset=reset)
 
         self.intcaltimeout = self.record.connection.properties.get('intcaltimeout', 30)
 
@@ -57,6 +37,30 @@ class MettlerToledo(Balance):
     def _query(self, command):
         self.connection.serial.flush()
         return self.connection.query(command)
+
+    def connect_bal(self, reset=False):
+        ok = True
+        while ok:
+            try:
+                self.connection = self.record.connect()
+
+                if reset:
+                    self.reset()
+                while True:
+                    log.debug("...talking to balance...")
+                    r = self._query("X")  # 'X' is not recognised by any of the Mettler balances we have, such that an
+                    # error string ES is returned.  Sending an empty string to the AT106 repeats the last valid command.
+                    log.debug(f'...received {r}...')
+                    if r.strip("\r") == "ES":
+                        break
+                assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
+                    "Serial mismatch: expected " + str(self.record.serial) + " but received " + str(self.get_serial())
+                # prints error if false
+                break
+
+            except MSLConnectionError:
+                self._pt.show('ok_cancel', "Please connect balance to continue")
+                ok = self._pt.wait_for_prompt_reply()
 
     def reset(self):
         log.info('Balance reset')

@@ -84,12 +84,14 @@ class WeighingWindow(QtWidgets.QWidget):
         return status
 
     def mettler_panel(self):
+        reset_comms = Button(text='Reconnect balance', left_click=self.reset_balance_comms, )
         zero = Button(text='Zero balance', left_click=self.zero_balance, )
         tare = Button(text='Tare balance', left_click=self.tare, )
         scale = Button(text='Scale adjustment', left_click=self.scale, )
 
         controls = QtWidgets.QGroupBox()
         controls_layout = QtWidgets.QVBoxLayout()
+        controls_layout.addWidget(reset_comms)
         controls_layout.addWidget(zero)
         controls_layout.addWidget(tare)
         controls_layout.addWidget(scale)
@@ -192,6 +194,13 @@ class WeighingWindow(QtWidgets.QWidget):
             # do a quick check on the ambient conditions
             check_ambient_pre(self.bal.ambient_instance, self.bal.ambient_details)
             super().show()
+
+    def reset_balance_comms(self):
+        self.bal.connection.disconnect()
+        log.info("Reconnecting to balance...")
+        self.bal.wait_for_elapse(2)
+        self.bal.connect_bal()  # could add reset True here if desired
+        log.info("Connected to balance")
 
     def zero_balance(self):
         self.bal.zero_bal()
