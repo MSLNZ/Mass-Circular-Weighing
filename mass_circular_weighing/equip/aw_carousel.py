@@ -210,14 +210,17 @@ class AWBalCarousel(MettlerToledo):
             log.warning("Weight groups must first be assigned to positions.")
             return False
 
-        if not self.want_abort:
-            log.info("Beginning balance loading check")
-            self.move_to(self.positions[0])
+        if self.want_abort:
+            log.warning("Check loading aborted")
+            return False
+        log.info("Beginning balance loading check")
+        self.move_to(self.positions[0])
 
         times = []
         lifting = []
         for pos in np.roll(self.positions, -1):   # puts first position at end
             if self.want_abort:
+                log.warning("Check loading aborted")
                 return self.move_time
             t0 = perf_counter()
             self.move_to(pos)
@@ -268,17 +271,20 @@ class AWBalCarousel(MettlerToledo):
             return False
 
         log.info("Commencing centring for {}".format(pos_to_centre))
-        if not self.want_abort:
-            for pos in pos_to_centre:
-                self.move_to(pos)
-                for i in range(repeats):
-                    log.info("Centring #{} of {} for position {}".format(i + 1, repeats, pos))
-                    self.lift_to('weighing', hori_pos=pos)
-                    # the lift_to includes appropriate waits
-                    self.lift_to('top', hori_pos=pos)
+        for pos in pos_to_centre:
+            if self.want_abort:
+                log.warning("Centring aborted")
+                return self._is_centred
 
-            log.info("Centring complete")
-            self._is_centred = True
+            self.move_to(pos)
+            for i in range(repeats):
+                log.info("Centring #{} of {} for position {}".format(i + 1, repeats, pos))
+                self.lift_to('weighing', hori_pos=pos)
+                # the lift_to includes appropriate waits
+                self.lift_to('top', hori_pos=pos)
+
+        log.info("Centring complete")
+        self._is_centred = True
 
         return self._is_centred
 

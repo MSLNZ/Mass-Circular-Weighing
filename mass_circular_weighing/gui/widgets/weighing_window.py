@@ -69,6 +69,7 @@ class WeighingWindow(QtWidgets.QWidget):
         self.start_panel = self.start_panel()
 
     def status_panel(self):
+        want_stop = Button(text='Request stop', left_click=self.request_stop, )
 
         status = QtWidgets.QGroupBox()
         status_layout = QtWidgets.QFormLayout()
@@ -78,7 +79,8 @@ class WeighingWindow(QtWidgets.QWidget):
         status_layout.addRow(label('Cycle'), self.cycle)
         status_layout.addRow(label('Position'), self.position)
         status_layout.addRow(label('Reading'), self.reading)
-        status_layout.setWidget(6, 2, self.logger)
+        status_layout.setWidget(6, 2, want_stop)
+        status_layout.setWidget(7, 2, self.logger)
         status.setLayout(status_layout)
 
         return status
@@ -201,6 +203,7 @@ class WeighingWindow(QtWidgets.QWidget):
         self.bal.wait_for_elapse(2)
         self.bal.connect_bal()  # could add reset True here if desired
         log.info("Connected to balance")
+        self.bal._want_abort = False
 
     def zero_balance(self):
         self.bal.zero_bal()
@@ -255,6 +258,15 @@ class WeighingWindow(QtWidgets.QWidget):
     def check_loading(self):
         self.bal.check_loading()
         self.bal.centring()
+
+    def request_stop(self):
+        self.bal._want_abort = True
+        log.warning("Stop requested. Reconnect balance to continue.")
+        self.controls.show()
+        self.initialise_controls.show()
+        self.start_panel.show()
+
+        self.resize(self.minimumSizeHint())
 
     def start_weighing(self):
         self.bal.want_adjust = True if self.adjust_ch.checkState() else False
