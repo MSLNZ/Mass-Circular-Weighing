@@ -4,8 +4,8 @@ import ast
 from ..log import log
 from ..constants import admin_default
 from ..configuration import Configuration
-from ..gui.threads.circweigh_popup import WeighingThread
-
+# from ..gui.threads.circweigh_popup import WeighingThread
+from ..gui.widgets.weighing_window import WeighingWindow
 
 # WeighingThread needs to know se_row_data, which is a dictionary of strings/integers with keys:
 # ['row', 'scheme_entry', 'nominal', 'bal_alias', 'num_runs']
@@ -68,8 +68,8 @@ def run_circweigh_popup(admin=None, se_row_data=None):
 
     gui = application()
 
-    weigh_thread = WeighingThread()
-    weigh_thread.show(se_row_data, cfg)
+    w = WeighingWindow()
+    w.show(se_row_data, cfg)
 
     gui.exec()
 

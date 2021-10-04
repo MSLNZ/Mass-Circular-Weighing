@@ -28,13 +28,13 @@ class Balance(object):
             get via Application(config).equipment[alias]
             Requires an MSL.equipment config.xml file
         """
-        self._pt = PromptThread()
         self.record = record
-        self._positions = None
         self._ambient_instance = None
         self._ambient_details = None
         self._want_abort = False
 
+        self._positions = None
+        self.cal_pos = 1
         self.want_adjust = True
         self._is_adjusted = False
 
@@ -51,6 +51,8 @@ class Balance(object):
 
         self.stable_wait = record.user_defined['stable_wait']
         # wait time in seconds for balance reading to stabilise
+
+        self._pt = PromptThread()
 
     @property
     def mode(self):

@@ -74,12 +74,13 @@ def get_next_run_id(root, scheme_entry):
     return run_id
 
 
+# check_bal_initialised is called by the gui's weighing window
 def check_bal_initialised(bal, wtgrps):
     if 'aw' in bal.mode:
         # use the class method within the AWBalCarousel and AWBalLinear classes
         # to check that the balance has been initialised correctly
         positions = bal.initialise_balance(wtgrps)
-        log.debug(str(positions))
+        log.debug(f'Positions in check_bal_initialised are {positions}')
         if positions is None:  # consequence of exit from initialise_balance for any number of reasons
             log.error("Balance initialisation was not completed")
             return None
@@ -91,7 +92,7 @@ def check_bal_initialised(bal, wtgrps):
     return positions
 
 
-# do_circ_weighing is called in circweigh_popup
+# do_circ_weighing is called by the gui's weighing window
 def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                      local_backup_folder=local_backup, **metadata):
     """Routine to run a circular weighing by collecting data from a balance.
@@ -101,7 +102,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     Parameters
     ----------
     bal : :class:`Balance`
-        balance instance, initialised using mass_circular_weighing.configuration using a balance alias
+        balance instance, initialised using mass_circular_weighing.configuration using a balance alias.
         the ambient logger info/instance is contained within the balance instance
     se : str
         scheme entry
@@ -130,20 +131,13 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     metadata['Weighing complete'] = False
 
     weighing = CircWeigh(se)
-    # check that initialisation has been completed
-    positions = check_bal_initialised(bal=bal, wtgrps=weighing.wtgrps)
-    if positions is None:
-        log.error("Balance initialisation not complete")
-        return None
-    if 'aw' in bal.mode:  # balance has been initialised so we know bal.move_time exists
-        circweightime = bal.cycle_duration * weighing.num_cycles  # total t in s
-        circweighmins = int(circweightime/60) + 1
-        log.info(f'Each circular weighing will take approximately {circweighmins} minutes')
+    # here we assume that balance initialisation has been completed successfully
+    positions = bal.positions
 
     positionstr = ''
     positiondict = {}
     for i in range(weighing.num_wtgrps):
-        positionstr = positionstr + tab + 'Position '+ str(positions[i]) + ': ' + weighing.wtgrps[i] + '\n'
+        positionstr = positionstr + tab + 'Position ' + str(positions[i]) + ': ' + weighing.wtgrps[i] + '\n'
         positiondict['Position ' + str(positions[i])] = weighing.wtgrps[i]
     metadata["Weight group loading order"] = positiondict
 
