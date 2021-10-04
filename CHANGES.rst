@@ -2,10 +2,25 @@
 Release Notes
 =============
 
-Version 1.0.2 (in development)
+Version 1.0.3 (in development)
 ==============================
 
 In development.
+
+Version 1.0.2 (04/10/2021)
+==========================
+
+* The main change is a new version of the circular weighing window without threads.
+* A 'move to position' widget allows movement to any horizontal and/or lift position.
+* A 'request stop' button sets bal want_abort to True, which will stop the requested action when it is safe to do so.
+* A 'reconnect to balance' button reconnects to the balance and sets _want_abort to False.
+* The ambient conditions are checked when connecting to the balance before the weighing window opens.
+* AllocatorDialog is called from aw_carousel.py and adjust_ch box is shared between allocator and weighing windows.
+* The log is saved to a .txt file when the window closes.
+* The weighing process checks that the balance is initialised before commencing set of weighings and assumes it is
+  initialised thereafter (to avoid retrying self-adjustment between weighings in a set).
+* do_new_weighing.py has been modified to work without the gui.
+* Minor changes to AT106 class: timings for internal weight loading and unloading
 
 Version 1.0.1 (30/07/2021)
 ==========================
