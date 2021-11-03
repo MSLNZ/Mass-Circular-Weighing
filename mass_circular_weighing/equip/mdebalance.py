@@ -38,6 +38,8 @@ class Balance(object):
         self.want_adjust = True
         self._is_adjusted = False
 
+        self._pt = PromptThread()
+
         self._unit = record.user_defined['unit']
         if not self._unit:
             self.set_unit()
@@ -51,8 +53,6 @@ class Balance(object):
 
         self.stable_wait = record.user_defined['stable_wait']
         # wait time in seconds for balance reading to stabilise
-
-        self._pt = PromptThread()
 
     @property
     def mode(self):
