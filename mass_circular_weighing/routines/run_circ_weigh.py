@@ -85,11 +85,10 @@ def check_bal_initialised(bal, wtgrps):
             log.error("Balance initialisation was not completed")
             return None
     else:
-        positions = range(1, len(wtgrps) + 1)
-        bal._positions = len(wtgrps)
+        bal._positions = range(1, len(wtgrps) + 1)
         bal.adjust_scale_if_needed()
 
-    return positions
+    return bal.positions
 
 
 # do_circ_weighing is called by the gui's weighing window

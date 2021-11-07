@@ -304,7 +304,10 @@ class WeighingWindow(QtWidgets.QWidget):
 
     def update_cyc_pos(self, c, p, num_cyc, num_pos):
         self.cycle.setText('{} of {}'.format(c, num_cyc))
-        self.position.setText('{} of {}'.format(p, self.bal.positions))
+        positions = self.bal.positions
+        if type(positions) is range:        # simplify display for non aw balances
+            positions = len(positions)
+        self.position.setText('{} of {}'.format(p, positions))
 
     def update_reading(self, reading, unit):
         if reading is None:
