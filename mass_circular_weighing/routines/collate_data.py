@@ -54,6 +54,7 @@ def collate_all_weighings(schemetable, cfg):
                 newdata = collate_m_data_from_json(url, schemetable.cellWidget(row, 0).text())
             dlen = data.shape[0]
             if newdata is not None:
+                print(schemetable.cellWidget(row, 0).text(), newdata)
                 ndlen = newdata.shape[0]
                 data.resize(dlen + ndlen)
                 data[-len(newdata):]['Nominal (g)'] = newdata[:]['Nominal (g)']
@@ -97,7 +98,13 @@ def collate_a_data_from_json(url, scheme_entry):
         return None
     folder = os.path.dirname(os.path.abspath(url))
     root = check_for_existing_weighdata(folder, url, scheme_entry)
-    schemefolder = root['Circular Weighings'][scheme_entry]
+    schemefolder = root['Circular Weighings'][scheme_entry]  # note that this must exist but could be empty
+    try:
+        an1 = schemefolder["analysis_run_1"]  # test to see if any of weighings have been analysed
+    except KeyError:
+        log.warning(f"No weighing data available for {scheme_entry} in {url}")
+        return None
+
     wt_grps = scheme_entry.split()
     num_wt_grps = len(wt_grps)
     runs = ""
@@ -209,7 +216,14 @@ def collate_m_data_from_json(url, scheme_entry):
                                 ('balance uncertainty ('+MU_STR+'g)', 'float64'), ('Acceptance met?', bool)])
 
     root = read(url)
-    for dataset in root['Circular Weighings'][scheme_entry].datasets():
+    try:
+        schemefolder = root['Circular Weighings'][scheme_entry]  # test to see if the se exists
+        an1 = schemefolder["analysis_run_1"]  # test to see if any of the weighings have been analysed
+    except KeyError:
+        log.warning(f"No weighing data available for {scheme_entry} in {url}")
+        return None
+
+    for dataset in schemefolder.datasets():
         dname = dataset.name.split('_')  # split('/')[-1].
 
         if dname[0][-8:] == 'analysis':# and ok:
