@@ -172,9 +172,11 @@ class WeighingWindow(QtWidgets.QWidget):
         if "aw" in self.mode:
             self.hori_pos_options.setRange(0, self.bal.num_pos)
             self.hori_pos_options.setValue(1)
-            if "l" in self.mode:
+            if "l" in self.mode:        # linear weight handler
                 self.lift_positions.addItems(["top", "loading", "weighing"])
-            else:
+            elif '106' in self.mode:    # catch for AT106
+                self.lift_positions.addItems(["top", "loading", "weighing"])
+            else:                       # carousel weight handler
                 self.lift_positions.addItems(['top', 'panbraking', 'weighing', 'calibration'])
 
     def show(self, se_row_data, cfg):
