@@ -54,7 +54,7 @@ def collate_all_weighings(schemetable, cfg):
                 newdata = collate_m_data_from_json(url, schemetable.cellWidget(row, 0).text())
             dlen = data.shape[0]
             if newdata is not None:
-                print(schemetable.cellWidget(row, 0).text(), newdata)
+                # log.debug(schemetable.cellWidget(row, 0).text(), newdata)
                 ndlen = newdata.shape[0]
                 data.resize(dlen + ndlen)
                 data[-len(newdata):]['Nominal (g)'] = newdata[:]['Nominal (g)']
@@ -218,7 +218,14 @@ def collate_m_data_from_json(url, scheme_entry):
     root = read(url)
     try:
         schemefolder = root['Circular Weighings'][scheme_entry]  # test to see if the se exists
-        an1 = schemefolder["analysis_run_1"]  # test to see if any of the weighings have been analysed
+        # test to see if any of the weighings have been analysed
+        an = 0
+        for ds in schemefolder.datasets():
+            if 'analysis' in ds.name:
+                an += 1
+        if not an:
+            log.warning(f"No weighing data analysed for {scheme_entry} in {url}")
+            return None
     except KeyError:
         log.warning(f"No weighing data available for {scheme_entry} in {url}")
         return None
