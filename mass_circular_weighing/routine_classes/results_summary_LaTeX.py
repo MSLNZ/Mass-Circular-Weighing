@@ -221,7 +221,7 @@ class LaTexDoc(object):
                 str(meta['Relative uncertainty for no buoyancy correction (ppm)'])
         )
         self.make_normal_text(
-            "Sum of residues squared ($\\mug^2$) = " + str(meta['Sum of residues squared ('+MU_STR+'g^2)'])
+            "Sum of residues squared ($\\mu g^2$) = " + str(meta['Sum of residues squared ('+MU_STR+'g^2)'])
         )
         self.fp.write("\\end{landscape}\n")
 
