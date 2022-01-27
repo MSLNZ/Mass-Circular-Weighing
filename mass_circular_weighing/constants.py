@@ -3,6 +3,7 @@ A repository for constants and symbols used in the mass weighing program
 Modify default folder paths as necessary
 """
 import os
+from datetime import date
 
 MU_STR = 'µ'                    # ALT+0181 or 'µ'. use 'u' if running into issues
 SIGMA_STR = 'σ'                 # \u03C3 for sigma sign
@@ -23,7 +24,10 @@ admin_default = os.path.join(ROOT_DIR, r'utils\default_admin.xlsx')
 config_default = os.path.join(ROOT_DIR, r'utils\default_config.xml')
 
 save_folder_default = r'G:\My Drive'
-commercial21_folder = r'I:\MSL\Private\Mass\Commercial Calibrations\2021'
+
+i_drive_folder = r'I:\MSL\Private\Mass\Commercial Calibrations'
+year = date.today().strftime("%Y")
+commercial_folder = os.path.join(i_drive_folder, year)
 mass_folder = r'I:\MSL\Private\Mass'
 mydrive = r'G:\My Drive'
 

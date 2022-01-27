@@ -3,7 +3,7 @@ A custom widget for browsing for files and folders
 """
 from msl.qt import QtWidgets, Button, prompt, utils
 
-from ...constants import commercial21_folder, mass_folder, mydrive
+from ...constants import commercial_folder, mass_folder, mydrive
 from ...log import log
 
 
@@ -66,7 +66,7 @@ class Browse(QtWidgets.QWidget):
         self.display_browse()
 
     def commcals_selected(self):
-        self.textbox.setText(commercial21_folder)
+        self.textbox.setText(commercial_folder)
         self.display_browse()
 
     def dragEnterEvent(self, event):
