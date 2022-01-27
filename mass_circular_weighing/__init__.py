@@ -1,7 +1,7 @@
 from .log import log
 
 __author__ = 'Measurement Standards Laboratory of New Zealand'
-__copyright__ = '\xa9 2021, ' + __author__
+__copyright__ = '\xa9 2022, ' + __author__
 __version__ = '1.0.4.dev0'
 
 from .gui.gui import show_gui
