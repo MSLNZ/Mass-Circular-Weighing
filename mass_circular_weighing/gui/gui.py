@@ -139,8 +139,16 @@ class MCWGui(QtWidgets.QWidget):
             return
 
         # run circweigh popup as a subprocess that still allows the main gui window to operate
-        Popen(
-            ['circweigh-gui', self.housekeeping.cfg.path, str(se_row_data)],
+        try:
+            Popen(
+                ['circweigh-gui', self.housekeeping.cfg.path, str(se_row_data)],
+                close_fds=True,
+                creationflags=0x00000008  # creates new window as a detached process
+            )
+
+        except FileNotFoundError:  # e.g. the exe isn't on the python path already
+            Popen(
+            [os.path.join(os.getcwd(), 'circweigh-gui.exe'), self.housekeeping.cfg.path, str(se_row_data)],
             close_fds=True,
             creationflags=0x00000008  # creates new window as a detached process
         )
