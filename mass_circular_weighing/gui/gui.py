@@ -139,19 +139,22 @@ class MCWGui(QtWidgets.QWidget):
             return
 
         # run circweigh popup as a subprocess that still allows the main gui window to operate
-        try:
+        try:    # running as installed program in Python environment
             Popen(
                 ['circweigh-gui', self.housekeeping.cfg.path, str(se_row_data)],
                 close_fds=True,
                 creationflags=0x00000008  # creates new window as a detached process
             )
 
-        except FileNotFoundError:  # e.g. the exe isn't on the python path already
+        except FileNotFoundError:  # running from exe without Python environment
             Popen(
-            [os.path.join(os.getcwd(), 'circweigh-gui.exe'), self.housekeeping.cfg.path, str(se_row_data)],
-            close_fds=True,
-            creationflags=0x00000008  # creates new window as a detached process
-        )
+                [
+                    os.path.join(os.getcwd(), 'mass_circular_weighing_standalone.exe'),
+                    self.housekeeping.cfg.path,
+                    str(se_row_data)
+                ],
+                close_fds=True,
+            )
 
     def reanalyse_weighings(self, ):
         row = self.schemetable.currentRow()

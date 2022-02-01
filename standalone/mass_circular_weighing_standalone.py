@@ -1,11 +1,17 @@
 import sys
 import traceback
 
-try:
-    from mass_circular_weighing.gui import gui
+nargs = len(sys.argv)
 
-    # Show the GUI
-    gui.show_gui()
+try:
+    if nargs == 1:      # Show the GUI
+        from mass_circular_weighing.gui import gui
+        gui.show_gui()
+    elif nargs == 3:    # Show the weighing window
+        from mass_circular_weighing.utils.circweigh_subprocess import run_circweigh_popup
+        run_circweigh_popup()
+    else:               # Something has gone wrong...
+        raise ValueError(f'Invalid number of command line arguments: {nargs}')
 
 except KeyboardInterrupt:
     pass
