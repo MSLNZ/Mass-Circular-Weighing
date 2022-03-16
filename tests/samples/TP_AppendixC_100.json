@@ -1,0 +1,84 @@
+#File created with: MSL JSONWriter version 1.0
+{
+  "Circular Weighings": {
+    "100 100s 50+50s": {
+      "measurement_run_1": {
+        "Client": "Client",
+        "Balance": "AT201",
+        "Unit": "g",
+        "Nominal mass (g)": 100.0,
+        "Max stdev from CircWeigh (µg)": 12.0,
+        "Stdev for balance (µg)": 15.0,
+        "Program Version": "1.0.4",
+        "Mmt Timestamp": "07-07-1994 13:43",
+        "Time unit": "min",
+        "Ambient monitoring": {
+          "MIN_T": 18.1,
+          "MAX_T": 21.9,
+          "MAX_T_CHANGE": 0.5,
+          "MIN_RH": 30.0,
+          "MAX_RH": 70.0,
+          "MAX_RH_CHANGE": 15.0,
+          "Type": "OMEGA",
+          "Alias": "Mass 1",
+          "Sensor": 1
+        },
+        "Weighing complete": true,
+        "Weight group loading order": {
+          "Position 1": "100",
+          "Position 2": "100s",
+          "Position 3": "50+50s"
+        },
+        "T (°C)": "19.98 to 19.984",
+        "RH (%)": "52.8 to 52.8",
+        "Ambient OK?": true,
+        "dtype": "<f8",
+        "data": [
+          [
+            [0.0,100.00027],
+            [0.5603,100.00014],
+            [1.1737,100.00029]
+          ],
+          [
+            [1.7481,100.000267],
+            [2.1943,100.00015],
+            [2.7843,100.0003]
+          ],
+          [
+            [3.394,100.00029],
+            [3.8847,100.00015],
+            [4.4169,100.00029]
+          ],
+          [
+            [4.9822,100.000273],
+            [5.494,100.00016],
+            [6.1513,100.00029]
+          ]
+        ]
+      },
+      "analysis_run_1": {
+        "Analysis Timestamp": "15-03-2022 10:07",
+        "Residual std devs": "{'no drift': 8.12e-06, 'linear drift': 7.75e-06, 'quadratic drift': 7.49e-06, 'cubic drift': 8.07e-06}",
+        "Selected drift": "quadratic drift",
+        "Uses mmt times": false,
+        "Mass unit": "g",
+        "Drift unit": "g per reading",
+        "Acceptance met?": true,
+        "Exclude": false,
+        "linear drift": "3.7354e-06 (2.35e-06)",
+        "quadratic drift": "-2.5676e-07 (2.05e-07)",
+        "dtype": [
+          ["+ weight group","object"],
+          ["- weight group","object"],
+          ["mass difference","float64"],
+          ["residual","float64"]
+        ],
+        "data": [
+          ["100","100s",0.00012616787000752083,5.342129282708389e-06],
+          ["100s","50+50s",-0.00014184564645347564,5.342129282708397e-06],
+          ["50+50s","100",1.5677776445954805e-05,5.4538235072372124e-06]
+        ]
+      }
+    }
+  }
+}

@@ -66,6 +66,7 @@ def filter_mass_set(masses, inputdata):
 
 
 class FinalMassCalc(object):
+    REL_UNC = REL_UNC
 
     def __init__(self, folder, client, client_masses, check_masses, std_masses, inputdata, nbc=True, corr=None):
         """Initialises the calculation of mass values using matrix least squares methods
@@ -311,7 +312,7 @@ class FinalMassCalc(object):
             cmx1 = np.ones(self.num_client_masses + self.num_check_masses)  # from above, stds are added last
             cmx1 = np.append(cmx1, np.zeros(self.num_stds))  # 1's for unknowns, 0's for reference stds
 
-            reluncert = REL_UNC  # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1 (ppm)
+            reluncert = self.REL_UNC  # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1 (ppm)
             unbc = reluncert * self.b * cmx1  # weighing uncertainty in ug as vector of length num_unknowns.
             # Note: TP has * 1e-6 for ppm which would give the uncertainty in g
             uunbc = np.vstack(unbc) * np.hstack(unbc)  # square matrix of dim num_obs
