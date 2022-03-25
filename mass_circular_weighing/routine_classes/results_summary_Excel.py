@@ -48,10 +48,6 @@ class ExcelSummaryWorkbook(object):
             cell.font = Font(italic=True)
             cell.alignment = Alignment(horizontal='general', vertical='center', text_rotation=0, wrap_text=True,
                                        shrink_to_fit=False, indent=0)
-
-        scheme_sheet.insert_rows(0, 1)
-        scheme_sheet["a1"] = "Weighing scheme"
-        scheme_sheet['A1'].font = Font(bold=True)
         scheme_sheet.column_dimensions["A"].width = 21
 
     def save_array_to_sheet(self, data, sheet_name):
