@@ -29,12 +29,7 @@ Other requirements
 To run the program, you will need to be able to access a *Balance Register* and an *Equipment Register*
 in the MSL-Equipment_ format.
 
-   For mass calibration at MSL, these registers are stored in I:\\MSL\\Private\\MAP\\Equipment register.
-
-To enable ambient logging via Emile's LabVIEW server, a LabVIEW Runtime engine is needed.
-
-   At MSL, run LVRTE2010std.exe from I:\MSL\Shared\Temperature\LabVIEW RuntimeEngines.
-   This install will require administrator rights on a Callaghan Innovation computer.
+   For mass calibration at MSL, these registers are stored in I:\\MSL\\Private\\Mass\\Equipment register.
 
 
 

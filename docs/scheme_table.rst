@@ -1,7 +1,7 @@
 .. _schemetable:
 
 The Scheme Table
-=====================================
+================
 
 A weighing scheme describes the comparisons involved in a calibration,
 where each comparison includes unknown and known masses.
@@ -29,8 +29,8 @@ Weight groups in a comparison are separated by spaces. For example, the scheme t
 =================  ================== =================  ==================
  200 200MA 200MB          200             AB204-S               2
  100+100MA 200MA          200             AB204-S               2
- 100 100MA 100MB          100             AB204-S               2
-  50+50MA 100MA           100             AB204-S               2
+ 100 100MA 100MB          100             AT106                 2
+ 50+50MA 100MA            100             AT106                 2
 =================  ================== =================  ==================
 
 

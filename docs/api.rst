@@ -4,7 +4,7 @@
 API Documentation
 =================
 
-The main entryway in to **Mass-Circular-Weighing** is achieved by running the gui, as in the following example:
+The main entry point for **Mass-Circular-Weighing** is running the gui, as in the following example:
 
 .. code-block:: pycon
 

@@ -12,7 +12,7 @@ More information about these two different types of `Database Formats`_ can be f
 
 The registers relevant for this program are the *Balance Register* and the *Equipment Register*.
 
-    At MSL these registers are stored on the I: drive in I:\\MSL\\Private\\MAP\\Equipment register.
+    The Mass Standards registers are stored on the I: drive in I:\\MSL\\Private\\Mass\\Equipment Register.
 
 To add new equipment (except balances), add the appropriate details to the `Equipment` sheet in the *Equipment Register*.
 

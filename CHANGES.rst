@@ -2,10 +2,30 @@
 Release Notes
 =============
 
-Version 1.0.3 (in development)
+Version 1.0.5 (in development)
 ==============================
 
 In development.
+
+* Removed addition of 'Weighing Scheme' line in summary file, so that the summary file can be used in place of the
+  admin file
+* Added test case from TP MSLT.M.001.008 appendices C and D
+* Updated docs
+
+Version 1.0.4 (01/02/2022)
+==========================
+
+* Revised make scripts and installs so that exe works with the circular weighing window as a subprocess
+* Moved examples to utils so they are accessible from the exe
+
+Version 1.0.3 (27/01/2022)
+==========================
+
+* Ambient monitoring NUC is now addressed by name rather than IP address
+* Fixed bugs in positions setting and display
+* Fixed bugs in collate_data.py for if any analysis datasets are present (even if not acceptable)
+* Fixed incorrect lift positions for AT106
+* Link to Commercial Calibrations folder now updates year to current year
 
 Version 1.0.2 (04/10/2021)
 ==========================
