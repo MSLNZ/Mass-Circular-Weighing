@@ -1,5 +1,5 @@
 """
-An entry point for testing the connection to Emile's LabVIEW server for ambient monitoring.
+An entry point for testing the connection to the server for ambient monitoring.
 Note that calibrated values are returned by default.
 """
 import logging
