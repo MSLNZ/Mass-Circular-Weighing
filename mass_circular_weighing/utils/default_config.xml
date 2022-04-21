@@ -16,8 +16,8 @@
     <equipment alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
 
     <!-- Specify Arduino information -->
-    <equipment alias="Arduino-XPE505C" manufacturer="Arduino" model="MEGA2560" serial="95730333238351F0A011"/>
-    <equipment alias="Arduino-AT106" manufacturer="Arduino" model="MEGA2560" serial="5573132313635190E1B1"/>
+    <equipment alias="Arduino-XPE505C" manufacturer="Arduino" model="MEGA2560" serial="6E 75 6E 6B 77 6F 00 10 12"/>
+    <equipment alias="Arduino-AT106" manufacturer="Arduino" model="MEGA2560" serial="6E 75 6E 6B 77 6F 00 0C 0B"/>
 
     <!-- Specify Vaisala ambient monitoring equipment available for weighings. -->
     <equipment alias="AX10005-Vaisala-K1510011" manufacturer="Vaisala" model="PTU303" serial="K1510011"/>
