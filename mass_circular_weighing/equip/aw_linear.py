@@ -75,13 +75,18 @@ class AWBalLinear(AWBalCarousel):
             raise ValueError("Error at Arduino: {}".format(reply))
 
     def check_serial(self):
-        import serial.tools.list_ports
+        # XPE505C Arduino serial number is 95730333238351F0A011
+        # XPE505C board bytearray given by ArduinoID is a hex: 6E 75 6E 6B 77 6F 00 10 12
+        # AT106 Arduino serial number is 5573132313635190E1B1
+        # AT106 board bytearray given by ArduinoID is a hex: 6E 75 6E 6B 77 6F 00 0C 0B
+        ba = self.query_arduino("ArduinoID")
 
-        for pinfo in serial.tools.list_ports.comports():
-            if pinfo.serial_number == self.handler.serial:
-                print(pinfo.device)
-                return serial.Serial(pinfo.device)
-        raise IOError("Could not find an Arduino - is it plugged in?")
+        if not ba == self.handler.serial:
+            log.error("Arduino serial mismatch: expected " + str(self.handler.serial) + " but received " + str(ba))
+            # prints error if false
+            return False
+
+        return True
 
     def identify_handler(self):
         """Initialises and identifies the weight changer Arduino
@@ -94,11 +99,10 @@ class AWBalLinear(AWBalCarousel):
         log.info("Connecting to Arduino.........")
         self.wait_for_elapse(20)  # need to allow time for the Arduino to initialise
         log.debug(self.query_arduino("START"))
-        # sleep(1)
-        # print(self.arduino.read())
-        # sleep(1)
-        # print("handler", self.handler.serial)
-        # print(self.arduino.serial)
+
+        # check serial number is correct
+        if not self.check_serial():
+            return False
 
         status = self.query_arduino("STATUS")
 
@@ -107,7 +111,6 @@ class AWBalLinear(AWBalCarousel):
         else:
             return self.parse_reply(status)
         # if status BAD, set self._want_abort = True (see parent Balance class)
-        # TODO: check serial number is correct
 
     def place_weight(self, mass, pos):
         """Allow a mass to be placed onto the carrier in position pos using the loading height.
