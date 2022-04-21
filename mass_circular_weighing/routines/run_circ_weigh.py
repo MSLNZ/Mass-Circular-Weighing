@@ -288,6 +288,7 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
     max_stdev_circweigh = weighdata.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)')
 
     analysis_meta = {
+        'Program Version': __version__,
         'Analysis Timestamp': datetime.now().strftime('%d-%m-%Y %H:%M'),
         'Residual std devs': str(weighing.stdev),
         'Selected drift': drift,
