@@ -42,7 +42,8 @@ def do_new_weighing(config, bal_alias, nominal_mass, scheme_entry, positions=Non
 
     # collect metadata
     metadata = {
-        'Client': cfg.client, 'Balance': bal_alias, 'Unit': balance.unit, 'Nominal mass (g)': nominal_mass,
+        'Client': cfg.client, 'Balance': bal_alias, 'Bal serial no.': balance.record.serial,
+        'Unit': balance.unit, 'Nominal mass (g)': nominal_mass,
     }
     for key, value in ac.items():
         metadata[key] = value

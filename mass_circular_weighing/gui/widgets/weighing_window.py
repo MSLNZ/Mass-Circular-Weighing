@@ -333,7 +333,8 @@ class WeighingWindow(QtWidgets.QWidget):
         ac = self.cfg.acceptance_criteria(self.se_row_data['bal_alias'], float(self.se_row_data['nominal']))
 
         metadata = {
-            'Client': self.cfg.client, 'Balance': self.se_row_data['bal_alias'],
+            'Client': self.cfg.client,
+            'Balance': self.se_row_data['bal_alias'], 'Bal serial no.': self.bal.record.serial,
             'Unit': self.bal.unit, 'Nominal mass (g)': float(self.se_row_data['nominal']),
         }
         for key, value in ac.items():
