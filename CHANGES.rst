@@ -2,15 +2,20 @@
 Release Notes
 =============
 
-Version 1.0.5 (in development)
-==============================
+Version 1.0.6.dev0 (in development)
+===================================
 
 In development.
+
+Version 1.0.5 (22/04/2022)
+==========================
 
 * Removed addition of 'Weighing Scheme' line in summary file, so that the summary file can be used in place of the
   admin file
 * Added test case from TP MSLT.M.001.008 appendices C and D
 * Updated docs
+* Added balance serial number to measurement metadata, and program version number to analysis metadata
+* Added check_serial method to identify_handler for Arduinos, using ArduinoID
 
 Version 1.0.4 (01/02/2022)
 ==========================
