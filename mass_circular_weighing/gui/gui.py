@@ -93,7 +93,7 @@ class MCWGui(QtWidgets.QWidget):
         nominal = self.schemetable.cellWidget(row, 1).text()
         url = os.path.join(self.housekeeping.cfg.folder, self.housekeeping.cfg.client+'_'+nominal+'.json')
         if not os.path.isfile(url):
-            return None
+            self.schemetable.update_status(row, "0")
 
         scheme_entry = self.schemetable.cellWidget(row, 0).text()
         root = read(url)
