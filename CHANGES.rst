@@ -2,10 +2,16 @@
 Release Notes
 =============
 
-Version 1.0.6.dev0 (in development)
+Version 1.0.7.dev0 (in development)
 ===================================
 
-In development.
+In development
+
+Version 1.0.6 (11/05/2022)
+==========================
+
+* Updates status of scheme entry good runs to 0 if no file is available (but there was data previously).
+* Fixed bugs from previous change to allow summary file to be used in place of the admin file
 
 Version 1.0.5 (22/04/2022)
 ==========================
