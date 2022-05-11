@@ -37,8 +37,12 @@ class ExcelSummaryWorkbook(object):
             log.error(f"Admin worksheet does not exist in {cfg.path}! Please confirm settings before continuing.")
         if "Scheme" not in self.wb.sheetnames:
             log.error(f'Scheme worksheet does not exist in {cfg.path}! Please save scheme before continuing.')
+        for sh in self.wb.sheetnames:
+            if sh not in ["Admin", "Scheme"]:  # e.g. if the Summary file is used in place of the Admin file
+                shref = self.wb.get_sheet_by_name(sh)  # get the sheet reference
+                self.wb.remove_sheet(shref)  # delete the sheet
 
-        self.first_scheme_entry_row = 3
+        self.first_scheme_entry_row = 2
         self.collate_ambient = {'T' + IN_DEGREES_C: [], 'RH (%)': []}
 
     def format_scheme_file(self):
