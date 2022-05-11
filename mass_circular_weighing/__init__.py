@@ -2,7 +2,7 @@ from .log import log
 
 __author__ = 'Measurement Standards Laboratory of New Zealand'
 __copyright__ = '\xa9 2022, ' + __author__
-__version__ = '1.0.7.dev0'
+__version__ = '1.0.7'
 
 from .gui.gui import show_gui
 from .utils.poll_omega_logger import poll_omega_logger
