@@ -2,7 +2,7 @@
 Release Notes
 =============
 
-Version 1.1.0.dev0 (in development)
+Version 1.0.8.dev0 (in development)
 ===================================
 
 In development
