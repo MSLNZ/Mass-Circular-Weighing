@@ -2,10 +2,15 @@
 Release Notes
 =============
 
-Version 1.0.7.dev0 (in development)
+Version 1.1.0.dev0 (in development)
 ===================================
 
 In development
+
+Version 1.0.7 (11/05/2022)
+==========================
+
+* Fixed another bug in update status
 
 Version 1.0.6 (11/05/2022)
 ==========================

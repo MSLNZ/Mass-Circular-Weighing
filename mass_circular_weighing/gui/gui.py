@@ -92,15 +92,13 @@ class MCWGui(QtWidgets.QWidget):
     def check_good_runs_in_file(self, row):
         nominal = self.schemetable.cellWidget(row, 1).text()
         url = os.path.join(self.housekeeping.cfg.folder, self.housekeeping.cfg.client+'_'+nominal+'.json')
-        if not os.path.isfile(url):
+        if os.path.isfile(url):
+            scheme_entry = self.schemetable.cellWidget(row, 0).text()
+            root = read(url)
+            good_runs, run_1_no = check_existing_runs(root, scheme_entry, display_message=True)
+            self.schemetable.update_status(row, str(good_runs)+' from '+str(run_1_no-1))
+        else:
             self.schemetable.update_status(row, "0")
-
-        scheme_entry = self.schemetable.cellWidget(row, 0).text()
-        root = read(url)
-
-        good_runs, run_1_no = check_existing_runs(root, scheme_entry, display_message=True)
-
-        self.schemetable.update_status(row, str(good_runs)+' from '+str(run_1_no-1))
 
     def check_good_run_status(self, ):
         for row in range(self.schemetable.rowCount()):
