@@ -181,10 +181,9 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                 weighdata[cycle, i, :] = [time, reading]
                 if reading is not None:
                     try:
-                        root.save(file=url, mode='w', ensure_ascii=False)
-                    except OSError:
-                        root.save(file=local_backup_file, mode='w', ensure_ascii=False)
-                        log.warning('Data saved to local backup at '+local_backup_file)
+                        root.save(file=url, mode='w',  encoding='utf-8', ensure_ascii=False)
+                    except FileNotFoundError:
+                        save_to_local_backup(root, local_backup_folder, local_backup_file)
                 bal.unload_bal(mass, positions[i])
         break
 
@@ -196,11 +195,10 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         metadata['Weighing complete'] = True
         weighdata.add_metadata(**metadata)
         try:
-            root.save(file=url, mode='w', ensure_ascii=False)
-        except:
+            root.save(file=url, mode='w', encoding='utf-8', ensure_ascii=False)
+        except FileNotFoundError:
             log.debug('weighdata:\n' + str(weighdata[:, :, :]))
-            root.save(file=local_backup_file, mode='w', ensure_ascii=False)
-            log.warning('Data saved to local backup: ' + local_backup_file)
+            save_to_local_backup(root, local_backup_folder, local_backup_file)
 
         return root
 
@@ -208,12 +206,20 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     if reading:
         weighdata.add_metadata(**metadata)
         try:
-            root.save(file=url, mode='w', ensure_ascii=False)
-        except OSError:
-            root.save(file=local_backup_file, mode='w', ensure_ascii=False)
-            log.warning('Data saved to local backup file: ' + local_backup_file)
+            root.save(file=url, mode='w', encoding='utf-8', ensure_ascii=False)
+        except FileNotFoundError:
+            log.debug('weighdata:\n' + str(weighdata[:, :, :]))
+            save_to_local_backup(root, local_backup_folder, local_backup_file)
 
     return None
+
+
+def save_to_local_backup(root, local_backup_folder, local_backup_file):
+    """Saves to local backup folder in case of internet outage"""
+    if not os.path.exists(local_backup_folder):
+        os.makedirs(local_backup_folder)
+    root.save(file=local_backup_file, mode='w', encoding='utf-8', ensure_ascii=False)
+    log.warning('Data saved to local backup file: ' + local_backup_file)
 
 
 def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, EXCL=3, local_backup_folder=local_backup, **metadata):
