@@ -121,13 +121,19 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     -------
     msl.io root object if weighing was completed, False if weighing was not started, or None if weighing was aborted.
     """
-    local_backup_file = os.path.join(local_backup_folder, url.split('\\')[-1])
-
     metadata['Program Version'] = __version__
-    metadata['Mmt Timestamp'] = datetime.now().strftime('%d-%m-%Y %H:%M')
+    timestamp = datetime.now()
+    metadata['Mmt Timestamp'] = timestamp.strftime('%d-%m-%Y %H:%M')
     metadata['Time unit'] = 'min'
     metadata['Ambient monitoring'] = bal.ambient_details
     metadata['Weighing complete'] = False
+
+    local_folder = os.path.join(local_backup_folder, os.path.split(os.path.dirname(url))[-1])
+    # ensure a unique filename in case of intermittent internet
+    local_file = os.path.join(
+        local_folder,
+        os.path.basename(url).strip('.json') + f'_{run_id}_{timestamp.strftime("%Y%m%d_%H%M")}.json'
+    )
 
     weighing = CircWeigh(se)
     # here we assume that balance initialisation has been completed successfully
@@ -180,10 +186,9 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                 times.append(time)
                 weighdata[cycle, i, :] = [time, reading]
                 if reading is not None:
-                    try:
-                        root.save(file=url, mode='w',  encoding='utf-8', ensure_ascii=False)
-                    except FileNotFoundError:
-                        save_to_local_backup(root, local_backup_folder, local_backup_file)
+                    network_ok = save_data(root, url, local_folder, local_file)
+                    if not network_ok:
+                        metadata['Network issues'] = True
                 bal.unload_bal(mass, positions[i])
         break
 
@@ -194,32 +199,34 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
         metadata['Weighing complete'] = True
         weighdata.add_metadata(**metadata)
-        try:
-            root.save(file=url, mode='w', encoding='utf-8', ensure_ascii=False)
-        except FileNotFoundError:
+        ok = save_data(root, url, local_folder, local_file)
+        if not ok:
             log.debug('weighdata:\n' + str(weighdata[:, :, :]))
-            save_to_local_backup(root, local_backup_folder, local_backup_file)
 
         return root
 
     log.info('Circular weighing sequence aborted')
     if reading:
         weighdata.add_metadata(**metadata)
-        try:
-            root.save(file=url, mode='w', encoding='utf-8', ensure_ascii=False)
-        except FileNotFoundError:
+        ok = save_data(root, url, local_folder, local_file)
+        if not ok:
             log.debug('weighdata:\n' + str(weighdata[:, :, :]))
-            save_to_local_backup(root, local_backup_folder, local_backup_file)
 
     return None
 
 
-def save_to_local_backup(root, local_backup_folder, local_backup_file):
-    """Saves to local backup folder in case of internet outage"""
-    if not os.path.exists(local_backup_folder):
-        os.makedirs(local_backup_folder)
-    root.save(file=local_backup_file, mode='w', encoding='utf-8', ensure_ascii=False)
-    log.warning('Data saved to local backup file: ' + local_backup_file)
+def save_data(root, url, local_folder, local_file):
+    """Saves data to local drive and attempts to also save to network drive"""
+    if not os.path.exists(local_folder):
+        os.makedirs(local_folder)
+    root.save(file=local_file, mode='w', encoding='utf-8', ensure_ascii=False)
+    try:
+        root.save(file=url, mode='w', encoding='utf-8', ensure_ascii=False)
+        return True
+    except FileNotFoundError:
+        log.warning(f'Data unable to be saved to {url}. Please check network connection.')
+        log.info(f"Data saved to {local_file}")
+        return False
 
 
 def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, EXCL=3, local_backup_folder=local_backup, **metadata):

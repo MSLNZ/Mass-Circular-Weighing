@@ -327,9 +327,14 @@ class WeighingWindow(QtWidgets.QWidget):
             self.logger.save(log_save_path)
         except FileNotFoundError:
             # Saves to local backup folder in case of internet outage"""
-            if not os.path.exists(local_backup):
-                os.makedirs(local_backup)
-            log_save_path = os.path.join(local_backup, logfile)
+            local_folder = os.path.join(local_backup, os.path.split(os.path.dirname(log_save_path))[-1])
+            # ensure a unique filename in case of intermittent internet
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            log_save_path = os.path.join(local_folder,
+                                      os.path.basename(log_save_path).strip('.txt') + f'_{timestamp}.txt')
+            if not os.path.exists(local_folder):
+                os.makedirs(local_folder)
             self.logger.save(log_save_path)
 
         print(f"Log saved to {log_save_path}")
