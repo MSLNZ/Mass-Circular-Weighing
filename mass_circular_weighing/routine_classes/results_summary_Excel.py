@@ -275,6 +275,9 @@ class ExcelSummaryWorkbook(object):
                         cell_name = col + str(i+1) + ','  # enumerate starts from 0, rows from 1
                         formula_ave += cell_name
                         formula_stdev += cell_name
+                if formula_ave == "=AVERAGE(":
+                    log.warning(f"No data selected for {se}")
+                    break
                 formula_ave = formula_ave.strip(',') + ")"
                 formula_stdev = formula_stdev.strip(',') + ")"
                 ave_row.append(formula_ave)
