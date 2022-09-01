@@ -158,7 +158,7 @@ class WeighingWindow(QtWidgets.QWidget):
         self.initialise_controls.hide()
         self.start_panel.hide()
 
-        self.resize(self.minimumSizeHint())
+        self.showMaximized()
 
     def make_labels(self, se_row_data, cfg):
         self.se_row_data = se_row_data
