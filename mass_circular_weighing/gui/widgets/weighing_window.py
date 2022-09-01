@@ -11,7 +11,7 @@ from msl.qt import QtWidgets, QtGui, Signal, Button, Logger
 
 from ... import __version__
 from ...log import log
-from ...constants import MAX_BAD_RUNS, FONTSIZE
+from ...constants import MAX_BAD_RUNS, FONTSIZE, local_backup
 
 from ...gui.widgets import label
 from ...gui.widgets.wait_until_time import WaitUntilTimeDisplay
@@ -323,7 +323,15 @@ class WeighingWindow(QtWidgets.QWidget):
         print("Connection closed")
         logfile = self.cfg.client + '_' + self.se_row_data['nominal'] + '_log.txt'
         log_save_path = os.path.join(self.cfg.folder, logfile)
-        self.logger.save(log_save_path)
+        try:
+            self.logger.save(log_save_path)
+        except FileNotFoundError:
+            # Saves to local backup folder in case of internet outage"""
+            if not os.path.exists(local_backup):
+                os.makedirs(local_backup)
+            log_save_path = os.path.join(local_backup, logfile)
+            self.logger.save(log_save_path)
+
         print(f"Log saved to {log_save_path}")
 
     def process(self):
