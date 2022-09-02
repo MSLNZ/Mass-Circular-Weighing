@@ -128,13 +128,6 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     metadata['Ambient monitoring'] = bal.ambient_details
     metadata['Weighing complete'] = False
 
-    local_folder = os.path.join(local_backup_folder, os.path.split(os.path.dirname(url))[-1])
-    # ensure a unique filename in case of intermittent internet
-    local_file = os.path.join(
-        local_folder,
-        os.path.basename(url).strip('.json') + f'_{run_id}_{timestamp.strftime("%Y%m%d_%H%M")}.json'
-    )
-
     weighing = CircWeigh(se)
     # here we assume that balance initialisation has been completed successfully
     positions = bal.positions
@@ -186,7 +179,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
                 times.append(time)
                 weighdata[cycle, i, :] = [time, reading]
                 if reading is not None:
-                    network_ok = save_data(root, url, local_folder, local_file)
+                    network_ok = save_data(root, url, local_backup_folder, run_id, timestamp)
                     if not network_ok:
                         metadata['Network issues'] = True
                 bal.unload_bal(mass, positions[i])
@@ -199,7 +192,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
         metadata['Weighing complete'] = True
         weighdata.add_metadata(**metadata)
-        ok = save_data(root, url, local_folder, local_file)
+        ok = save_data(root, url, local_backup_folder, run_id, timestamp)
         if not ok:
             log.debug('weighdata:\n' + str(weighdata[:, :, :]))
 
@@ -208,15 +201,21 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     log.info('Circular weighing sequence aborted')
     if reading:
         weighdata.add_metadata(**metadata)
-        ok = save_data(root, url, local_folder, local_file)
+        ok = save_data(root, url, local_backup_folder, run_id, timestamp)
         if not ok:
             log.debug('weighdata:\n' + str(weighdata[:, :, :]))
 
     return None
 
 
-def save_data(root, url, local_folder, local_file):
+def save_data(root, url, local_backup_folder, run_id, timestamp):
     """Saves data to local drive and attempts to also save to network drive"""
+    local_folder = os.path.join(local_backup_folder, os.path.split(os.path.dirname(url))[-1])
+    # ensure a unique filename in case of intermittent internet
+    local_file = os.path.join(
+        local_folder,
+        os.path.basename(url).strip('.json') + f'_{run_id}_{timestamp.strftime("%Y%m%d_%H%M")}.json'
+    )
     if not os.path.exists(local_folder):
         os.makedirs(local_folder)
     root.save(file=local_file, mode='w', encoding='utf-8', ensure_ascii=False)
@@ -263,7 +262,7 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
     if not weighdata.metadata.get('Weighing complete'):
         return None
 
-    log.info('CIRCULAR WEIGHING ANALYSIS for scheme entry '+ se + ' ' + run_id)
+    log.info(f'CIRCULAR WEIGHING ANALYSIS for scheme entry {se} {run_id}')
 
     weighing = CircWeigh(se)
     if timed:
@@ -331,12 +330,8 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
 
     weighanalysis.add_metadata(**analysis_meta)
 
-    try:
-        root.save(file=url, mode='w', encoding='utf-8', ensure_ascii=False)
-    except OSError:
-        local_backup_file = os.path.join(local_backup_folder, url.split('\\')[-1])
-        root.save(file=local_backup_file, mode='w', ensure_ascii=False)
-        log.warning('Data saved to local backup file: ' + local_backup_file)
+    timestamp = datetime.strptime(weighdata.metadata.get('Mmt Timestamp'), '%d-%m-%Y %H:%M')
+    save_data(root, url, local_backup_folder, run_id, timestamp)  # save to same file on C: drive as the weighing data
 
     log.info('Circular weighing analysis for '+se+', '+run_id+' complete\n')
 
