@@ -145,7 +145,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
              '\nWeight groups are positioned as follows:' +
              '\n' + positionstr.strip('\n'))
 
-    ambient_pre = check_ambient_pre(bal.ambient_instance, bal.ambient_details)
+    ambient_pre = check_ambient_pre(bal.ambient_instance, bal.ambient_details, bal.mode)
     if not ambient_pre:
         log.info('Measurement not started due to unsuitable ambient conditions')
         return False
@@ -186,7 +186,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         break
 
     while not bal.want_abort:
-        ambient_post = check_ambient_post(ambient_pre, bal.ambient_instance, bal.ambient_details)
+        ambient_post = check_ambient_post(ambient_pre, bal.ambient_instance, bal.ambient_details, bal.mode)
         for key, value in ambient_post.items():
             metadata[key] = value
 
@@ -223,7 +223,7 @@ def save_data(root, url, local_backup_folder, run_id, timestamp):
         root.save(file=url, mode='w', encoding='utf-8', ensure_ascii=False)
         return True
     except FileNotFoundError:
-        log.warning(f'Data unable to be saved to {url}. Please check network connection.')
+        log.warning(f'Unable to save to {url}. Please check network connection.')
         log.info(f"Data saved to {local_file}")
         return False
 
@@ -325,8 +325,11 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
 
     flag = weighdata.metadata.get('Ambient OK?')
     if not flag:
-        log.warning('Analysis not accepted due to ambient conditions during weighing')
-        analysis_meta['Acceptance met?'] = False
+        if flag is False:
+            log.warning('Analysis not accepted due to unsuitable ambient conditions during weighing')
+            analysis_meta['Acceptance met?'] = False
+        else:  # e.g. flag is None
+            log.warning('Ambient conditions unavailable during weighing')
 
     weighanalysis.add_metadata(**analysis_meta)
 

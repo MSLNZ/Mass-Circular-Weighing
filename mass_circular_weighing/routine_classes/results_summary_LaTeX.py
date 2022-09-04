@@ -105,7 +105,7 @@ class LaTexDoc(object):
 
     def init_report(self, job, client, operator, folder):
         self.make_title(job + " for " + client)
-        self.fp.write(f"Operator: {operator}\n")
+        self.fp.write(f"Operator: {operator} \\\\ \n")
         self.fp.write("Data files saved in \\url{" + folder + '} \n')
 
     def make_table_wts(self, client_wt_IDs, check_wt_IDs, check_set_file_path, std_wt_IDs, std_set_file_path):
@@ -228,17 +228,32 @@ class LaTexDoc(object):
     def make_table_run_meta(self, cw_run_meta, bal_model):
         """Makes table of ambient and other metadata from circular weighing run"""
 
-        self.fp.write(
-            '\\begin{tabular}{llllllll}\n'
-            ' Time:  & '+ cw_run_meta.get("Mmt Timestamp").split()[1] + '&'
-            ' Date:   & '+ cw_run_meta.get("Mmt Timestamp").split()[0]+ '&'
-            ' Balance  & '+ bal_model + '&'
-            ' Unit: & ' + cw_run_meta.get("Unit") + '\\\\ \n'
-            ' Temp (°C): & ' + cw_run_meta.get("T"+IN_DEGREES_C) + '&'
-            ' RH (\\%): & ' + cw_run_meta.get("RH (%)") +  '&' 
-            " Ambient OK? & " + str(cw_run_meta.get("Ambient OK?")) + '\\\\ \n'     
-            '\\end{tabular} \n'
-        )
+        try:
+            self.fp.write(
+                '\\begin{tabular}{llllllll}\n'
+                ' Time:  & '+ cw_run_meta.get("Mmt Timestamp").split()[1] + '&'
+                ' Date:   & '+ cw_run_meta.get("Mmt Timestamp").split()[0]+ '&'
+                ' Balance  & '+ bal_model + '&'
+                ' Unit: & ' + cw_run_meta.get("Unit") + '\\\\ \n'
+                ' Temp (°C): & ' + cw_run_meta.get("T"+IN_DEGREES_C) + '&'
+                ' RH (\\%): & ' + cw_run_meta.get("RH (%)") + '&' 
+                " Ambient OK? & " + str(cw_run_meta.get("Ambient OK?")) + '\\\\ \n'     
+                '\\end{tabular} \n'
+            )
+        except TypeError:  # e.g if ambient condition data is missing
+            self.fp.write(
+                '\\begin{tabular}{llllllll}\n'
+                ' Time:  & '+ cw_run_meta.get("Mmt Timestamp").split()[1] + '&'
+                ' Date:   & '+ cw_run_meta.get("Mmt Timestamp").split()[0]+ '&'
+                ' Balance  & '+ bal_model + '&'
+                ' Unit: & ' + cw_run_meta.get("Unit") + '\\\\ \n'
+                ' Temp (°C): & ' + "None available" + '&'
+                ' RH (\\%): & ' + "None available" + '&' 
+                " Ambient OK? & " + "None available" + '\\\\ \n'     
+                '\\end{tabular} \n'
+            )
+
+
 
     def make_table_diffs_meta(self, cw_anal_meta):
         '''Makes table of metadata from circular weighing analysis'''
@@ -418,12 +433,15 @@ class LaTexDoc(object):
                     if (str(float(nom)), se, dname[2]) in incl_datasets:
                         self.make_heading3(run_id.replace('_', ' '))
 
-                        temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
-                        for t in temps:
-                            self.collate_ambient['T' + IN_DEGREES_C].append(float(t))
-                        rhs = weighdata.metadata.get("RH (%)").split(" to ")
-                        for rh in rhs:
-                            self.collate_ambient['RH (%)'].append(float(rh))
+                        try:
+                            temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
+                            for t in temps:
+                                self.collate_ambient['T' + IN_DEGREES_C].append(float(t))
+                            rhs = weighdata.metadata.get("RH (%)").split(" to ")
+                            for rh in rhs:
+                                self.collate_ambient['RH (%)'].append(float(rh))
+                        except AttributeError:
+                            log.warning(f"Missing ambient conditions for {se} {run_id}")
 
                     else:
                         self.make_heading3(run_id.replace('_', ' ') + " (EXCLUDED)")

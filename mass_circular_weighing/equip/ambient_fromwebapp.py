@@ -113,9 +113,7 @@ def get_t_rh_during(ithx_name, sensor="", start=None, end=None):
     Returns
     -------
     :class:`numpy.ndarray` or :data:`None`
-        The temperature values
-    :class:`numpy.ndarray` or :data:`None`
-        The humidity values
+        The temperature values and the humidity values
     """
     try:
         json = get('/fetch',

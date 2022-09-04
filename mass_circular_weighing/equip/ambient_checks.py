@@ -10,7 +10,7 @@ pt = PromptThread()
 from ..equip import get_t_rh_now, get_t_rh_during
 
 
-def check_ambient_pre(ambient_instance, ambient_details):
+def check_ambient_pre(ambient_instance, ambient_details, mode):
     """Check ambient conditions meet quality criteria (in config.xml file) for commencing weighing
 
     Parameters
@@ -18,6 +18,8 @@ def check_ambient_pre(ambient_instance, ambient_details):
     ambient_instance : str "OMEGA" or Vaisala instance
     ambient_details : :class:`dict`
         dict of ambient monitor alias and limits on ambient conditions
+    mode : str
+        mode for balance (manual or automatic loading) such as mde, mw, aw_l, aw_c etc
 
     Returns
     -------
@@ -31,7 +33,7 @@ def check_ambient_pre(ambient_instance, ambient_details):
             f"sensor {ambient_details['Sensor']}"
         )
         date_start, t_start, rh_start = None, None, None
-        for i in range(15):  # in case the connection gets aborted by the software in the host machine
+        for i in range(10):  # in case the connection gets aborted by the software in the host machine
             date_start, t_start, rh_start = get_t_rh_now(str(ambient_details['Alias']), sensor=ambient_details['Sensor'])
             if t_start is not None:
                 break
@@ -39,7 +41,17 @@ def check_ambient_pre(ambient_instance, ambient_details):
                 sleep(1)
 
         if t_start is None:
-            t_start, rh_start = prompt_t_rh(timepoint=None)
+            if mode[0] == 'm':  # manual weighing, so the operator is present
+                t_start, rh_start = prompt_t_rh(timepoint=None)
+
+            else:  # automatic weighing, so no operator is present
+                log.critical('Ambient conditions unavailable! Check connection to OMEGA logger')
+                ambient_pre = {
+                    'Start time': datetime.now().replace(microsecond=0).isoformat(sep=' '),
+                    'T_pre' + IN_DEGREES_C: np.nan,
+                    'RH_pre (%)': np.nan,
+                }
+                return ambient_pre
 
     elif ambient_details["Type"] == "Vaisala":
         log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
@@ -82,7 +94,7 @@ def check_ambient_pre(ambient_instance, ambient_details):
     return ambient_pre
 
 
-def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
+def check_ambient_post(ambient_pre, ambient_instance, ambient_details, mode):
     """Check ambient conditions met quality criteria during weighing
 
     Parameters
@@ -93,6 +105,8 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
     ambient_instance : str "OMEGA" or Vaisala instance
     ambient_details : :class:`dict`
         dict of ambient monitor alias and limits on ambient conditions
+    mode : str
+        mode for balance (manual or automatic loading) such as mde, mw, aw_l, aw_c etc
 
     Returns
     -------
@@ -100,22 +114,42 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
         dict of ambient conditions at end of weighing, and evaluation of overall conditions during measurement.
         dict has key-value pairs {'T_post'+IN_DEGREES_C: list of floats, 'RH_post (%)': list of floats, 'Ambient OK?': bool}
     """
+    ambient_post = {}
     if ambient_details["Type"] == "OMEGA":
         log.info(
             f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']} "
             f"sensor {ambient_details['Sensor']}"
         )
-        t_data, rh_data = get_t_rh_during(
-            str(ambient_details['Alias']),
-            sensor=ambient_details['Sensor'],
-            start=ambient_pre['Start time']
-        )
+        for i in range(10):  # in case the connection gets aborted by the software in the host machine
+            t_data, rh_data = get_t_rh_during(
+                str(ambient_details['Alias']),
+                sensor=ambient_details['Sensor'],
+                start=ambient_pre['Start time']
+            )
+            if t_data is not None:
+                break
+            else:
+                sleep(1)
         # t_data and rh_data returned as numpy ndarrays
 
         if t_data is None:
-            t_data, rh_data = prompt_t_rh(timepoint=datetime.now().replace(microsecond=0).isoformat(sep=' '))
-            t_data = [t_data]
-            rh_data = [rh_data]
+            if mode[0] == 'm':  # manual weighing, so the operator is present
+                t_data, rh_data = prompt_t_rh(timepoint=datetime.now().replace(microsecond=0).isoformat(sep=' '))
+                t_data = [t_data]
+                rh_data = [rh_data]
+
+            else:  # automatic weighing, so no operator is present
+                log.critical('Ambient conditions unavailable! Check connection to OMEGA logger')
+
+                ambient_post['T_pre' + IN_DEGREES_C] = ambient_pre['T_pre' + IN_DEGREES_C]
+                log.warning('Ambient temperature change during weighing not recorded')
+
+                ambient_post['RH_pre (%)'] = ambient_pre['RH_pre (%)']
+                log.warning('Ambient humidity change during weighing not recorded')
+
+                ambient_post = {'Ambient OK?': None}
+
+                return ambient_post
 
     elif ambient_details["Type"] == "Vaisala":
         log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
@@ -130,7 +164,6 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details):
         log.error("Unrecognised ambient monitoring sensor")
         return False
 
-    ambient_post = {}
     if not t_data[0]:
         ambient_post['T_pre'+IN_DEGREES_C] = ambient_pre['T_pre'+IN_DEGREES_C]
         log.warning('Ambient temperature change during weighing not recorded')
@@ -177,7 +210,6 @@ def prompt_t_rh(timepoint):
     tuple of two :class:`float`s
         The two values that were entered.
     """
-
     while True:
         try:
             if timepoint is None:
