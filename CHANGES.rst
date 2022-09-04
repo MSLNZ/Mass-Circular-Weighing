@@ -2,10 +2,21 @@
 Release Notes
 =============
 
-Version 1.0.8.dev0 (in development)
+Version 1.0.9.dev0 (in development)
 ===================================
 
 In development
+
+Version 1.0.8 (05/09/2022)
+==========================
+
+* Fixed bug in save to C: drive in case of internet outage (for both weighing data and log file): now the weighing data
+  is always saved to the C: drive and also uploaded to the I: drive if the network connection is available.
+  The log file is only saved to the C: drive if the I: drive is unavailable.
+* Added fix for incorrect mean and standard deviation formulae if no rows are selected in FMC
+* Changed Weighing Window to automatically maximise when weighing so that the prompt windows don't cover the other info
+* Allow automatic weighings to complete, even if the connection to the OMEGA logger fails, provided initial ambient
+  conditions are acceptable.
 
 Version 1.0.7 (11/05/2022)
 ==========================
