@@ -8,6 +8,7 @@ from ..gui.threads.prompt_thread import PromptThread
 pt = PromptThread()
 
 from ..equip import get_t_rh_now, get_t_rh_during
+from .ambient_fromdatabase import get_cal_temp_now, get_cal_temp_during, get_rh_p_now, get_rh_p_during
 
 
 def check_ambient_pre(ambient_instance, ambient_details, mode):
@@ -59,6 +60,11 @@ def check_ambient_pre(ambient_instance, ambient_details, mode):
         ambient_instance.open_comms()
         date_start, t_start, rh_start, p_start = ambient_instance.get_readings()
         ambient_instance.close_comms()
+
+    elif ambient_details["Type"] == "BuildDown":
+        log.info(f"COLLECTING AMBIENT CONDITIONS from databases for ambient_logger {ambient_details['Alias']}")
+        date_start, t_start = get_cal_temp_now()
+        rh_start, p_start = get_rh_p_now()
 
     else:
         log.error("Unrecognised ambient monitoring sensor")
@@ -160,6 +166,16 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details, mode):
         t_data = [t]
         rh_data = [rh]
 
+    elif ambient_details["Type"] == "BuildDown":
+        log.info(f"COLLECTING AMBIENT CONDITIONS from databases for ambient_logger {ambient_details['Alias']}")
+
+        # convert back to datetime object
+        start = datetime.fromisoformat(ambient_pre['Start time'])
+
+        t_data = get_cal_temp_during(start=start)
+        rh_data, p_data = get_rh_p_during(start=start)
+        ambient_post["Pressure (hPa)"] = f'{min(p_data)} to {max(p_data)}'
+
     else:
         log.error("Unrecognised ambient monitoring sensor")
         return False
@@ -193,11 +209,13 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details, mode):
 
     if ambient_details["Type"] == "Vaisala":
         try:
-            ambient_post["Pressure (hPa)"] = [ambient_pre["P_pre (hPa)"], p_post]
+            ambient_post["Pressure (hPa)"] = f'{ambient_pre["P_pre (hPa)"]} to {p_post}'
         except KeyError:
             ambient_post["Pressure (hPa)"] = p_post
 
-    log.info('Ambient conditions:\n' + str(ambient_post))
+    log.info('Ambient conditions during weighing:')
+    for key, value in ambient_post.items():
+        log.info(f"\t{key}: {value}")
 
     return ambient_post
 
