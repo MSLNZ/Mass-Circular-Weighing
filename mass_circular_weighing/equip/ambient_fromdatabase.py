@@ -9,7 +9,7 @@ import sqlite3
 from ..log import log
 from ..constants import database_dir
 m_database_path = os.path.join(database_dir, 'Temperature_milliK.sqlite3')
-v_database_path = os.path.join(database_dir, 'TRHP_Vaisala.sqlite3')
+v_database_path = os.path.join(database_dir, 'Mass_Lab_Vaisala_PTU300.sqlite3')
 
 
 def data(path, start=None, end=None, as_datetime=True, select='*'):
