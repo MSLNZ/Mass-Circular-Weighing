@@ -146,11 +146,12 @@ def apply_calibration_milliK(resistance):
     if not corr_R:
         return None
 
-    R0 = 100.017    # raw reading at 0 deg C, in Ohms
+    # Values for 89/S4 (updated 20/07/2023)
+    R0 = 99.983886    # raw reading at 0 deg C, in Ohms
     corr_R0 = corrected_resistance(R0)
 
-    A = 3.90991e-3  # per degree C
-    B = -5.891e-7   # per degree C squared
+    A = 0.00391778  # per degree C
+    B = -0.0000007329   # per degree C squared
 
     def solve_quadratic_equation(a, b, c):
         """Use quadratic formula to solve for T
