@@ -2,10 +2,22 @@
 Release Notes
 =============
 
-Version 1.0.9.dev0 (in development)
-===================================
+Version 1.0.10.dev0 (in development)
+====================================
 
 In development
+
+Version 1.0.9 (28/07/2023)
+==========================
+
+* Added excel export to test_hortres.py, where  the data from the exported Excel file is the example in the Technical
+  Procedure MSLT.M.001.009. Note that the admin file was renamed in order to enable this change.
+* Added direct read of chamber monitoring databases for BuildDown2023
+  (Humidity and Pressure now read from Mass_Lab_Vaisala_PTU300.sqlite3;
+  Temperature from Temperature_milliK.sqlite3 using calibration coefficients for 89/S4)
+* Updated timestamp reporting for circweigh and info about std mass set
+* Created do_repeatability functions and allowed single weight in main GUI for repeatability test
+* Updated to use 'released' msl packages
 
 Version 1.0.8 (05/09/2022)
 ==========================
