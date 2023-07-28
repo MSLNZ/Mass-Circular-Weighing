@@ -43,6 +43,7 @@ class MettlerToledo(Balance):
         while ok:
             try:
                 self.connection = self.record.connect()
+                self.connection.rstrip = True
 
                 if reset:
                     self.reset()
@@ -51,9 +52,9 @@ class MettlerToledo(Balance):
                     r = self._query("X")  # 'X' is not recognised by any of the Mettler balances we have, such that an
                     # error string ES is returned.  Sending an empty string to the AT106 repeats the last valid command.
                     log.debug(f'...received {r}...')
-                    if r.strip("\r") == "ES":
+                    if r == "ES":
                         break
-                assert str(self.record.serial) == str(self.get_serial().strip('\r')), \
+                assert str(self.record.serial) == str(self.get_serial()), \
                     "Serial mismatch: expected " + str(self.record.serial) + " but received " + str(self.get_serial())
                 # prints error if false
                 break
@@ -64,7 +65,7 @@ class MettlerToledo(Balance):
 
     def reset(self):
         log.info('Balance reset')
-        return self._query("@")[6: -2]
+        return self._query("@")[6: -1]
 
     def get_serial(self):
         """Gets serial number of balance
@@ -74,7 +75,7 @@ class MettlerToledo(Balance):
         str
             serial number
         """
-        return self._query("I4")[6: -2]
+        return self._query("I4")[6: -1]
 
     def zero_bal(self):
         """Zeroes balance: must ensure no mass on balance"""

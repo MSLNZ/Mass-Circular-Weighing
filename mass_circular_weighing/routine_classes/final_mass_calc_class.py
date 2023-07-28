@@ -439,7 +439,7 @@ def make_backup(folder, client, filesavepath, ):
             os.makedirs(back_up_folder)
         new_index = len(os.listdir(back_up_folder))  # counts number of files in backup folder
         new_file = os.path.join(back_up_folder, client + '_finalmasscalc_backup{}.json'.format(new_index))
-        existing_root.is_read_only = False
+        existing_root.read_only = False
         root = JSONWriter()
         root.set_root(existing_root)
         root.save(root=existing_root, file=new_file, mode='w', ensure_ascii=False)
