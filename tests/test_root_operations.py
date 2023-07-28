@@ -16,10 +16,10 @@ def check_remove(url=jsonfile_for_test, se="20KRA 10KMA+10KMB 20KRB 20KRC"):
             run_id = 'run_' + str(i)
 
             read_root = read(url, encoding='utf-8')
-            read_root.is_read_only = True
+            read_root.read_only = True
             root = JSONWriter()
             root.set_root(read_root)
-            root.is_read_only = True
+            root.read_only = True
 
             schemefolder = root['Circular Weighings'][se]
             analysis = schemefolder['analysis_' + run_id]  # so that it breaks out of the loop when no more run_id's
@@ -33,7 +33,7 @@ def check_remove(url=jsonfile_for_test, se="20KRA 10KMA+10KMB 20KRB 20KRC"):
             assert "Cannot modify" in str(err.value)
             assert repr(root) == "<JSONWriter 'NoneType' (5 groups, 10 datasets, 0 metadata)>"
 
-            root.is_read_only = False
+            root.read_only = False
             a = root.remove(se_name)
 
             if url.split("\\")[-1] == "BuildUp_50kg_20000.json":

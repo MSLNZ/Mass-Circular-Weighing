@@ -151,6 +151,10 @@ class Configuration(AdminDetails):
             ambient_details["Type"] = "Vaisala"
             ambient_details['Alias'] = ambient_logger
 
+        elif 'builddown' in ambient_logger.lower():
+            ambient_details["Type"] = "BuildDown"
+            ambient_details['Alias'] = ambient_logger
+
         elif 'sensor' in ambient_logger.lower():
             ambient_details["Type"] = "OMEGA"
             omega_details = ambient_logger.split(", sensor ")

@@ -13,8 +13,8 @@ gui = application()
 
 cfg = Configuration(admin_default)
 
-bal_alias = 'AX10005'
-# bal_alias = 'AX1006'
+# bal_alias = 'AX10005'
+bal_alias = 'AX1006'
 bal, mode = cfg.get_bal_instance(bal_alias)
 
 print(bal.unit)
@@ -26,10 +26,10 @@ bal.get_status()
 print("Handler in position {}, {} position".format(bal.hori_pos, bal.lift_pos))
 
 """Check Vaisala"""
-vai = bal.ambient_instance
-vai.open_comms()
-print(vai.get_readings())
-vai.close_comms()
+# vai = bal.ambient_instance
+# vai.open_comms()
+# print(vai.get_readings())
+# vai.close_comms()
 #
 # bal.move_to(1)
 # bal.lift_to('top')
@@ -65,5 +65,33 @@ vai.close_comms()
 # print(bal.move_time)
 # bal.time_move()
 # print(bal.move_time)
+
+
+def do_repeatability(num_loadings):
+    """Load the same mass a specified number of times. The mass must already be in position.
+
+    Parameters
+    ----------
+    num_loadings : number of times to lower mass and take reading
+
+    Returns
+    -------
+
+    """
+    masses = []
+    bal.lift_to('top')
+
+    for i in range(num_loadings):
+        bal.lift_to('weighing')
+        m = bal.get_mass_stable(str(i))
+        masses.append(m)
+        print(m)
+        bal.lift_to('top')
+
+    for m in masses:
+        print(m)
+
+    return masses
+
 
 bal.connection.disconnect()

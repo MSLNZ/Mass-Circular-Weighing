@@ -41,7 +41,7 @@ def check_for_existing_weighdata(folder, url, se):
             os.makedirs(back_up_folder)
         new_index = len(os.listdir(back_up_folder))  # counts number of files in backup folder
         new_file = os.path.join(back_up_folder, se + '_backup{}.json'.format(new_index))
-        existing_root.is_read_only = False
+        existing_root.read_only = False
         log.debug('Existing root is '+repr(existing_root))
         root = JSONWriter()
         root.set_root(existing_root)
@@ -123,7 +123,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     """
     metadata['Program Version'] = __version__
     timestamp = datetime.now()
-    metadata['Mmt Timestamp'] = timestamp.strftime('%d-%m-%Y %H:%M')
+    metadata['Mmt Timestamp'] = timestamp.strftime('%d-%m-%Y %H:%M:%S')
     metadata['Time unit'] = 'min'
     metadata['Ambient monitoring'] = bal.ambient_details
     metadata['Weighing complete'] = False
@@ -144,6 +144,8 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
              '\nNumber of cycles = '+ str(weighing.num_cycles) +
              '\nWeight groups are positioned as follows:' +
              '\n' + positionstr.strip('\n'))
+
+    log.info(f"Weighing starting at {metadata['Mmt Timestamp']}")
 
     ambient_pre = check_ambient_pre(bal.ambient_instance, bal.ambient_details, bal.mode)
     if not ambient_pre:
@@ -191,6 +193,11 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
             metadata[key] = value
 
         metadata['Weighing complete'] = True
+        end_time = datetime.now()
+        metadata['Mmt end time'] = end_time.strftime('%d-%m-%Y %H:%M:%S')
+        log.info(f"Weighing completed at {metadata['Mmt end time']}")
+        elapsed_duration(end_time - timestamp)  # reports weighing duration to log window
+
         weighdata.add_metadata(**metadata)
         ok = save_data(root, url, local_backup_folder, run_id, timestamp)
         if not ok:
@@ -214,7 +221,7 @@ def save_data(root, url, local_backup_folder, run_id, timestamp):
     # ensure a unique filename in case of intermittent internet
     local_file = os.path.join(
         local_folder,
-        os.path.basename(url).strip('.json') + f'_{run_id}_{timestamp.strftime("%Y%m%d_%H%M")}.json'
+        os.path.basename(url).strip('.json') + f'_{run_id}_{timestamp.strftime("%Y%m%d_%H%M%S")}.json'
     )
     if not os.path.exists(local_folder):
         os.makedirs(local_folder)
@@ -301,7 +308,7 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
 
     analysis_meta = {
         'Program Version': __version__,
-        'Analysis Timestamp': datetime.now().strftime('%d-%m-%Y %H:%M'),
+        'Analysis Timestamp': datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
         'Residual std devs': str(weighing.stdev),
         'Selected drift': drift,
         'Uses mmt times': timed,
@@ -333,7 +340,7 @@ def analyse_weighing(root, url, se, run_id, bal_mode, timed=False, drift=None, E
 
     weighanalysis.add_metadata(**analysis_meta)
 
-    timestamp = datetime.strptime(weighdata.metadata.get('Mmt Timestamp'), '%d-%m-%Y %H:%M')
+    timestamp = datetime.strptime(weighdata.metadata.get('Mmt Timestamp'), '%d-%m-%Y %H:%M:%S')
     save_data(root, url, local_backup_folder, run_id, timestamp)  # save to same file on C: drive as the weighing data
 
     log.info('Circular weighing analysis for '+se+', '+run_id+' complete\n')
@@ -430,3 +437,13 @@ def check_existing_runs(root, scheme_entry, display_message=False):
     run_1_no = int(run_id.strip('run_'))
 
     return good_runs, run_1_no  # returns integers for each
+
+
+def elapsed_duration(duration):
+    duration_in_s = duration.total_seconds()
+    hours = int(divmod(duration_in_s, 3600)[0])  # Seconds in an hour = 3600
+    minutes = int(divmod(duration_in_s, 60)[0])  # Seconds in a minute = 60
+    seconds = int(divmod(duration_in_s, 60)[1])
+    log.info(f"(duration of {hours} hours, {minutes} minutes and {seconds} seconds)")
+
+    return hours, minutes, seconds
