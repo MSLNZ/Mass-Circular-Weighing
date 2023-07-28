@@ -124,6 +124,7 @@ class Housekeeping(QtWidgets.QWidget):
         log.info(f'Client: {self.cfg.client}')
         log.info(f'Client masses: {self.cfg.client_wt_IDs}')
         log.info(f'Standard mass set: {self.cfg.std_set}')
+        log.info(f'Standard masses: {self.cfg.all_stds}')
         log.info(f'Check mass set: {self.cfg.check_set}')
         log.info(f'Drift correction: {self.cfg.drift_text}')
         log.info(f'Use measurement times? {self.cfg.timed}')
