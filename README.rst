@@ -36,7 +36,7 @@ Other requirements
 ------------------
 
 To run the program, you will need to be able to access the *Balance Register* and the *Equipment Register*
-in G:\Shared drives\MSL - MAP\Equipment register.
+in I:/MSL/Private/Mass/Equipment Register.
 
 Documentation
 -------------
