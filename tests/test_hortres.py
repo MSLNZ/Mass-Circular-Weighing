@@ -1,3 +1,6 @@
+"""
+These tests use data from a calibration for Hort. Research in 2000
+"""
 import os
 import numpy as np
 import pytest
@@ -9,10 +12,11 @@ from mass_circular_weighing.constants import MU_STR
 
 from mass_circular_weighing.routine_classes.final_mass_calc_class import FinalMassCalc
 from mass_circular_weighing.gui.threads.masscalc_popup import filter_mass_set
+from mass_circular_weighing.routine_classes.results_summary_Excel import ExcelSummaryWorkbook
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-admin_for_test = os.path.join(ROOT_DIR, r'tests\samples\admin_TP_AppendixD.xlsx')
+admin_for_test = os.path.join(ROOT_DIR, r'tests\samples\Hort.Res._Admin.xlsx')
 input_data_file_for_test = os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc\LeastSquaresInputData_TPAppendixD.xlsx')
 
 # Create the table of input data
@@ -196,6 +200,19 @@ def test_save_to_json_file():
     assert "7 groups, 4 datasets" in repr(test_read)
 
 
+def test_save_to_excel():
+    cfg.folder = os.path.join(ROOT_DIR, r'tests\samples')
+    xl = ExcelSummaryWorkbook(cfg)
+    test_folder = os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc')
+    test_client = 'hortres'
+    test_file_path = os.path.join(test_folder, test_client + '_TPAppendixD.json')
+    fmc_root = read(test_file_path)
+    xl.add_mls(fmc_root)
+    test_folder = os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc')
+    test_client = 'hortres'
+    xl.save_workbook(test_folder, test_client + '_TPAppendixD.xlsx')
+
+
 if __name__ == '__main__':
     test_file_structure()
     test_filter_masses()
@@ -207,3 +224,4 @@ if __name__ == '__main__':
     test_make_summary_table()
     test_add_data_to_root()
     test_save_to_json_file()
+    test_save_to_excel()

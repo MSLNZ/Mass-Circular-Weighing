@@ -11,7 +11,7 @@ from msl.qt import QtWidgets, QtGui, Signal, Button, Logger
 
 from ... import __version__
 from ...log import log
-from ...constants import MAX_BAD_RUNS, FONTSIZE
+from ...constants import MAX_BAD_RUNS, FONTSIZE, local_backup
 
 from ...gui.widgets import label
 from ...gui.widgets.wait_until_time import WaitUntilTimeDisplay
@@ -158,7 +158,7 @@ class WeighingWindow(QtWidgets.QWidget):
         self.initialise_controls.hide()
         self.start_panel.hide()
 
-        self.resize(self.minimumSizeHint())
+        self.showMaximized()
 
     def make_labels(self, se_row_data, cfg):
         self.se_row_data = se_row_data
@@ -196,7 +196,7 @@ class WeighingWindow(QtWidgets.QWidget):
             self.resize(self.minimumSizeHint())
 
             # do a quick check on the ambient conditions
-            check_ambient_pre(self.bal.ambient_instance, self.bal.ambient_details)
+            check_ambient_pre(self.bal.ambient_instance, self.bal.ambient_details, 'mde')
             super().show()
 
     def reset_balance_comms(self):
@@ -288,6 +288,8 @@ class WeighingWindow(QtWidgets.QWidget):
         wt = WaitUntilTimeDisplay(message=f"Delayed start for weighing for {self.scheme_entry.text()}.", loop_delay=1000)
         wt.exec()  # rather than show; to make the pop-up blocking
         if wt.go:
+            # do another quick check on the ambient conditions in case the server has gone down in the meantime
+            check_ambient_pre(self.bal.ambient_instance, self.bal.ambient_details, 'mde')
             self.start_weighing()
 
     def check_for_existing(self):
@@ -323,7 +325,20 @@ class WeighingWindow(QtWidgets.QWidget):
         print("Connection closed")
         logfile = self.cfg.client + '_' + self.se_row_data['nominal'] + '_log.txt'
         log_save_path = os.path.join(self.cfg.folder, logfile)
-        self.logger.save(log_save_path)
+        try:
+            self.logger.save(log_save_path)
+        except FileNotFoundError:
+            # Saves to local backup folder in case of internet outage"""
+            local_folder = os.path.join(local_backup, os.path.split(os.path.dirname(log_save_path))[-1])
+            # ensure a unique filename in case of intermittent internet
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+            log_save_path = os.path.join(local_folder,
+                                      os.path.basename(log_save_path).strip('.txt') + f'_{timestamp}.txt')
+            if not os.path.exists(local_folder):
+                os.makedirs(local_folder)
+            self.logger.save(log_save_path)
+
         print(f"Log saved to {log_save_path}")
 
     def process(self):
@@ -367,6 +382,8 @@ class WeighingWindow(QtWidgets.QWidget):
                 winsound.Beep(740, 200)
                 winsound.Beep(659, 200)
                 winsound.Beep(587, 300)
+                # do another quick check on the ambient conditions in case the server has gone down in the meantime
+                check_ambient_pre(self.bal.ambient_instance, self.bal.ambient_details, 'mde')
                 return
             # get next run id
             run_id = 'run_' + str(round(self.se_row_data['first run no.']+run, 0))

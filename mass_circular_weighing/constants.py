@@ -18,16 +18,18 @@ IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 NBC = True                  #
 REL_UNC = 0.03              # relative uncertainty in ppm for no buoyancy correction: typically 0.03 or 0.1
 
-local_backup = r'C:\CircularWeighingData'
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 admin_default = os.path.join(ROOT_DIR, r'utils\default_admin.xlsx')
 config_default = os.path.join(ROOT_DIR, r'utils\default_config.xml')
+
+database_dir = r'C:\AX1006_TRHP'
 
 save_folder_default = r'G:\My Drive'
 
 i_drive_folder = r'I:\MSL\Private\Mass\Commercial Calibrations'
 year = date.today().strftime("%Y")
 commercial_folder = os.path.join(i_drive_folder, year)
+local_backup = os.path.join(r'C:\CircularWeighingData', year)
 mass_folder = r'I:\MSL\Private\Mass'
 mydrive = r'G:\My Drive'
 

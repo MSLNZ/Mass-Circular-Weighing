@@ -9,8 +9,10 @@ from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment
 
 from msl.io import read
+from ..gui.threads.prompt_thread import PromptThread
+pt = PromptThread()
 
-from ..constants import IN_DEGREES_C
+from ..constants import FONTSIZE, IN_DEGREES_C
 from ..log import log
 
 
@@ -161,8 +163,12 @@ class ExcelSummaryWorkbook(object):
                     weighdata = root.require_dataset(
                         root['Circular Weighings'][se].name + '/measurement_' + run_id)
 
-                    temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
-                    rhs = weighdata.metadata.get("RH (%)").split(" to ")
+                    try:
+                        temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
+                        rhs = weighdata.metadata.get("RH (%)").split(" to ")
+                    except AttributeError:
+                        temps = []
+                        rhs = []
 
                     if (str(float(nom)), se, dname[2]) in incl_datasets:
                         incl = 1
@@ -219,6 +225,9 @@ class ExcelSummaryWorkbook(object):
                         ]
                         sheet.append(header)
 
+                        all_temps = []
+                        all_rh = []
+
                         first_dataset = False
 
                     # add data for each run
@@ -237,12 +246,18 @@ class ExcelSummaryWorkbook(object):
                     data_list += [
                         drift,
                         res,
-                        str(weighdata.metadata.get("Ambient OK?")),
-                        min(temps),
-                        max(temps),
-                        min(rhs),
-                        max(rhs),
+                        str(weighdata.metadata.get("Ambient OK?"))
                     ]
+
+                    if temps:
+                        data_list += [
+                            min(temps),
+                            max(temps),
+                            min(rhs),
+                            max(rhs),
+                        ]
+                    else:
+                        data_list += ["", "", "", ""]
 
                     try:
                         p = weighdata.metadata.get("Pressure (hPa)").split(" to ")
@@ -255,6 +270,9 @@ class ExcelSummaryWorkbook(object):
                     data_list += [bal_model, weighdata.metadata.get("Unit")]
 
                     sheet.append(data_list)
+
+                    all_temps += temps
+                    all_rh += rhs
 
             sheet['A6'].font = Font(italic=True)
             sheet.column_dimensions["A"].width = 15
@@ -275,6 +293,9 @@ class ExcelSummaryWorkbook(object):
                         cell_name = col + str(i+1) + ','  # enumerate starts from 0, rows from 1
                         formula_ave += cell_name
                         formula_stdev += cell_name
+                if formula_ave == "=AVERAGE(":
+                    log.warning(f"No data selected for {se}")
+                    break
                 formula_ave = formula_ave.strip(',') + ")"
                 formula_stdev = formula_stdev.strip(',') + ")"
                 ave_row.append(formula_ave)
@@ -287,6 +308,28 @@ class ExcelSummaryWorkbook(object):
             sheet.append(stdev_row)
             for cell in sheet[sheet.max_row]:
                 cell.font = Font(italic=True)
+
+            sheet.append([])
+            if not all_temps:
+                message = '<html>Please enter any known temperature values during weighing<br>' \
+                          'for {}, separated by a space</html>'.format(se)
+                pt.show('text', message, font=FONTSIZE, title='Ambient Monitoring')
+                reply = pt.wait_for_prompt_reply()
+                try:
+                    temperatures = reply.split()
+                except AttributeError:
+                    temperatures = []
+                sheet.append(["Temperatures:"] + temperatures)
+            if not all_rh:
+                message = '<html>Please enter any known humidity values during weighing<br>' \
+                          'for {}, separated by a space</html>'.format(se)
+                pt.show('text', message, font=FONTSIZE, title='Ambient Monitoring')
+                reply = pt.wait_for_prompt_reply()
+                try:
+                    humidities = reply.split()
+                except AttributeError:
+                    humidities = []
+                sheet.append(["Humidities:"] + humidities)
 
     def add_all_cwdata(self, cfg, incl_datasets,):
         scheme = self.wb['Scheme']

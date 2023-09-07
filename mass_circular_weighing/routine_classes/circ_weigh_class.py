@@ -12,7 +12,7 @@ import numpy as np
 from ..log import log
 
 class CircWeigh(object):
-    _sequences = {2: 5, 3: 4, 4: 3, 5: 3, 6: 3, 7: 3}  # key: number of weight groups in weighing, value: number of cycles
+    _sequences = {1: 10, 2: 5, 3: 4, 4: 3, 5: 3, 6: 3, 7: 3}  # key: number of weight groups in weighing, value: number of cycles
     _driftorder = {'no drift': 0, 'linear drift': 1, 'quadratic drift': 2, 'cubic drift': 3}
     _orderdrift = {0: 'no drift', 1 : 'linear drift', 2 : 'quadratic drift', 3 : 'cubic drift'}
 
