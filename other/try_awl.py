@@ -26,11 +26,10 @@ print(bal.unit)
 print(bal.mode)
 print(bal.get_serial())
 
-# pos = 4
-# bal.move_to(pos)
-
-pos = 3
+pos = 2
 bal.move_to(pos)
+
+# sleep(3600)
 
 # bal.zero_bal()
 # sleep(3)
@@ -45,6 +44,8 @@ def do_repeatability_awl(n_loadings=11, stable_wait=40):
     stability = []
 
     # initial zero
+    pos = 2
+    bal.move_to(pos)
     bal.zero_bal()
     print(f'mass off, #0')
     z = bal._query("S")  #.get_mass_stable('mass off')
@@ -53,6 +54,8 @@ def do_repeatability_awl(n_loadings=11, stable_wait=40):
 
     for i in range(n_loadings):
         # weigh mass
+        pos = 3
+        bal.move_to(pos)
         bal.lift_to('weighing', wait=False)
         t0 = perf_counter_ns()
         print(f'mass on, #{i+1}')
@@ -68,7 +71,9 @@ def do_repeatability_awl(n_loadings=11, stable_wait=40):
         print(m, stability[-1])
 
         # get zero
-        bal.lift_to('top', wait=False)
+        pos = 2
+        bal.move_to(pos)
+        bal.lift_to('weighing', wait=False)
         t0 = perf_counter_ns()
         print(f'mass off, #{i+1}')
         sleep(stable_wait)
@@ -98,7 +103,7 @@ def do_repeatability_awl(n_loadings=11, stable_wait=40):
 
     print(df)
 
-    folder = r'I:\MSL\Private\Mass\Commercial Calibrations\2023\505C_test'  # folder of data
+    folder = r'I:\MSL\Private\Mass\Commercial Calibrations\2023\505C_test\repeatability circular weighing 3-2 500-0'  # folder of data
     filename = f'test_wait_{stable_wait}s_SI.csv'
     save_path = os.path.join(folder, filename)
     df.to_csv(save_path)
@@ -107,7 +112,7 @@ def do_repeatability_awl(n_loadings=11, stable_wait=40):
 
 
 ## Do repeatability test
-for wait in [30]: #, 40, 25, 35, 45]:  #[35, 80, 15, 90, 25, 75, 10, 65]:
+for wait in [35, 60, 45, 50, 70, 40, 55, 65]:  # [30, 40, 25, 35, 45, 20, 50, 15, 60, 30]:
     do_repeatability_awl(n_loadings=11, stable_wait=wait)  # extra loading to exercise the balance
 
 
