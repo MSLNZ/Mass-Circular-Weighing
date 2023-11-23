@@ -245,7 +245,10 @@ class AdminDetails(object):
                 if nom[-1].lower() == 'k':
                     all_stds['Nominal (g)'].append(int(nom[:-1])*1000)
                 else:
-                    print(nom)
+                    try:
+                        all_stds['Nominal (g)'].append(float(nom))
+                    except ValueError:
+                        log.warning(f"Nominal mass {nom} not included in mass set.")
             else:
                 all_stds['Nominal (g)'].append(nom)
             all_stds['Shape/Mark'].append(std_sheet[f'A{start_row + i}'].value)
