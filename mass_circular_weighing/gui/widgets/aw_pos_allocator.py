@@ -29,7 +29,7 @@ class AllocatorDialog(QtWidgets.QDialog):
         self.pos_to_centre = []
         self.centrings = 0
         self.cal_pos = 1
-        self.want_adjust = True
+        self.want_adjust = False
 
         self.pos_list = QtWidgets.QListWidget()
         if num_pos > 9:
