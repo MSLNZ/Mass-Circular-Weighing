@@ -2,6 +2,7 @@
 This class requires an .xlsx file in the correct template
 """
 import os
+import io
 import string
 
 from openpyxl import load_workbook
@@ -28,7 +29,8 @@ class AdminDetails(object):
         """
         self.path = path
 
-        self.wb = load_workbook(path, data_only=True)
+        with open(path, "rb") as f:         # so that the file remains available to be edited after being read
+            self.wb = load_workbook(f, data_only=True)
         log.info(f"Found Admin file at {self.path}")
 
         self.ds = self.wb["Admin"]  # note that this will raise an error if the sheet Admin doesn't exist
@@ -214,14 +216,15 @@ class AdminDetails(object):
             'Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)',
             'u_drift'
         """
-        massrefwb = load_workbook(self.massref_path, read_only=True, data_only=True)
+        with open(self.massref_path, "rb") as f:  # so that the file remains available to be edited after being read
+            massrefwb = load_workbook(io.BytesIO(f.read()), read_only=True, data_only=True)
 
-        self.all_stds = self.load_set_from_massref(massrefwb, sheet=self.std_set, set_ID="Standard")
+            self.all_stds = self.load_set_from_massref(massrefwb, sheet=self.std_set, set_ID="Standard")
 
-        if self.check_set is not None:
-            self.all_checks = self.load_set_from_massref(massrefwb, sheet=self.check_set, set_ID='Check')
-        else:
-            self.all_checks = None
+            if self.check_set is not None:
+                self.all_checks = self.load_set_from_massref(massrefwb, sheet=self.check_set, set_ID='Check')
+            else:
+                self.all_checks = None
 
     def load_set_from_massref(self, massrefwb, sheet, set_ID):
         std_sheet = massrefwb[sheet]
