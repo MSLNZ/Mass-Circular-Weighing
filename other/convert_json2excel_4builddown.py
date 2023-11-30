@@ -16,8 +16,8 @@ from mass_circular_weighing.constants import IN_DEGREES_C, DEGREE_SIGN
 from mass_circular_weighing.log import log
 
 
-folder = r'C:\Users\rebecca.hawke\Desktop\builddown testing'  # folder of data
-json_file = r'C:\Users\rebecca.hawke\Desktop\builddown testing\MassStds_1000.json'
+folder = r'I:\MSL\Private\Mass\Commercial Calibrations\2023\AX1006PostService'  # folder of data
+json_file = r'I:\MSL\Private\Mass\Commercial Calibrations\2023\AX1006PostService\MassStds_1000.json'
 
 jf = read(json_file)
 print(jf)
@@ -228,7 +228,7 @@ def add_weighing_dataset(se, cw_file, nom, cfg):
 
         sheet.append([])
 
-        wb.save(os.path.join(folder, "summary.xlsx"))
+        wb.save(os.path.join(folder, "_builddown_format.xlsx"))
 
 
 add_weighing_dataset(se, cw_file, nom, cfg)
