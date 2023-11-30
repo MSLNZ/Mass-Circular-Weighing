@@ -96,6 +96,7 @@ class AWBalLinear(AWBalCarousel):
         Bool to indicate ready status of weight changer
         """
         self.arduino = self.handler.connect()
+        self.arduino.rstrip = True
         log.info("Connecting to Arduino.........")
         self.wait_for_elapse(20)  # need to allow time for the Arduino to initialise
         log.debug(self.query_arduino("START"))
