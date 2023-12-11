@@ -36,6 +36,14 @@ def to_LST(jsonroot, save_folder, cfg=None):
         for weighdata in jsonroot.datasets():
             if 'measurement' in weighdata.name:
                 nom = weighdata.metadata.get("Nominal mass (g)")
+                # get dictionary of positions e.g.
+                # {
+                #           "Position 1": "1KP1",
+                #           "Position 2": "S",
+                #           "Position 3": "1KP2",
+                #           "Position 4": "1KTLT"
+                #         }
+                positions = weighdata.metadata.get("Weight group loading order")
                 if weighdata.metadata.get("Weighing complete"):
                     if weighdata.metadata.get("Unit") == "g":
                         to_mg = 1000
