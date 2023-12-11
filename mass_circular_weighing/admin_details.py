@@ -255,9 +255,14 @@ class AdminDetails(object):
             else:
                 all_stds['Nominal (g)'].append(nom)
             all_stds['Shape/Mark'].append(std_sheet[f'A{start_row + i}'].value)
-            wt_id = std_sheet[f'C{start_row + i}'].value
-            if wt_id is None:
-                wt_id = str(nom).upper() + all_stds['Set identifier']  # here we are forcing k --> K
+
+            # Create weight IDs from nominal, any identifiers like d, and the set identifier.
+            # Note here we are forcing k --> K
+            try:
+                wt_id = str(nom).upper() + std_sheet[f'C{start_row + i}'].value + all_stds['Set identifier']  # here we are forcing k --> K
+            except TypeError:
+                wt_id = str(nom).upper()  + all_stds['Set identifier']
+
             all_stds['Weight ID'].append(wt_id)
             mv = std_sheet[f'D{start_row + i}'].value
 
