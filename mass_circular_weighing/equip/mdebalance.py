@@ -198,7 +198,7 @@ class Balance(object):
         reading = 0
         while not self.want_abort:
             try:
-                self._pt.show('double', "Enter balance reading: ", font=FONTSIZE, decimals=self.dp,
+                self._pt.show('double', "Enter balance reading: ", font=FONTSIZE, decimals=int(self.dp),
                                    title='Circular Weighing')
                 reading = self._pt.wait_for_prompt_reply()
                 if not reading and not reading == 0:

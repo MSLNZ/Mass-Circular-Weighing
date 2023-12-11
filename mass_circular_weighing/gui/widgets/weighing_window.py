@@ -16,7 +16,8 @@ from ...constants import MAX_BAD_RUNS, FONTSIZE, local_backup
 from ...gui.widgets import label
 from ...gui.widgets.wait_until_time import WaitUntilTimeDisplay
 
-from ...routines import check_for_existing_weighdata, check_existing_runs, check_bal_initialised, do_circ_weighing, analyse_weighing
+from ...routines import check_for_existing_weighdata, check_existing_runs, check_bal_initialised
+from ...routines import do_circ_weighing, analyse_weighing
 from ...routine_classes import CircWeigh
 from ...equip import check_ambient_pre
 
