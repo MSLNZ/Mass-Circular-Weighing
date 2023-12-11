@@ -35,7 +35,7 @@ class Balance(object):
 
         self._positions = None
         self.cal_pos = 1
-        self.want_adjust = True
+        self.want_adjust = False
         self._is_adjusted = False
 
         self._pt = PromptThread()
@@ -227,7 +227,7 @@ class Balance(object):
 
         Parameters
         ----------
-        elapse_time : int
+        elapse_time : float
             time to wait in seconds
         start_time : float
             perf_counter value at start time.
