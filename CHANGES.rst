@@ -2,10 +2,17 @@
 Release Notes
 =============
 
-Version 1.0.10.dev0 (in development)
+Version 1.0.11.dev0 (in development)
 ====================================
 
 In development
+
+Version 1.0.10 (12/12/2023)
+===========================
+
+* Initial incorporation of AX107H
+* Do internal self calibration defaults to False
+* Fix to parsing of weight IDs from MassRef
 
 Version 1.0.9 (28/07/2023)
 ==========================
