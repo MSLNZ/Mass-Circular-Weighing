@@ -238,6 +238,7 @@ def get_cal_temp_during(start=None, end=None):
 
 def get_rh_p_now():
     """Query the Vaisala database file for the latest humidity and pressure values.
+    Note that these values are corrected before being saved to the database as of 12/12/2023
     If no data is available, the method returns a tuple of Nones and logs a warning.
 
     Returns
@@ -260,6 +261,7 @@ def get_rh_p_now():
 
 def get_rh_p_during(start=None, end=None):
     """Query the Vaisala database file for the humidity and pressure values between start and end times.
+    Note that these values are corrected before being saved to the database as of 12/12/2023
     If no data is available, the method returns tuple of Nones and logs a warning.
 
     Parameters
