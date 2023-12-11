@@ -86,6 +86,13 @@ class AWBalCarousel(MettlerToledo):
             self.handler = "H1006"
             return True
 
+        elif self.record.model == "AX107H":
+            assert h_list[0] == "H1006"
+            assert h_list[1] == "serial number #0015"
+            assert h_list[-1][-5:] == "ready"
+            self.handler = "H1006"
+            return True
+
         log.error("Unknown balance connected; reply received: {}".format(h_str))
         return False
 
@@ -193,9 +200,11 @@ class AWBalCarousel(MettlerToledo):
         pos : int
             integer of position where mass is to be placed
         """
-        self.move_to(pos, wait=False)
-        # these balances are loaded in the top position
-        message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ')</i>'
+        roll_pos = [2, 3, 4, 1]
+        offset_pos = roll_pos[pos]
+        self.move_to(offset_pos, wait=False)
+        # these balances are loaded in the top position, in the adjacent position to the selected position
+        message = 'Place mass <b>' + mass + '</b><br><i>(position ' + str(pos) + ') using RH door</i>'
         self._pt.show('ok_cancel', message, font=self._fontsize, title='Balance Preparation')
         reply = self._pt.wait_for_prompt_reply()
 
@@ -227,13 +236,14 @@ class AWBalCarousel(MettlerToledo):
             # note that move_to has a buffer time of 5 s by default (unless wait=False)
             times.append(perf_counter() - t0)
 
-            self.lift_to('weighing', hori_pos=pos)
+            self.lift_to('weighing', hori_pos=pos, wait=False)
+            self.wait_for_elapse(20)
             m = self.get_mass_instant()
             log.info("Mass value: {} {}".format(m, self.unit))
             self.lift_to('top', hori_pos=pos)
             lifting.append(perf_counter() - t0)
 
-        self.cycle_duration = np.ceil(len(self.positions)*max(lifting))
+        self.cycle_duration = np.ceil(len(self.positions)*(max(lifting) - 10 + self.stable_wait))
         # here cycle_duration includes waits at top and bottom as well as getting the mass value
 
         self._move_time = np.ceil(max(times))
@@ -279,14 +289,27 @@ class AWBalCarousel(MettlerToledo):
             self.move_to(pos)
             for i in range(repeats):
                 log.info("Centring #{} of {} for position {}".format(i + 1, repeats, pos))
-                self.lift_to('weighing', hori_pos=pos)
-                # the lift_to includes appropriate waits
+                self.lift_to('weighing', hori_pos=pos, wait=False)
+                self.wait_for_elapse(20)
                 self.lift_to('top', hori_pos=pos)
 
         log.info("Centring complete")
         self._is_centred = True
 
         return self._is_centred
+
+    def internal_weight_control(self):
+        if self.record.model == "AX107H":
+            # Lift both internal weights
+            r = self._query("Y2 0").split()
+            # Lower both internal weights
+            r = self._query("Y2 1").split()
+            # Lower left/right internal weight
+            r = self._query("Y2 2").split()
+            r = self._query("Y2 3").split()
+            # all should return 'Y2 A'
+        else:
+            pass
 
     def prep_for_scale_adjust(self, cal_pos):
         """Loads appropriate mass for scale adjustment.
@@ -307,8 +330,10 @@ class AWBalCarousel(MettlerToledo):
         if not self.lift_pos == "weighing":
             self.lift_to('weighing', hori_pos=cal_pos)
 
-        log.info("Current mass reading: {}".format(self.get_mass_instant()))
+        m = self.get_mass_instant()
+        log.info("Current mass reading: {}".format(m))
         # double checks that the mass loaded is sensible!
+        #TODO: if mass is 10 g can't do scale adjust with internal masses
         self.wait_for_elapse(60)
 
         return True
@@ -489,6 +514,10 @@ class AWBalCarousel(MettlerToledo):
         if self.want_abort:
             return False
 
+        # self.get_status()
+        # if 'weighing' in self.lift_pos:
+        #
+
         log.info("Sinking mass")
         self.connection.write("SINK")
 
@@ -651,7 +680,7 @@ class AWBalCarousel(MettlerToledo):
         return None
 
     def get_mass_stable(self, mass):
-        """Reads instantaneous mass values from balance three times, and returns the average.
+        """Reads instantaneous mass values from balance five times with 0.5 s between readings, and returns the average.
         Gives a warning if difference between readings is more than twice the balance resolution
         (but allows the reading to be returned).
 
@@ -662,7 +691,7 @@ class AWBalCarousel(MettlerToledo):
 
         Returns
         -------
-        float of the average of three instantaneous balance readings
+        float of the average of five instantaneous balance readings over 2 s
         """
         if not self.want_abort:
             log.info('Reading mass values for '+mass)
@@ -673,17 +702,18 @@ class AWBalCarousel(MettlerToledo):
                 b = self.get_mass_instant()
                 if type(b) == float:
                     readings.append(b)
+                    self.wait_for_elapse(0.5)
                 elif b is None:
                     continue
                 else:
                     print(b)  # this case shouldn't happen, so it's useful to know why it did!
                     self._raise_error_loaded(b)
 
-                if len(readings) >= 3:
+                if len(readings) >= 5:
                     if max(readings) - min(readings) > 2.25*self.resolution:
                         log.warning("Readings differ by more than twice the balance resolution")
                         log.info("Readings recorded: {}".format(readings))
-                    return sum(readings)/3
+                    return sum(readings)/len(readings)
 
                 time = perf_counter() - t0
 
@@ -719,9 +749,11 @@ class AWBalCarousel(MettlerToledo):
                     log.info('Waiting for movement to end')
 
     def _raise_error_loaded(self, errorkey):
-        self.raise_handler()
-        self.raise_handler()
-        self._raise_error(errorkey)
+        if errorkey:
+            self.raise_handler()
+            self.raise_handler()
+            self._raise_error(errorkey)
+        log.warning("Unknown serial communication error")
 
     @staticmethod
     def get_key(val):

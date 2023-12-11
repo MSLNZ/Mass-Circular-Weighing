@@ -228,7 +228,8 @@ class MettlerToledo(Balance):
             return m
 
     def _raise_error(self, errorkey):
-        raise ValueError(ERRORCODES.get(errorkey, 'Unknown serial communication error: {}'.format(errorkey)))
+        if errorkey:
+            raise ValueError(ERRORCODES.get(errorkey, 'Unknown serial communication error: {}'.format(errorkey)))
 
     def close_connection(self):
         self.connection.disconnect()

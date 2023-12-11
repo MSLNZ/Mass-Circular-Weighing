@@ -7,7 +7,7 @@ import numpy as np
 from msl.qt import Qt, QtWidgets, Button, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
 
-from ...constants import MU_STR, NBC
+from ...constants import SIGMA_STR, MU_STR, NBC
 from ...routine_classes.final_mass_calc_class import FinalMassCalc, filter_mass_set
 from ...routines.report_results import export_results_summary
 from .prompt_thread import PromptThread
@@ -28,7 +28,7 @@ class DiffsTable(QtWidgets.QTableWidget):
         super(DiffsTable, self).__init__()
         headers = ['Nominal (g)', 'Scheme entry', 'Run #',
                    '+ weight group', '- weight group', 'mass difference (g)',
-                   'CW sigma ('+MU_STR+'g)', 'CW residual OK?',
+                   SIGMA_STR+' of diff ('+MU_STR+'g)', 'CW residual OK?',
                    'balance uncertainty ('+MU_STR+'g)', 'MLS residual', 'Include?']
         self.setColumnCount(len(headers))
         self.setHorizontalHeaderLabels(headers)

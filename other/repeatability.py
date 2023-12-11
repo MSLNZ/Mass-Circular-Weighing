@@ -19,7 +19,7 @@ cfg = Configuration(admin_default)
 
 # bal_alias = 'XPE505C'
 # bal_alias = 'AX10005'
-bal_alias = 'AX1006'
+bal_alias = 'AX107H'
 bal, mode = cfg.get_bal_instance(bal_alias)
 
 ## Check balance set-up
@@ -54,7 +54,7 @@ def do_repeatability_ab(pos_a, pos_b, n_loadings=5):
     bal.move_to(pos_a)
     print(f'mass a, #0')
     bal.lift_to('weighing', wait=True)
-    a = bal.get_mass_stable('mass off')
+    a = bal.get_mass_stable('mass a')
     a_s.append(a)
     print(a)
 
@@ -91,31 +91,37 @@ def do_repeatability_ab(pos_a, pos_b, n_loadings=5):
 
     print(df)
 
-    folder = r'I:\MSL\Private\Mass\Commercial Calibrations\2023\AX1006_ABA'  # folder of data
-    filename = f'ABA_{pos_a}_{pos_b}.csv'
+    folder = r'I:\MSL\Private\Mass\Commercial Calibrations\2023\AX107H testing'  # folder of data
+    filename = f'ABA_{bal.stable_wait}s_{pos_a}_{pos_b}.csv'
     save_path = os.path.join(folder, filename)
     df.to_csv(save_path)
 
     return df
 
 
-positions = [1, 2, 3, 4]
-pairs = [(positions[i], positions[j]) for i in range(4)
-         for j in range(i+1, 4)]
+positions = [1, 3] #, 3, 4]
+pairs = [(positions[i], positions[j]) for i in range(len(positions))
+         for j in range(i+1, len(positions))]
 
 for pair in pairs:
-    pos_a = pair[1]
-    pos_b = pair[0]
-    print(pos_a, pos_b)
-    do_repeatability_ab(pos_a=pos_a, pos_b=pos_b)
+    for wait in [45, 55, 65, 40, 60, 50, 70]:
+        bal.stable_wait = wait
+        pos_a = pair[1]
+        pos_b = pair[0]
+        print(pos_a, pos_b)
+        do_repeatability_ab(pos_a=pos_a, pos_b=pos_b, n_loadings=6)
 
 for pair in pairs:
-    pos_a = pair[0]
-    pos_b = pair[1]
-    print(pos_a, pos_b)
-    do_repeatability_ab(pos_a=pos_a, pos_b=pos_b)
+    for wait in [65, 45, 55, 70, 40, 60, 50]:
+        bal.stable_wait = wait
+        pos_a = pair[0]
+        pos_b = pair[1]
+        print(pos_a, pos_b)
+        do_repeatability_ab(pos_a=pos_a, pos_b=pos_b, n_loadings=6)
 
 
+bal.lift_to('top', wait=True)
+bal.close_connection()
 
 ## Do a practice weighing
 
