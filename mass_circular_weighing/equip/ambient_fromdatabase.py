@@ -77,7 +77,7 @@ def apply_calibration_milliK(resistance):
     """Hard-code calibration information for 2023 build-down
 
     Correction for resistance on channel 1 of milliK:
-    <milliK serial="411776.1" channel="1">  <!--  update to 391119-1 when using mass lab milliK -->
+    <milliK serial="391119.1" channel="1">
             <report date="2020-02-07" number="Temperature/2020/887a">
                 <start_date>2020-02-05</start_date>
                 <end_date>2020-02-05</end_date>
@@ -120,6 +120,27 @@ def apply_calibration_milliK(resistance):
         </report>
     </PRT>
 
+    Conversion from resistance to temperature for 89/S4:
+    <PRT serial="89/S4" channel="1">
+        <report date="2018-07-26" number="Temperature/2018/743">
+            <start_date>2018-07-17</start_date>
+            <end_date>2018-07-18</end_date>
+            <coverage_factor>2.0</coverage_factor>
+            <confidence>95%</confidence>
+            <temperature unit="C" min="0" max="40">
+                <!--
+                  The 'coefficients' element represents the polynomial coefficients
+                  c0, c1, c2, c3... to apply as the calibration equation. You can
+                  either separate the coefficients by a comma or a semi-colon.
+                  The calibration equation is
+                      R(t)/R0 = 1 + At + Bt**2
+                -->
+                <coefficients>R0=99.9794, A=3.91354e-3, B=-5.978e-7</coefficients>
+                <expanded_uncertainty>0.0026</expanded_uncertainty>
+            </temperature>
+        </report>
+    </PRT>
+
     Parameters
     ----------
     resistance : :class:`float`
@@ -150,8 +171,8 @@ def apply_calibration_milliK(resistance):
     R0 = 99.983886    # raw reading at 0 deg C, in Ohms
     corr_R0 = corrected_resistance(R0)
 
-    A = 0.00391778  # per degree C
-    B = -0.0000007329   # per degree C squared
+    A = 0.00391354  # per degree C
+    B = -5.978e-7   # per degree C squared
 
     def solve_quadratic_equation(a, b, c):
         """Use quadratic formula to solve for T
