@@ -27,8 +27,16 @@ def to_LST(jsonroot, save_folder, cfg=None):
         sheet1 = wb.active
         sheet1.title = "LST file"
         header = []
-        for pos, grp in enumerate(cw_class.wtgrps):
-            header.append(grp + '(#' + str(pos+1) + ")")
+        for weighdata in jsonroot.datasets():
+            if 'measurement' in weighdata.name:
+                positions = weighdata.metadata.get("Weight group loading order")
+                for grp in cw_class.wtgrps:
+                    for k, v in positions.items():
+                        if v == grp:
+                            pos = k.strip("Position ")
+                    header.append(f'{grp}(#{pos})')
+                break
+            break
         sheet1.append(header)
         sheet1.append(["=F4", cw_class.num_cycles])
         sheet1.append([])
@@ -36,14 +44,6 @@ def to_LST(jsonroot, save_folder, cfg=None):
         for weighdata in jsonroot.datasets():
             if 'measurement' in weighdata.name:
                 nom = weighdata.metadata.get("Nominal mass (g)")
-                # get dictionary of positions e.g.
-                # {
-                #           "Position 1": "1KP1",
-                #           "Position 2": "S",
-                #           "Position 3": "1KP2",
-                #           "Position 4": "1KTLT"
-                #         }
-                positions = weighdata.metadata.get("Weight group loading order")
                 if weighdata.metadata.get("Weighing complete"):
                     if weighdata.metadata.get("Unit") == "g":
                         to_mg = 1000
@@ -73,7 +73,7 @@ def to_LST(jsonroot, save_folder, cfg=None):
                                     mean_P,
                                     mean_rhs
                                 ]
-                                print(ambient_data)
+                                # print(ambient_data)
                                 data_row += ambient_data
                                 ambient_data[2] = float(temps[1])
                             except AttributeError:
@@ -104,12 +104,40 @@ def to_LST(jsonroot, save_folder, cfg=None):
 
 
 if __name__ == "__main__":
-    folder = r'I:\MSL\Private\Mass\Recal_2020\kgs\PostBIPMAX1006files'  # folder of data
-
+    cfg = Config(r"C:\MCW_Config\local_config.xml")
+    folder = r'I:\MSL\Private\Mass\Recal_2020\kgs\PostBIPMAX1006files\correct_temperatures'  # folder of data
     json_file = r'I:\MSL\Private\Mass\Recal_2020\kgs\PostBIPMAX1006files\MassStds_1000.json'
     jsonroot = read(json_file)
     print(jsonroot)
 
-    cfg=Config(r"C:\MCW_Config\local_config.xml")
-
     to_LST(jsonroot=jsonroot, save_folder=folder, cfg=cfg)
+
+    # for path, directories, files in os.walk(folder):
+    #     for f in files:
+    #         if ".json" in f:
+    #             json_file = os.path.join(path, f)
+    #             jsonroot = read(json_file)
+    #             print(jsonroot)
+    #
+    #             to_LST(jsonroot=jsonroot, save_folder=folder, cfg=cfg)
+
+
+### extra used for re-correcting previous files:
+#from mass_circular_weighing.equip.ambient_fromdatabase import apply_calibration_milliK, corrected_resistance
+#
+# # Values for 89/S4 (updated 20/07/2023)
+# R0 = 99.983886  # raw reading at 0 deg C, in Ohms
+# corr_R0 = corrected_resistance(R0)
+#
+# old_A = 0.00391778
+# old_B = -0.0000007329
+#
+#
+# def recorrect_temperature_milliK(old_T):
+#     # R(t)/R0 = 1 + At + Bt**2
+#     Rt_R0 = 1 + old_A*old_T + old_B*old_T**2
+#     Rt = Rt_R0 * corr_R0
+#
+#     corr_T = apply_calibration_milliK(Rt)  # this uses the correct values now
+#
+#     return corr_T
