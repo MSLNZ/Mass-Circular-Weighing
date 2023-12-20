@@ -274,7 +274,7 @@ class WeighingWindow(QtWidgets.QWidget):
     def start_weighing(self):
         self.bal.want_adjust = True if self.adjust_ch.checkState() else False
         if self.bal.want_adjust:
-            if self.nominal_mass.currentText == "10":
+            if self.nominal_mass.text() == "10":
                 log.warning("Cannot perform internal self-calibration at 10 g! Please ensure a 20 g mass is used.")
         self.change_to_weighing_layout()
         self.check_for_existing()
@@ -283,7 +283,7 @@ class WeighingWindow(QtWidgets.QWidget):
     def start_weighing_at(self):
         if 'aw' in self.bal.mode:
             if self.bal.want_adjust:
-                if self.nominal_mass.currentText == "10":
+                if self.nominal_mass.text() == "10":
                     log.warning("Cannot perform internal self-calibration at 10 g! Please ensure a 20 g mass is used.")
             self.bal.want_adjust = False  # so that any scale adjustment occurs immediately before weighing
             # check that the balance has been initialised correctly (except for scale adjustment)
