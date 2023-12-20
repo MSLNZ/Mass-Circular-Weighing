@@ -73,7 +73,7 @@ def data(path, start=None, end=None, as_datetime=True, select='*'):
     return data
 
 
-def apply_calibration_milliK(resistance):
+def corrected_resistance(r):
     """Hard-code calibration information for 2023 build-down
 
     Correction for resistance on channel 1 of milliK:
@@ -98,6 +98,31 @@ def apply_calibration_milliK(resistance):
                 </resistance>
             </report>
         </milliK>
+
+        Parameters
+    ----------
+    resistance : :class:`float`
+        raw resistance value as read from milliK channel 1
+
+    Returns
+    -------
+    :class:`float` or None
+        Corrected resistance value, if between 43 and 347 Ohms, or None.
+    """
+    # min="43" max="347"
+    if not 43 <= r <= 347:
+        log.error(f"Resistance calibration for {r} Ohms is out of calibration range!")
+        return None
+    a0 = 4.315e-4  # Ohm
+    a1 = -1.825e-5
+    a2 = 5.672e-8  # per Ohm
+    dr = a0 + a1 * r + a2 * r ** 2
+    return r + dr
+
+
+def apply_calibration_milliK(resistance):
+    """Convert corrected resistance to temperature
+    Hard-code calibration information for 2023 build-down
 
     Conversion from resistance to temperature for SILM08_4:
     <PRT serial="SILM08_4" channel="1">
@@ -151,17 +176,6 @@ def apply_calibration_milliK(resistance):
     :class:`float` or None
         Calibrated temperature value, if between 0 and 40 deg C, or None.
     """
-    def corrected_resistance(r):
-        # min="43" max="347"
-        if not 43 <= r <= 347:
-            log.error(f"Resistance calibration for {r} Ohms is out of calibration range!")
-            return None
-        a0 = 4.315e-4  # Ohm
-        a1 = -1.825e-5
-        a2 = 5.672e-8  # per Ohm
-        dr = a0 + a1 * r + a2 * r ** 2
-        return r + dr
-
     R = resistance  # raw reading in Ohms
     corr_R = corrected_resistance(R)
     if not corr_R:
