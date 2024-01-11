@@ -230,7 +230,7 @@ class AdminDetails(object):
         std_sheet = massrefwb[sheet]
         all_stds = {'MASSREF file': self.massref_path, 'Sheet name': sheet, "Set type": set_ID}
         all_stds['Set name'] = std_sheet['B1'].value  # e.g. Mettler 11
-        all_stds['Set identifier'] = std_sheet['D1'].value  # e.g. MA
+        all_stds['Set identifier'] = std_sheet['D1'].value.strip()  # e.g. MA
         all_stds['Calibrated'] = str(std_sheet['F1'].value)  # can't serialise/JSONify a datetime object...!
 
         # use parsing of nominal values to determine last non-empty row
