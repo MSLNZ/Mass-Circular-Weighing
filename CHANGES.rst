@@ -2,12 +2,18 @@
 Release Notes
 =============
 
-Version 1.0.11.dev0 (in development)
+Version 1.0.12.dev0 (in development)
 ====================================
+
+
+Version 1.0.11 (09/02/2024)
+===========================
 
 * Updated calibration coefficients for milliK PRT
 * Updated LST exporter to include correct position # in header
 * Fixed incorrect call for Qlabel.text() that was preventing correct operation of scale adjustment
+* Fixed parsing of extra whitespace in set ID for reference/check sets
+* Updated copyright year to 2024
 
 Version 1.0.10 (12/12/2023)
 ===========================
