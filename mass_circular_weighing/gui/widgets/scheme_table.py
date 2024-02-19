@@ -149,8 +149,10 @@ class SchemeTable(QtWidgets.QTableWidget):
         for i in range(self.rowCount()):
             try:
                 scheme_entry = self.cellWidget(i, 0).text()
+                masses = []
                 for wtgrp in scheme_entry.split():
                     for mass in wtgrp.split('+'):
+                        masses.append(mass)
                         if mass in cfg.client_wt_IDs:
                             log.debug(mass + ' in client set')
                         elif mass in cfg.all_stds['Weight ID']:
@@ -159,7 +161,9 @@ class SchemeTable(QtWidgets.QTableWidget):
                                 and mass in cfg.all_checks['Weight ID']:
                             log.debug(mass + ' in check set')
                         else:
-                            log.error(mass + ' is not in any of the specified mass sets.')
+                            log.error(mass + ' is not in any of the specified mass sets')
+                if len(masses) != len(set(masses)):
+                    log.error(f"Duplicate masses found in {scheme_entry}")
 
             except AttributeError:
                 pass
