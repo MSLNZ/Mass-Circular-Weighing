@@ -12,7 +12,7 @@ from mass_circular_weighing.routine_classes.circ_weigh_class import CircWeigh
 from mass_circular_weighing.constants import IN_DEGREES_C
 
 
-def to_LST(jsonroot, save_folder, cfg=None):
+def to_lst(json_root, save_folder, cfg=None):
     lst_filename = ""
     for grp in jsonroot['Circular Weighings'].groups():
         ambient_data = [""]
@@ -38,8 +38,9 @@ def to_LST(jsonroot, save_folder, cfg=None):
                 break
             break
         sheet1.append(header)
-        sheet1.append(["=F4", cw_class.num_cycles])
+        sheet1.append(["=F4", cw_class.num_cycles])  # timestamp needs to appear in cell A2
         sheet1.append([])
+        padding = [""]*(5 - cw_class.num_wtgrps)  # customise padding so metadata starts in column F
 
         for weighdata in jsonroot.datasets():
             if 'measurement' in weighdata.name:
@@ -67,23 +68,29 @@ def to_LST(jsonroot, save_folder, cfg=None):
                                 mean_rhs = (float(rhs[0]) + float(rhs[1])) / 2
 
                                 ambient_data = [
-                                    "",
                                     weighdata.metadata.get("Mmt Timestamp"),
                                     float(temps[0]), #mean_temp,
                                     mean_P,
                                     mean_rhs
                                 ]
                                 # print(ambient_data)
+                                data_row += padding  # ambient data must start in column F
                                 data_row += ambient_data
-                                ambient_data[2] = float(temps[1])
+                                ambient_data[1] = float(temps[1])
                             except AttributeError:
                                 pass
                         bal_alias = weighdata.metadata.get("Balance")
 
                         sheet1.append(data_row)
 
-        last_row = ['', '', '', '']
-        last_row += ambient_data
+                    try:
+                        corresponding_analysis_run = weighdata.name.replace("measurement", "analysis")
+                        last_row_date = jsonroot[corresponding_analysis_run].metadata.get('Analysis Timestamp')
+                    except KeyError:  # this shouldn't happen because we've determined the dataset is complete...
+                        print(f"No analysis available for {corresponding_analysis_run}! Moving to next dataset...")
+
+        last_row = ['', '', '', '', '', last_row_date]
+        last_row += ambient_data[1:]
         sheet1.append(last_row)
 
         try:
@@ -95,7 +102,7 @@ def to_LST(jsonroot, save_folder, cfg=None):
         sheet1["F2"] = bal_serial
 
         print(ambient_data)
-        last_date = ambient_data[1].split()[0]
+        last_date = ambient_data[0].split()[0]
 
         lst_filename = os.path.join(save_folder, last_date + "_" +str(nom) + "_" + se + "_LST.xlsx")
         wb.save(lst_filename)
@@ -105,12 +112,12 @@ def to_LST(jsonroot, save_folder, cfg=None):
 
 if __name__ == "__main__":
     cfg = Config(r"C:\MCW_Config\local_config.xml")
-    folder = r'I:\MSL\Private\Mass\Recal_2020\kgs\PostBIPMAX1006files\correct_temperatures'  # folder of data
-    json_file = r'I:\MSL\Private\Mass\Recal_2020\kgs\PostBIPMAX1006files\MassStds_1000.json'
+    folder = r'I:\MSL\Private\Mass\Recal_2020\D2\json_files_to_LST'  # folder of data
+    json_file = r'I:\MSL\Private\Mass\Recal_2020\D2\json_files_to_LST\MassStdsD2_200(DiscCheck2)_3-4-24.json'
     jsonroot = read(json_file)
     print(jsonroot)
 
-    to_LST(jsonroot=jsonroot, save_folder=folder, cfg=cfg)
+    to_lst(json_root=jsonroot, save_folder=folder, cfg=cfg)
 
     # for path, directories, files in os.walk(folder):
     #     for f in files:
@@ -119,7 +126,7 @@ if __name__ == "__main__":
     #             jsonroot = read(json_file)
     #             print(jsonroot)
     #
-    #             to_LST(jsonroot=jsonroot, save_folder=folder, cfg=cfg)
+    #             to_lst(json_root=jsonroot, save_folder=folder, cfg=cfg)
 
 
 ### extra used for re-correcting previous files:
