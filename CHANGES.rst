@@ -5,6 +5,13 @@ Release Notes
 Version 1.0.12.dev0 (in development)
 ====================================
 
+Version 1.0.11.AX10005 (09/05/2024)
+===================================
+
+* added check for duplicate masses in se into check_scheme_entries method
+* updated json2LST to now use the analysis timestamp for the end time of the final weighing (assuming the weighings
+  haven't been reanalysed at a later date!), and to make sure the metadata always starts in column F.
+* updated file locations and calibration coefficients etc for build up on AX10005
 
 Version 1.0.11 (09/02/2024)
 ===========================
