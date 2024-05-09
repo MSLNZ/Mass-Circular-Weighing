@@ -74,11 +74,11 @@ def data(path, start=None, end=None, as_datetime=True, select='*'):
 
 
 def corrected_resistance(r):
-    """Hard-code calibration information for 2023 build-down
+    """Hard-code calibration information for 2024 build-up on AX10005
 
-    Correction for resistance on channel 1 of milliK:
-    <milliK serial="391119.1" channel="1">
-            <report date="2020-02-07" number="Temperature/2020/887a">
+    Correction for resistance on channel 2 of milliK:
+    <milliK serial="391119.1" channel="2">
+            <report date="2020-02-07" number="Temperature/2020/887b">
                 <start_date>2020-02-05</start_date>
                 <end_date>2020-02-05</end_date>
                 <coverage_factor>2.0</coverage_factor>
@@ -93,8 +93,8 @@ def corrected_resistance(r):
                       where,
                           dx = c0 + c1*x + c2*x^2 + c3*x^3 + ...
                     -->
-                    <coefficients>4.315e-4, -1.825e-5, 5.672e-8</coefficients>
-                    <expanded_uncertainty>0.00031</expanded_uncertainty>
+                    <coefficients>3.374e-4, -1.807e-5, 5.162e-8</coefficients>
+                    <expanded_uncertainty>0.00026</expanded_uncertainty>
                 </resistance>
             </report>
         </milliK>
@@ -102,7 +102,7 @@ def corrected_resistance(r):
         Parameters
     ----------
     resistance : :class:`float`
-        raw resistance value as read from milliK channel 1
+        raw resistance value as read from milliK channel 2
 
     Returns
     -------
@@ -113,22 +113,20 @@ def corrected_resistance(r):
     if not 43 <= r <= 347:
         log.error(f"Resistance calibration for {r} Ohms is out of calibration range!")
         return None
-    a0 = 4.315e-4  # Ohm
-    a1 = -1.825e-5
-    a2 = 5.672e-8  # per Ohm
+    a0 = 3.374e-4  # Ohm
+    a1 = -1.807e-5
+    a2 = 5.162e-8  # per Ohm
     dr = a0 + a1 * r + a2 * r ** 2
     return r + dr
 
 
 def apply_calibration_milliK(resistance):
     """Convert corrected resistance to temperature
-    Hard-code calibration information for 2023 build-down
+    Hard-code calibration information for 2024 build-up on AX10005
 
     Conversion from resistance to temperature for SILM08_4:
-    <PRT serial="SILM08_4" channel="1">
-        <report date="2018-06-21" number="Temperature/2018/739">
-            <start_date>2018-06-19</start_date>
-            <end_date>2018-06-20</end_date>
+    <PRT serial="SILM08_4" channel="2">
+        <report date="2024-04-15" number="Temperature/2024/303">
             <coverage_factor>2.0</coverage_factor>
             <confidence>95%</confidence>
             <temperature unit="C" min="0" max="40">
@@ -139,29 +137,7 @@ def apply_calibration_milliK(resistance):
                   The calibration equation is
                       R(t)/R0 = 1 + At + Bt**2
                 -->
-                <coefficients>R0=100.0163, A=3.90991e-3, B=-5.891e-7</coefficients>
-                <expanded_uncertainty>0.0029</expanded_uncertainty>
-            </temperature>
-        </report>
-    </PRT>
-
-    Conversion from resistance to temperature for 89/S4:
-    <PRT serial="89/S4" channel="1">
-        <report date="2018-07-26" number="Temperature/2018/743">
-            <start_date>2018-07-17</start_date>
-            <end_date>2018-07-18</end_date>
-            <coverage_factor>2.0</coverage_factor>
-            <confidence>95%</confidence>
-            <temperature unit="C" min="0" max="40">
-                <!--
-                  The 'coefficients' element represents the polynomial coefficients
-                  c0, c1, c2, c3... to apply as the calibration equation. You can
-                  either separate the coefficients by a comma or a semi-colon.
-                  The calibration equation is
-                      R(t)/R0 = 1 + At + Bt**2
-                -->
-                <coefficients>R0=99.9794, A=3.91354e-3, B=-5.978e-7</coefficients>
-                <expanded_uncertainty>0.0026</expanded_uncertainty>
+                <coefficients>R0=100.01959, A=3.91e-3, B=-5.90e-7</coefficients>
             </temperature>
         </report>
     </PRT>
@@ -181,12 +157,12 @@ def apply_calibration_milliK(resistance):
     if not corr_R:
         return None
 
-    # Values for 89/S4 (updated 20/07/2023)
-    R0 = 99.983886    # raw reading at 0 deg C, in Ohms
+    # Values for SILM08_4 (updated 8/5/24)
+    R0 = 100.01959    # raw reading at 0 deg C, in Ohms
     corr_R0 = corrected_resistance(R0)
 
-    A = 0.00391354  # per degree C
-    B = -5.978e-7   # per degree C squared
+    A = 0.00391  # per degree C
+    B = -5.90e-7   # per degree C squared
 
     def solve_quadratic_equation(a, b, c):
         """Use quadratic formula to solve for T
@@ -231,7 +207,7 @@ def get_cal_temp_now():
     """
     start = datetime.now() - timedelta(minutes=1)
     end = datetime.now()
-    milliK_data = data(path=m_database_path, select='CH1_Ohm', as_datetime=True, start=start, end=end, )
+    milliK_data = data(path=m_database_path, select='CH2_Ohm', as_datetime=True, start=start, end=end, )
     try:
         latest = milliK_data[-1][0]
         return end.replace(microsecond=0).isoformat(sep=' '), apply_calibration_milliK(latest)
@@ -258,7 +234,7 @@ def get_cal_temp_during(start=None, end=None):
     :class:`numpy.ndarray` or :data:`None`
         List of calibrated temperature values, if between 0 and 40 deg C, or None.
     """
-    milliK_data = data(path=m_database_path, select='CH1_Ohm', as_datetime=True, start=start, end=end, )
+    milliK_data = data(path=m_database_path, select='CH2_Ohm', as_datetime=True, start=start, end=end, )
     try:
         last_value = milliK_data[-1][0]
         cal_temps = np.asarray([apply_calibration_milliK(i[0]) for i in milliK_data])
