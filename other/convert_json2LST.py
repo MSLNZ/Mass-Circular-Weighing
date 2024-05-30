@@ -4,16 +4,23 @@ into a LST-style table of weighing data for use in the builddown analysis.
 """
 import os
 from openpyxl import Workbook
+from datetime import datetime
 
-from msl.io import read
+from msl.io import JSONWriter, read
 from msl.equipment import Config
 
 from mass_circular_weighing.routine_classes.circ_weigh_class import CircWeigh
 from mass_circular_weighing.constants import IN_DEGREES_C
+from mass_circular_weighing.equip.ambient_fromdatabase import get_rh_p_during
+from mass_circular_weighing.equip.ambient_fromwebapp import get_t_rh_during
 
 
-def to_lst(json_root, save_folder, cfg=None):
+def to_lst(jsonroot, save_folder, cfg=None):
     lst_filename = ""
+    root = JSONWriter()
+    root.set_root(jsonroot)
+    root.read_only = False
+
     for grp in jsonroot['Circular Weighings'].groups():
         ambient_data = [""]
         to_mg = 1
@@ -22,6 +29,7 @@ def to_lst(json_root, save_folder, cfg=None):
 
         se = grp.name.split("/")[-1]
         cw_class = CircWeigh(se)
+        padding = [""]*(5 - cw_class.num_wtgrps)  # customise padding so metadata starts in column F
 
         wb = Workbook()
         sheet1 = wb.active
@@ -37,13 +45,14 @@ def to_lst(json_root, save_folder, cfg=None):
                     header.append(f'{grp}(#{pos})')
                 break
             break
+        header += padding
+        header += ["Time", "Temperature (°C)", "Mean P (hPa)", "Mean RH (%)", "Mean T (°C)", "T range (°C)"]
         sheet1.append(header)
         sheet1.append(["=F4", cw_class.num_cycles])  # timestamp needs to appear in cell A2
         sheet1.append([])
-        padding = [""]*(5 - cw_class.num_wtgrps)  # customise padding so metadata starts in column F
 
         for weighdata in jsonroot.datasets():
-            if 'measurement' in weighdata.name:
+            if se in weighdata.name and 'measurement' in weighdata.name:
                 nom = weighdata.metadata.get("Nominal mass (g)")
                 if weighdata.metadata.get("Weighing complete"):
                     if weighdata.metadata.get("Unit") == "g":
@@ -53,44 +62,58 @@ def to_lst(json_root, save_folder, cfg=None):
                     else:
                         print("Unit is ", weighdata.metadata.get("Unit"))
                     # print(data_set.name, run_no)
+                    try:
+                        corresponding_analysis_run = weighdata.name.replace("measurement", "analysis")
+                        last_row_date = jsonroot[corresponding_analysis_run].metadata.get('Analysis Timestamp')
+                        enddatetime = datetime.strptime(last_row_date, "%d-%m-%Y %H:%M")
+                    except KeyError:  # this shouldn't happen because we've determined the dataset is complete...
+                        print(f"No analysis available for {corresponding_analysis_run}! Moving to next dataset...")
+
                     for cycle, cyc_val in enumerate(weighdata):
                         data_row = []
                         for i in range(cw_class.num_wtgrps):
                             data_row.append(cyc_val[i][1]*to_mg)
                         if cycle == 0:
                             try:
-                                # could calculate actual mean and save to metadata as part of run_circ_weigh?
+                                start_time = weighdata.metadata.get("Mmt Timestamp")
+                                startdatetime = datetime.strptime(start_time, "%d-%m-%Y %H:%M")
+
                                 temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
-                                mean_temp = (float(temps[0]) + float(temps[1])) / 2
-                                p = weighdata.metadata.get("Pressure (hPa)").split(" to ")
-                                mean_P = (float(p[0]) + float(p[1])) / 2
-                                rhs = weighdata.metadata.get("RH (%)").split(" to ")
-                                mean_rhs = (float(rhs[0]) + float(rhs[1])) / 2
+                                min_temp = float(temps[0])
+                                max_temp = float(temps[1])
+                                temp_range = float(temps[1]) - float(temps[0])
+                                # get mean temperature and humidity during weighing from Omega database
+                                all_temps, all_rh = get_t_rh_during("Mass 1", sensor="2", start=startdatetime, end=enddatetime)
+                                mean_temps = sum(all_temps) / len(all_temps)
+                                root[weighdata.name].add_metadata(**{"Mean T" + IN_DEGREES_C: str(mean_temps)})
+                                mean_rhs = sum(all_rh) / len(all_rh)
+                                root[weighdata.name].add_metadata(**{"Mean RH (%)": str(mean_rhs)})
+
+                                # get P from Vaisala database
+                                rh, p = get_rh_p_during(start=startdatetime, end=enddatetime)
+                                mean_P = sum(p) / len(p)
+                                root[weighdata.name].add_metadata(**{"Pressure (hPa)": str(min(p)) + " to " + str(max(p))})
+                                root[weighdata.name].add_metadata(**{"Mean Pressure (hPa)": str(mean_P)})
 
                                 ambient_data = [
-                                    weighdata.metadata.get("Mmt Timestamp"),
-                                    float(temps[0]), #mean_temp,
+                                    start_time,
+                                    min_temp,
                                     mean_P,
-                                    mean_rhs
+                                    mean_rhs,
+                                    mean_temps,
+                                    temp_range
                                 ]
                                 # print(ambient_data)
                                 data_row += padding  # ambient data must start in column F
                                 data_row += ambient_data
-                                ambient_data[1] = float(temps[1])
+
                             except AttributeError:
                                 pass
                         bal_alias = weighdata.metadata.get("Balance")
 
                         sheet1.append(data_row)
 
-                    try:
-                        corresponding_analysis_run = weighdata.name.replace("measurement", "analysis")
-                        last_row_date = jsonroot[corresponding_analysis_run].metadata.get('Analysis Timestamp')
-                    except KeyError:  # this shouldn't happen because we've determined the dataset is complete...
-                        print(f"No analysis available for {corresponding_analysis_run}! Moving to next dataset...")
-
-        last_row = ['', '', '', '', '', last_row_date]
-        last_row += ambient_data[1:]
+        last_row = ['', '', '', '', '', last_row_date, max_temp]
         sheet1.append(last_row)
 
         try:
@@ -104,29 +127,33 @@ def to_lst(json_root, save_folder, cfg=None):
         print(ambient_data)
         last_date = ambient_data[0].split()[0]
 
-        lst_filename = os.path.join(save_folder, last_date + "_" +str(nom) + "_" + se + "_LST.xlsx")
+        new_filename = os.path.join(save_folder, last_date + "_" + str(nom) + "_" + se)
+        lst_filename = new_filename + "_LST.xlsx"
         wb.save(lst_filename)
+
+        new_json_name = new_filename + "_pressure.json"
+        root.save(root=root, file=new_json_name, mode='w', encoding='utf-8', ensure_ascii=False)
 
     return lst_filename
 
 
 if __name__ == "__main__":
     cfg = Config(r"C:\MCW_Config\local_config.xml")
-    folder = r'I:\MSL\Private\Mass\Recal_2020\D2\json_files_to_LST'  # folder of data
-    json_file = r'I:\MSL\Private\Mass\Recal_2020\D2\json_files_to_LST\MassStdsD2_200(DiscCheck2)_3-4-24.json'
-    jsonroot = read(json_file)
-    print(jsonroot)
+    folder = r'I:\MSL\Private\Mass\Recal_2020\D3\original json and log files'  # folder of data
+    # json_file = r'I:\MSL\Private\Mass\Recal_2020\D2\json_files_to_LST\MassStdsD2_200(DiscCheck2)_3-4-24.json'
+    # json__root = read(json_file)
+    # print(json__root)
 
-    to_lst(json_root=jsonroot, save_folder=folder, cfg=cfg)
+    # to_lst(jsonroot=json__root, save_folder=folder, cfg=cfg)
 
-    # for path, directories, files in os.walk(folder):
-    #     for f in files:
-    #         if ".json" in f:
-    #             json_file = os.path.join(path, f)
-    #             jsonroot = read(json_file)
-    #             print(jsonroot)
-    #
-    #             to_lst(json_root=jsonroot, save_folder=folder, cfg=cfg)
+    for path, directories, files in os.walk(folder):
+        for f in files:
+            if ".json" in f:
+                json_file = os.path.join(path, f)
+                json_root = read(json_file)
+                print(json_root)
+
+                to_lst(jsonroot=json_root, save_folder=folder, cfg=cfg)
 
 
 ### extra used for re-correcting previous files:
