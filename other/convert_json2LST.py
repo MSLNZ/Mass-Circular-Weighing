@@ -13,6 +13,7 @@ from mass_circular_weighing.routine_classes.circ_weigh_class import CircWeigh
 from mass_circular_weighing.constants import IN_DEGREES_C
 from mass_circular_weighing.equip.ambient_fromdatabase import get_rh_p_during
 from mass_circular_weighing.equip.ambient_fromwebapp import get_t_rh_during
+from mass_circular_weighing.equip.vaisala_utils import AirDens2009
 
 
 def to_lst(jsonroot, save_folder, cfg=None):
@@ -46,7 +47,8 @@ def to_lst(jsonroot, save_folder, cfg=None):
                 break
             break
         header += padding
-        header += ["Time", "Temperature (°C)", "Mean P (hPa)", "Mean RH (%)", "Mean T (°C)", "T range (°C)"]
+        header += ["Time", "Mean T (°C)", "T range (°C)", "Mean P (hPa)", "Mean RH (%)", "Air density (kg/m3)"]
+
         sheet1.append(header)
         sheet1.append(["=F4", cw_class.num_cycles])  # timestamp needs to appear in cell A2
         sheet1.append([])
@@ -78,30 +80,35 @@ def to_lst(jsonroot, save_folder, cfg=None):
                                 start_time = weighdata.metadata.get("Mmt Timestamp")
                                 startdatetime = datetime.strptime(start_time, "%d-%m-%Y %H:%M")
 
-                                temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
-                                min_temp = float(temps[0])
-                                max_temp = float(temps[1])
-                                temp_range = float(temps[1]) - float(temps[0])
-                                # get mean temperature and humidity during weighing from Omega database
+                                # temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
+                                # min_temp = float(temps[0])
+                                # max_temp = float(temps[1])
+                                # temp_range = float(temps[1]) - float(temps[0])
+                                """get mean temperature and humidity during weighing from Omega database"""
                                 all_temps, all_rh = get_t_rh_during("Mass 1", sensor="2", start=startdatetime, end=enddatetime)
                                 mean_temps = sum(all_temps) / len(all_temps)
+                                temp_range = max(all_temps) - min(all_temps)
                                 root[weighdata.name].add_metadata(**{"Mean T" + IN_DEGREES_C: str(mean_temps)})
+                                root[weighdata.name].add_metadata(**{"T range" + IN_DEGREES_C: str(temp_range)})
                                 mean_rhs = sum(all_rh) / len(all_rh)
                                 root[weighdata.name].add_metadata(**{"Mean RH (%)": str(mean_rhs)})
 
-                                # get P from Vaisala database
+                                """get P from Vaisala database"""
                                 rh, p = get_rh_p_during(start=startdatetime, end=enddatetime)
                                 mean_P = sum(p) / len(p)
                                 root[weighdata.name].add_metadata(**{"Pressure (hPa)": str(min(p)) + " to " + str(max(p))})
                                 root[weighdata.name].add_metadata(**{"Mean Pressure (hPa)": str(mean_P)})
 
+                                airdens = AirDens2009(mean_temps, mean_P, mean_rhs, 0.0004)
+                                root[weighdata.name].add_metadata(**{"Air density (kg/m3)": str(temp_range)})
+
                                 ambient_data = [
                                     start_time,
-                                    min_temp,
+                                    mean_temps,
+                                    temp_range,
                                     mean_P,
                                     mean_rhs,
-                                    mean_temps,
-                                    temp_range
+                                    airdens
                                 ]
                                 # print(ambient_data)
                                 data_row += padding  # ambient data must start in column F
@@ -113,7 +120,7 @@ def to_lst(jsonroot, save_folder, cfg=None):
 
                         sheet1.append(data_row)
 
-        last_row = ['', '', '', '', '', last_row_date, max_temp]
+        last_row = ['', '', '', '', '', last_row_date]
         sheet1.append(last_row)
 
         try:
@@ -139,7 +146,7 @@ def to_lst(jsonroot, save_folder, cfg=None):
 
 if __name__ == "__main__":
     cfg = Config(r"C:\MCW_Config\local_config.xml")
-    folder = r'I:\MSL\Private\Mass\Recal_2020\D3\original json and log files'  # folder of data
+    folder = r'I:\MSL\Private\Mass\Recal_2020\D4\original json and log files'  # folder of data
     # json_file = r'I:\MSL\Private\Mass\Recal_2020\D2\json_files_to_LST\MassStdsD2_200(DiscCheck2)_3-4-24.json'
     # json__root = read(json_file)
     # print(json__root)
