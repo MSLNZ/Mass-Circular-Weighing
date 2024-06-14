@@ -100,7 +100,7 @@ def to_lst(jsonroot, save_folder, cfg=None):
                                 root[weighdata.name].add_metadata(**{"Mean Pressure (hPa)": str(mean_P)})
 
                                 airdens = AirDens2009(mean_temps, mean_P, mean_rhs, 0.0004)
-                                root[weighdata.name].add_metadata(**{"Air density (kg/m3)": str(temp_range)})
+                                root[weighdata.name].add_metadata(**{"Air density (kg/m3)": str(airdens)})
 
                                 ambient_data = [
                                     start_time,
@@ -138,7 +138,7 @@ def to_lst(jsonroot, save_folder, cfg=None):
         lst_filename = new_filename + "_LST.xlsx"
         wb.save(lst_filename)
 
-        new_json_name = new_filename + "_pressure.json"
+        new_json_name = new_filename + "_airdens.json"
         root.save(root=root, file=new_json_name, mode='w', encoding='utf-8', ensure_ascii=False)
 
     return lst_filename
@@ -146,7 +146,7 @@ def to_lst(jsonroot, save_folder, cfg=None):
 
 if __name__ == "__main__":
     cfg = Config(r"C:\MCW_Config\local_config.xml")
-    folder = r'I:\MSL\Private\Mass\Recal_2020\D4\original json and log files'  # folder of data
+    folder = r'I:\MSL\Private\Mass\Recal_2020\D6\original json and log files'  # folder of data
     # json_file = r'I:\MSL\Private\Mass\Recal_2020\D2\json_files_to_LST\MassStdsD2_200(DiscCheck2)_3-4-24.json'
     # json__root = read(json_file)
     # print(json__root)
