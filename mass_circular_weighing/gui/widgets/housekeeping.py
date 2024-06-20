@@ -133,14 +133,7 @@ class Housekeeping(QtWidgets.QWidget):
         # save details to Admin sheet in (client)_admin.xlsx in save folder
         self.cfg.save_admin()
 
-        bal_list = []
-        # NOTE: This script only adds Mettler Toledo or Sartorius balances to the drop-down list
-        for alias, equip in self.cfg.equipment.items():
-            if "mettler" in equip.manufacturer.lower():
-                bal_list.append(alias)
-            if "sartorius" in equip.manufacturer.lower():
-                bal_list.append(alias)
-        self.balance_list.emit(bal_list)
+        self.balance_list.emit(self.cfg.bal_list)
 
         # trigger automatic loading of weighing scheme
         if self.cfg.scheme:

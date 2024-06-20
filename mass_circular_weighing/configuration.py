@@ -60,6 +60,14 @@ class Configuration(AdminDetails):
             'aw_d': Balance,
         }
 
+        self.bal_list = []
+        # NOTE: This script only adds Mettler Toledo or Sartorius balances to the drop-down list
+        for alias, equip in self.equipment.items():
+            if "mettler" in equip.manufacturer.lower():
+                self.bal_list.append(alias)
+            if "sartorius" in equip.manufacturer.lower():
+                self.bal_list.append(alias)
+
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
 
     def get_bal_instance(self, alias, strict=True, **kwargs):
