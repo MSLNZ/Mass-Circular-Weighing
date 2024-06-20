@@ -8,6 +8,7 @@ from msl.qt import Qt, QtWidgets, Button, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
 
 from ...constants import SIGMA_STR, MU_STR, NBC
+from ...utils import greg_format
 from ...routine_classes.final_mass_calc_class import FinalMassCalc, filter_mass_set
 from ...routines.report_results import export_results_summary
 from .prompt_thread import PromptThread
@@ -44,6 +45,7 @@ class DiffsTable(QtWidgets.QTableWidget):
         for i in range(self.rowCount()):
             for j in range(self.columnCount()-1):
                 self.setCellWidget(i, j, QtWidgets.QLabel())
+                self.cellWidget(i, j).setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             self.setCellWidget(i, self.columnCount()-1, QtWidgets.QCheckBox())
             self.cellWidget(i, self.columnCount() - 1).stateChanged.connect(self.update_checkboxes)
 
@@ -71,7 +73,8 @@ class DiffsTable(QtWidgets.QTableWidget):
             self.cellWidget(i, 2).setText(str(data['Run #'][i]))
             self.cellWidget(i, 3).setText(str(data['+ weight group'][i]))
             self.cellWidget(i, 4).setText(str(data['- weight group'][i]))
-            self.cellWidget(i, 5).setText(str("{:+.9f}".format(data['mass difference (g)'][i])))
+            self.cellWidget(i, 5).setText(greg_format(data['mass difference (g)'][i]))
+            self.cellWidget(i, 5).setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.cellWidget(i, 6).setText(str("{:+.3f}".format(data['residual (' + MU_STR + 'g)'][i])))
             self.cellWidget(i, 7).setText(str(data['Acceptance met?'][i]))
             self.cellWidget(i, 8).setText(str(data['balance uncertainty (' + MU_STR + 'g)'][i]))
@@ -98,7 +101,7 @@ class DiffsTable(QtWidgets.QTableWidget):
                 inputdata.resize(dlen + 1)
                 inputdata[-1:]['+ weight group'] = self.cellWidget(i, 3).text()
                 inputdata[-1:]['- weight group'] = self.cellWidget(i, 4).text()
-                inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 5).text()
+                inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 5).text().replace(" ", "")
                 inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 8).text()
 
         return inputdata
