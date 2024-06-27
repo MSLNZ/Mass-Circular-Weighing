@@ -69,6 +69,7 @@ class Configuration(AdminDetails):
                 self.bal_list.append(alias)
 
         self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
+        # criterion for excluding a single weighing within an automatic weighing sequence, default set arbitrarily at 3
 
     def get_bal_instance(self, alias, strict=True, **kwargs):
         """Selects balance class and returns balance instance.
