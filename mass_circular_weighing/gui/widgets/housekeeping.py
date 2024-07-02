@@ -39,6 +39,7 @@ class Housekeeping(QtWidgets.QWidget):
 
         self.drift_io = label('auto select')
         self.timed_io = label('NO')
+        self.true_mass_bool = label('False')
         self.corr_io = label('None')
 
         self.cfg = None
@@ -68,6 +69,7 @@ class Housekeeping(QtWidgets.QWidget):
         formlayout = QtWidgets.QFormLayout()
         formlayout.addRow(label('Drift correction'), self.drift_io)
         formlayout.addRow(label('Use measurement times?'), self.timed_io)
+        formlayout.addRow(label('Calculate true mass?'), self.true_mass_bool)
         formlayout.addRow(label('Correlations between standards'), self.corr_io)
         self.optionsGroup.setLayout(formlayout)
 
@@ -102,7 +104,8 @@ class Housekeeping(QtWidgets.QWidget):
 
             self.drift_io.setText(self.cfg.drift_text)
             self.timed_io.setText(self.cfg.timed_text)
-            self.corr_io.setText(self.cfg.correlations)
+            self.true_mass_bool.setText(str(self.cfg.calc_true_mass))
+            self.corr_io.setText(str(self.cfg.correlations))
 
         else:
             log.error('File does not exist at {!r}'.format(filepath))
@@ -122,10 +125,11 @@ class Housekeeping(QtWidgets.QWidget):
         log.info(f'Save folder: {self.cfg.folder}')
         log.info(f'Job: {self.cfg.job}')
         log.info(f'Client: {self.cfg.client}')
-        log.info(f'Client masses: {self.cfg.client_wt_IDs}')
+        log.info(f'Client masses: {self.cfg.all_client_wts}')
         log.info(f'Standard mass set: {self.cfg.std_set}')
         log.info(f'Standard masses: {self.cfg.all_stds}')
         log.info(f'Check mass set: {self.cfg.check_set}')
+        log.info(f'Check masses: {self.cfg.all_checks}')
         log.info(f'Drift correction: {self.cfg.drift_text}')
         log.info(f'Use measurement times? {self.cfg.timed}')
         log.info(f'Correlations between standards? {self.cfg.correlations}')

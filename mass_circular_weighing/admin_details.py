@@ -4,8 +4,9 @@ This class requires an .xlsx file in the correct template
 import os
 import io
 import string
+import numpy as np
 
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 
 from .log import log
 from .constants import config_default, client_default, job_default, MU_STR
@@ -89,7 +90,8 @@ class AdminDetails(object):
         # Circular Weighing Analysis Parameters
         self.drift_text = self.ds['E7'].value
         self.timed_text = self.ds['E8'].value
-        self.correlations = self.ds['E9'].value
+        self.calc_true_mass = self.ds['E9'].value
+        self.correlations = np.array([[i.value for i in j] for j in self.ds['I8:J9']])  # this is a 2x2 matrix of correlations
 
         # Weight Set Information
         self.all_client_wts = self.load_client_set()
@@ -116,13 +118,17 @@ class AdminDetails(object):
         self.scheme = self.load_scheme()
 
     @property
-    def drift(self):
+    def drift(self) -> str | None:
+        """Allowed options for returned string are: 'no drift', 'linear drift', 'quadratic drift', 'cubic drift'.
+        If 'auto select', drift is set to `None` such that the analysis routine selects optimal drift correction.
+        """
         if self.drift_text == 'auto select':
             return None
         return self.drift_text
 
     @property
-    def timed(self):
+    def timed(self) -> bool:
+        """if `True`, analysis uses times from weighings, otherwise assumes equally spaced in time"""
         if self.timed_text == 'NO':
             return False
         return True
@@ -159,44 +165,44 @@ class AdminDetails(object):
         dict
             keys:
                 'Set identifier', 'Client', 'Weight ID', 'Nominal (g)', 'Shape/Mark', 'Container',
-                'u_mag (mg)', 'Density (kg/m3)', 'u_density (kg/m3)'
+                'u_mag (mg)', 'Density (kg/m3)', 'u_density (kg/m3)', 'Expansion coeff (ppm/degC)',
+                'Num weights', 'Vol (mL)'
         """
         wt_dict = {
-            'Set identifier': None,   # TODO: alter here if decide to add an identifier to client weights
+            'Set identifier': None,
             'Set type': 'Client',
             'Client': self.client,
         }
 
         col_name_keys = {
             "weight id": 'Weight ID', "nom": 'Nominal (g)', 'mark': 'Shape/Mark', "container": 'Container',
-            'u_mag': 'u_mag (mg)', 'density': 'Density (kg/m3)', 'u_dens': 'u_density (kg/m3)'
+            'u_mag': 'u_mag (mg)', 'density': 'Density (kg/m3)', 'u_dens': 'u_density (kg/m3)',
+            'expans': 'Expansion coeff (ppm/degC)'
         }   # warning: 'u_density' contains 'density' so always use 'u_dens' in xlsx file instead.
 
-        for i in string.ascii_uppercase[:7]:  # go across a row ;)
+        for i in string.ascii_uppercase[:8]:  # go across a row ;)
             key = self.ds[i+str(header_row)].value
-
-            # do a look up to make sure the column name is a valid key
+            # do a look up to make sure the column name is a valid key, and use the valid key instead
             valid = False
             for code, real_key in col_name_keys.items():
                 if code in key.lower():
                     key = real_key
                     valid = True
             if not valid:
-                log.warning(f'Error in parsing client weight set: {key} not recognised as a known column header')
-            if valid:
-                # parse the data in that column
-                val = []
-                for row in range(header_row + 1, self.ds.max_row):
-                    v = self.ds[i + str(row)].value
-                    if key == 'Weight ID':
-                        if v is None:
-                            break
-                        else:
-                            # ensure all weight IDs are strings
-                            val.append(str(v))
+                raise ValueError(f'Error in parsing client weight set: {key} not recognised as a known column header')
+            # key is valid so we can parse the data in that column
+            val = []
+            for row in range(header_row + 1, self.ds.max_row):
+                v = self.ds[i + str(row)].value
+                if key == 'Weight ID':
+                    if v is None:
+                        break
                     else:
-                        # keep whatever data type makes sense
-                        val.append(v)
+                        # ensure all weight IDs are strings
+                        val.append(str(v))
+                else:
+                    # keep whatever data type makes sense
+                    val.append(v)
 
                 wt_dict[key] = val
 
@@ -206,15 +212,15 @@ class AdminDetails(object):
             num_weights = len(wt_dict['Weight ID'])
             for key, val in col_name_keys.items():
                 wt_dict[val] = wt_dict[val][:num_weights]
+            wt_dict['Num weights'] = num_weights
+
+        # calculate volumes if we have the densities
+        add_volumes(wt_dict)
 
         return wt_dict
 
-    def init_ref_mass_sets(self):
-        """Collects relevant weight info from MASSREF.xlsx file for all weights in set
-        Creates dictionaries for all_stds and all_checks with keys:
-            'MASSREF file', 'Sheet name', 'Set name', 'Set type', 'Set identifier', 'Calibrated',
-            'Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)',
-            'u_drift'
+    def init_ref_mass_sets(self) -> None:
+        """Collects relevant weight info for all reference and check sets following ':meth:`.load_set_from_massref
         """
         with open(self.massref_path, "rb") as f:  # so that the file remains available to be edited after being read
             massrefwb = load_workbook(io.BytesIO(f.read()), read_only=True, data_only=True)
@@ -226,16 +232,27 @@ class AdminDetails(object):
             else:
                 self.all_checks = None
 
-    def load_set_from_massref(self, massrefwb, sheet, set_ID):
+    def load_set_from_massref(self, massrefwb: Workbook, sheet: str, set_ID: str) -> dict:
+        """Makes a dictionary of the relevant weight info from a MASSREF.xlsx file for all weights in set
+
+        :param massrefwb: The mass set data
+        :param sheet: The sheet name for the specific mass set
+        :param set_ID: The MCW program name for the mass set (client/reference/check)
+        :return: A dictionary with the following keys:
+            'MASSREF file', 'Sheet name', 'Set name', 'Set type', 'Set identifier', 'Calibrated',
+            'Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)',
+            'u_drift', 'Density (kg/m3)', 'u_density (kg/m3)', 'Expansion coeff (ppm/degC)', 'Num weights', 'Vol (mL)'
+        """
         std_sheet = massrefwb[sheet]
-        all_stds = {'MASSREF file': self.massref_path, 'Sheet name': sheet, "Set type": set_ID}
-        all_stds['Set name'] = std_sheet['B1'].value  # e.g. Mettler 11
-        all_stds['Set identifier'] = std_sheet['D1'].value.strip()  # e.g. MA
-        all_stds['Calibrated'] = str(std_sheet['F1'].value)  # can't serialise/JSONify a datetime object...!
+        all_stds = {'MASSREF file': self.massref_path, 'Sheet name': sheet, "Set type": set_ID,
+                    'Set name': std_sheet['B1'].value, 'Set identifier': std_sheet['D1'].value.strip(),
+                    'Calibrated': str(std_sheet['F1'].value)}
 
         # use parsing of nominal values to determine last non-empty row
-        for key in ['Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)',
-                    'u_drift']:
+        for key in [
+            'Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)',
+            'u_drift', 'Density (kg/m3)', 'u_density (kg/m3)', 'Expansion coeff (ppm/degC)'
+        ]:
             all_stds[key] = []
 
         start_row = 4
@@ -259,26 +276,39 @@ class AdminDetails(object):
             # Create weight IDs from nominal, any identifiers like d, and the set identifier.
             # Note here we are forcing k --> K
             try:
-                wt_id = str(nom).upper() + std_sheet[f'C{start_row + i}'].value + all_stds['Set identifier']  # here we are forcing k --> K
+                wt_id = str(nom).upper() + std_sheet[f'C{start_row + i}'].value + all_stds['Set identifier']
             except TypeError:
                 wt_id = str(nom).upper()  + all_stds['Set identifier']
 
             all_stds['Weight ID'].append(wt_id)
+            # mass value
             mv = std_sheet[f'D{start_row + i}'].value
-
             all_stds['mass values (g)'].append(mv)
             # all values for uncertainty should be in micrograms
             u_cal = float(std_sheet[f'E{start_row + i}'].value)
-            u_drift = float(std_sheet[f'M{start_row + i}'].value)
+            u_drift = float(std_sheet[f'N{start_row + i}'].value)
             u_tot = round((u_cal**2 + u_drift**2)**0.5, 3)
             all_stds['u_cal'].append(u_cal)
             all_stds['u_drift'].append(u_drift)
             all_stds['uncertainties (' + MU_STR + 'g)'].append(u_tot)
+            # density and its uncertainty
+            dens = float(std_sheet[f'G{start_row + i}'].value)
+            u_dens = float(std_sheet[f'H{start_row + i}'].value)
+            # expansion coefficient (ppm/degC)
+            expans = float(std_sheet[f'I{start_row + i}'].value)
+            all_stds['Density (kg/m3)'].append(dens)
+            all_stds['u_density (kg/m3)'].append(u_dens)
+            all_stds['Expansion coeff (ppm/degC)'].append(expans)
+
             i += 1
 
-        # print(i)  # i now stores the number of non-empty rows
         if i < 1:
             log.error("No weights in standard weight set!")
+
+        all_stds['Num weights'] = len(all_stds['Weight ID'])
+
+        # calculate volumes if we have the densities
+        add_volumes(all_stds)
 
         return all_stds
 
@@ -291,66 +321,21 @@ class AdminDetails(object):
         log.info(f'Admin details saved to {self.path}')
 
 
-def load_stds_from_set_file(path, wtset):
-    """Collects relevant weight info from SET file for all weights in set
+def add_volumes(wt_dict: dict) -> None:
+    """Add a list of volumes of each weight to the weight set dictionary, using the key 'Vol (mL)'.
+    If the density is provided, the volume is calculated in mL using the nominal mass of the weight.
+    If the density is not provided, the volume is recorded as 'None'.
 
-    Parameters
-    ----------
-    path : path
-        location of where to find set file (e.g. cfg.root.find('standards/path').text)
-    wtset: str
-        specify if std or check weights
-
-    Returns
-    -------
-    dict
-        keys: 'Set file', 'Set identifier', 'Calibrated', 'Weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties (ug)'
+    :param wt_dict: weight set dictionary with keys as per :meth:`.load_set_from_massref` and :meth:`.load_client_set`.
     """
+    vols = []
+    for i in range(wt_dict['Num weights']):
+        try:
+            m = float(wt_dict['Nominal (g)'][i])
+            d = float(wt_dict['Density (kg/m3)'][i])
+            vol = 1000 * m / d
+            vols.append(vol)
+        except TypeError:
+            vols += [None]
 
-    stds = {'Set file': path}
-    for key in {'Weight ID', 'nominal (g)', 'mass values (g)', 'uncertainties ('+MU_STR+'g)'}:
-        stds[key] = []
-
-    with open(path, 'r') as fp:
-        if "WeightSetFile" in fp.readline():
-            set_name = fp.readline().strip('\n').strip('\"').split()
-            if set_name[0] == 'Mettler':
-                stds['Set identifier'] = 'M'+set_name[1]
-            else:
-                stds['Set identifier'] = set_name[0]
-            log.info(f"{wtset} masses use identifier {stds['Set identifier']}")
-            stds['Calibrated'] = set_name[-1]
-            log.info(f"{wtset} masses were last calibrated in {stds['Calibrated']}")
-            fp.readline()
-
-            headerline = fp.readline().strip('\n')
-            if not headerline == '" nominal (g) "," Weight IDentifier "," value(g) "," uncert (ug) ",' \
-                                 '"cov factor","density","dens uncert"':
-                log.warn('File format has changed; data sorting may be incorrect')
-                log.debug(headerline)
-
-            line = fp.readline()
-            while line:
-                line = line.strip('\n').split(',')
-                for i, key in enumerate(['nominal (g)', 'Weight ID', 'mass values (g)', 'uncertainties ('+MU_STR+'g)']):
-                    value = line[i].strip()
-                    if key == 'Weight ID':
-                        id = value.strip('\"')
-                        trunc_val = '{:g}'.format((float(stds['nominal (g)'][-1])))
-                        if float(trunc_val) > 999:
-                            trunc_val = '{:g}'.format(float(trunc_val)/1000) + 'K'
-                        if stds['Set identifier'] == 'CUSTOM':
-                            stds[key].append(trunc_val + id)
-                        else:
-                            stds[key].append(trunc_val + id + stds['Set identifier'])
-                    elif key == 'uncertainties ('+MU_STR+'g)':
-                        stds[key].append(float(value))  # /SUFFIX[MU_STR+'g']
-                    else:
-                        stds[key].append(float(value))
-
-                line = fp.readline()
-        else:
-            log.error('Weight set file must begin WeightSetFile')
-
-    fp.close()
-    return stds
+    wt_dict['Vol (mL)'] = vols

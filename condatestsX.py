@@ -4,13 +4,14 @@ Run the tests in conda environments.
 For more information see:
   https://msl-package-manager.readthedocs.io/en/latest/new_package_readme.html#create-readme-condatests
 """
+import argparse
+import collections
+import json
 import os
 import re
-import sys
-import json
-import argparse
 import subprocess
-import collections
+import sys
+
 try:
     import configparser
 except ImportError:
@@ -95,7 +96,7 @@ def print_envs(envs):
         return
     max_len = max(map(len, envs.keys()))
     for key, value in envs.items():
-        print('  {}  ->  {}'.format(key.ljust(max_len), value))
+        print(f'  {key.ljust(max_len)}  ->  {value}')
 
 
 def get_executable(base_exec_path):
@@ -103,7 +104,7 @@ def get_executable(base_exec_path):
     for item in EXECUTABLES:
         if os.path.isfile(os.path.join(path, item+EXT)):
             return [item]
-    raise IOError('The only supported executables are: {}'.format(', '.join(EXECUTABLES)))
+    raise OSError('The only supported executables are: {}'.format(', '.join(EXECUTABLES)))
 
 
 def ini_parser(path):
@@ -135,19 +136,19 @@ def cli_parser(args):
     p.add_argument('-s', '--show', action='store_true', help='alias for --list')
     p.add_argument('-C', '--create', default=[], nargs='+', help='the Python version numbers to use to create '
                                                                  'conda environments (e.g., 2 3.6 3.7.2)')
-    p.add_argument('-c', '--command', default='setup.py tests', help='the command to execute with each conda '
-                                                                     'environment [default: python setup.py tests]')
+    p.add_argument('-c', '--command', default='setupX.py tests', help='the command to execute with each conda '
+                                                                     'environment [default: python setupX.py tests]')
     p.add_argument('-i', '--include', default=[], nargs='+', help='the conda environments to include (supports regex)')
     p.add_argument('-x', '--exclude', default=[], nargs='+', help='the conda environments to exclude (supports regex)')
     p.add_argument('-f', '--ini', default=INI_PATH, help='the path to the configuration file '
-                                                         '[default: {}]'.format(INI_PATH))
+                                                         f'[default: {INI_PATH}]')
     p.add_argument('-r', '--requires', default=[], nargs='+', help='additional packages to install for the tests '
                                                                    '(can also be a path to a file)')
     return p.parse_args(args)
 
 
 def create_env(name, base_env_path, args):
-    print('Creating the {!r} environment'.format(name))
+    print(f'Creating the {name!r} environment')
     path = os.path.join(base_env_path, 'envs', name)
     p = subprocess.Popen(['conda', 'create', '--name', name, 'python=' + name[len(CREATE_ENV_PREFIX):], '--yes'],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -158,7 +159,7 @@ def create_env(name, base_env_path, args):
             sys.exit(err)
 
     test_packages = []
-    if 'setup.py' in args.command or 'pytest' in args.command:
+    if 'setupX.py' in args.command or 'pytest' in args.command:
         test_packages.extend(['pytest', 'pytest-cov', 'pytest-runner'])
     elif 'nosetests' in args.command:
         test_packages.append('nose')
@@ -179,7 +180,7 @@ def install_packages(env_name, packages_or_files):
     packages = []
     for item in packages_or_files:
         if os.path.isfile(item):
-            files.append('--file={}'.format(item))
+            files.append(f'--file={item}')
         else:
             packages.append(item)
     packages.extend(files)
@@ -195,7 +196,7 @@ def install_packages(env_name, packages_or_files):
 
 
 def remove_env(name):
-    print('Removing the {!r} environment'.format(name))
+    print(f'Removing the {name!r} environment')
     subprocess.call(['conda', 'remove', '--name', name, '--all', '--yes'],
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -216,7 +217,7 @@ def main(*args):
 
     for c in sorted(args.create):
         name = CREATE_ENV_PREFIX + c
-        test_envs[name] = 'Python {} environment'.format(c)
+        test_envs[name] = f'Python {c} environment'
 
     all_envs = get_conda_envs()
     inc_envs = include(all_envs, args) if args.include else all_envs
@@ -259,7 +260,7 @@ def main(*args):
         activate = [] if IS_WINDOWS else ['source']
         activate.extend([os.path.join(all_envs['base'], CONDA_DIR, 'activate'), name])
         cmd = activate + ['&&'] + get_executable(path) + command + ['&&', 'conda', 'deactivate']
-        print('Testing with the {!r} environment'.format(name))
+        print(f'Testing with the {name!r} environment')
         ret = subprocess.call(' '.join(cmd), shell=True, executable=executable)
 
         if name.startswith(CREATE_ENV_PREFIX):
