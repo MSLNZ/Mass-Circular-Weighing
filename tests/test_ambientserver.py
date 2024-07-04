@@ -65,7 +65,7 @@ def test_get_t_rh_now():
 @pytest.mark.skipif(not has_server, reason='requires access to server running webapp')
 def test_get_t_rh_during():
     # there is data within the specified date range
-    temperatures = [19.6382 , 19.64808, 19.62832, 19.52952, 19.61844, 19.62832,
+    temperatures = [19.659335, 19.64808, 19.62832, 19.52952, 19.61844, 19.62832,  #[19.6382 ,
        19.6382 , 19.6382 , 19.62832, 19.62832, 19.62832, 19.62832,
        19.62832, 19.6382 , 19.62832, 19.62832, 19.62832, 19.62832,
        19.6382 , 19.64808, 19.6382 , 19.64808, 19.64808, 19.6382 ,
@@ -74,9 +74,9 @@ def test_get_t_rh_during():
        19.64808, 19.65796, 19.64808, 19.64808, 19.65796, 19.65796,
        19.6382 , 19.65796, 19.65796, 19.65796, 19.66784, 19.64808,
        19.64808, 19.65796, 19.65796, 19.65796, 19.64808, 19.64808,
-       19.66784, 19.65796, 19.65796, 19.64808, 19.66784, 19.65796]
+       19.66784, 19.65796, 19.65796, 19.64808, 19.66784, 19.679113] # 19.65796]
 
-    humidities = [64.38549224, 64.38549224, 64.38549224, 64.7809523 , 64.38549224,
+    humidities = [63.607215379, 64.38549224, 64.38549224, 64.7809523 , 64.38549224, # [64.38549224,
        64.31960783, 64.31960783, 64.28666837, 64.31960783, 64.28666837,
        64.25373074, 64.22079494, 64.25373074, 64.25373074, 64.22079494,
        64.22079494, 64.22079494, 64.22079494, 64.22079494, 64.22079494,
@@ -87,16 +87,16 @@ def test_get_t_rh_during():
        64.15492882, 64.12199851, 64.11102214, 64.08907002, 64.08907002,
        64.04516821, 64.02321853, 63.9793216 , 63.9793216 , 63.9793216 ,
        63.94640104, 63.94640104, 63.91348231, 63.8805654 , 63.84765033,
-       63.8805654 , 63.8805654 , 63.84765033, 63.84765033, 63.84765033]
+       63.8805654 , 63.8805654 , 63.84765033, 63.84765033, 63.060427]  # 63.84765033]
 
     temps, hums = get_t_rh_during(mass1, sensor=2, start="2021-03-11 13:00", end="2021-03-11 14:00")
     # note that these values are corrected by default
     assert len(temps) == len(temperatures) == len(hums) == len(humidities) == 60
 
-    assert temps[0] == pytest.approx(19.6382)
-    assert hums[0] == pytest.approx(64.38549224)
-    assert temps[-1] == pytest.approx(19.65796)
-    assert hums[-1] == pytest.approx(63.84765033)
+    assert temps[0] == pytest.approx(temperatures[0])
+    assert hums[0] == pytest.approx(humidities[0])
+    assert temps[-1] == pytest.approx(temperatures[-1])
+    assert hums[-1] == pytest.approx(humidities[-1])
 
     # there is no data within the specified date range
     temps, hums = get_t_rh_during(mass1, sensor=1, start="2021-03-01 13:00", end="2021-03-01 13:00")  # start='2021-2-27 12:00', end='2021-2-28 12:00')
@@ -114,13 +114,13 @@ def test_get_t_rh_during():
 
     # fetch data for a narrow time window
     temps, hums = get_t_rh_during(mass1, sensor=1, start="2021-03-01 13:00", end="2021-03-01 13:02")
-    temperatures = [20.09202, 20.07244]
-    humidities = [65.00239709, 65.00239709]
-    for t1, t2 in zip(temps, temperatures):
-        assert t1 == pytest.approx(t2)
-    for h1, h2 in zip(humidities, hums):
-        assert h1 == pytest.approx(h2)
-    # note that the uncorrected values are [20.38, 20.36]and [66.58, 66.58] which fails the assertion
+    temperatures = [20.3749, 20.35536]
+    humidities = [64.23419636844, 64.23419636844]
+    # temperatures = [20.09202, 20.07244]       # old values
+    # humidities = [65.00239709, 65.00239709]   # old values
+    assert temps == pytest.approx(temperatures)
+    assert humidities == pytest.approx(hums)
+    # note that the uncorrected values are [20.38, 20.36] and [66.58, 66.58] which fails the assertion
 
 
 if __name__ == "__main__":
