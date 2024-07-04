@@ -292,13 +292,18 @@ class AdminDetails(object):
             all_stds['u_drift'].append(u_drift)
             all_stds['uncertainties (' + MU_STR + 'g)'].append(u_tot)
             # density and its uncertainty
-            dens = float(std_sheet[f'G{start_row + i}'].value)
-            u_dens = float(std_sheet[f'H{start_row + i}'].value)
-            # expansion coefficient (ppm/degC)
-            expans = float(std_sheet[f'I{start_row + i}'].value)
+            dens = std_sheet[f'G{start_row + i}'].value
+            u_dens =std_sheet[f'H{start_row + i}'].value
+            expans = std_sheet[f'I{start_row + i}'].value
             all_stds['Density (kg/m3)'].append(dens)
-            all_stds['u_density (kg/m3)'].append(u_dens)
-            all_stds['Expansion coeff (ppm/degC)'].append(expans)
+            try:    # allow u_density to be missing
+                all_stds['u_density (kg/m3)'].append(float(u_dens))
+            except TypeError:
+                all_stds['u_density (kg/m3)'].append(None)
+            try:    # allow expansion coeff to be missing
+                all_stds['Expansion coeff (ppm/degC)'].append(float(expans))
+            except TypeError:
+                all_stds['Expansion coeff (ppm/degC)'].append(None)
 
             i += 1
 
