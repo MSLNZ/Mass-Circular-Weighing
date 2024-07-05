@@ -172,6 +172,7 @@ class AdminDetails(object):
             'Set identifier': None,
             'Set type': 'Client',
             'Client': self.client,
+            'Weight ID': []
         }
 
         col_name_keys = {
@@ -208,11 +209,11 @@ class AdminDetails(object):
 
         if not wt_dict['Weight ID']:
             log.error("No weights in client weight set!")
-        else:  # make sure all the lists are the same length as the Weight ID list
-            num_weights = len(wt_dict['Weight ID'])
-            for key, val in col_name_keys.items():
-                wt_dict[val] = wt_dict[val][:num_weights]
-            wt_dict['Num weights'] = num_weights
+        # make sure all the lists are the same length as the Weight ID list
+        num_weights = len(wt_dict['Weight ID'])
+        for key, val in col_name_keys.items():
+            wt_dict[val] = wt_dict[val][:num_weights]
+        wt_dict['Num weights'] = num_weights
 
         # calculate volumes if we have the densities
         add_volumes(wt_dict)

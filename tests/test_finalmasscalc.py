@@ -44,6 +44,8 @@ def test_filter_masses():
     for key, value in cfg.all_stds.items():
         if value is None:
             assert stds[key] is None
+        elif type(value) is int:
+            assert stds[key] == value
         else:
             assert len(stds[key]) == len(value)
             assert stds[key][0] == value[0]
@@ -54,6 +56,8 @@ def test_filter_masses():
     for key, value in cfg.all_client_wts.items():
         if value is None:
             assert stds[key] is None
+        elif type(value) is int:
+            assert stds[key] == value
         else:
             assert len(stds[key]) == len(value)
             assert stds[key][0] == value[0]

@@ -53,6 +53,9 @@ def test_filter_masses():
     for key, value in cfg.all_client_wts.items():
         if value is None:
             assert client_wts[key] is None
+        elif type(value) is int:
+            if key == 'Num weights':
+                assert client_wts[key] == 10
         else:
             assert len(client_wts[key]) == len(value)
             assert client_wts[key][0] == value[0]
