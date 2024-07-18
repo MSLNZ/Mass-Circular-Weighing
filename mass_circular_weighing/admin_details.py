@@ -304,6 +304,8 @@ class AdminDetails(object):
             try:    # allow expansion coeff to be missing
                 all_stds['Expansion coeff (ppm/degC)'].append(float(expans))
             except TypeError:
+                log.warning(f"No Expansion coefficient data found in the {set_ID} mass set. "
+                            f"Please ensure u_drift is in column N of the appropriate MASSREF file.")
                 all_stds['Expansion coeff (ppm/degC)'].append(None)
 
             i += 1

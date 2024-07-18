@@ -237,7 +237,7 @@ class FinalMassCalc(object):
             log.error("Error in design matrix. Calculation aborted")
             return False
 
-        # Calculate least squares solution, following the mathcad example in Tech proc MSLT.M.001.008
+        # Calculate least squares solution, following the mathcad example in Tech proc MSLT.M.001
         x = self.designmatrix
         xT = self.designmatrix.T
 
