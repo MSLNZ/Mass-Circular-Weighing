@@ -91,7 +91,15 @@ class AdminDetails(object):
         self.drift_text = self.ds['E7'].value
         self.timed_text = self.ds['E8'].value
         self.calc_true_mass = self.ds['E9'].value
-        self.correlations = np.array([[i.value for i in j] for j in self.ds['I8:J9']])  # this is a 2x2 matrix of correlations
+
+        # correlations are included as a 2x2 matrix - if no values are found, the identity matrix is used
+        try:
+            self.correlations = np.array([[float(i.value) for i in j] for j in self.ds['I8:J9']])
+            print(self.correlations)
+            log.info(f'Using matrix of correlations:\n{self.correlations}')
+        except TypeError:
+            self.correlations = np.identity(2)
+            log.info(f'No correlations between standards')
 
         # Weight Set Information
         self.all_client_wts = self.load_client_set()
@@ -178,10 +186,10 @@ class AdminDetails(object):
         col_name_keys = {
             "weight id": 'Weight ID', "nom": 'Nominal (g)', 'mark': 'Shape/Mark', "container": 'Container',
             'u_mag': 'u_mag (mg)', 'density': 'Density (kg/m3)', 'u_dens': 'u_density (kg/m3)',
-            'expans': 'Expansion coeff (ppm/degC)'
+            'expans': 'Expansion coeff (ppm/degC)', 'centre height': 'Centre Height (mm)', 'u_height': 'u_height (mm)'
         }   # warning: 'u_density' contains 'density' so always use 'u_dens' in xlsx file instead.
 
-        for i in string.ascii_uppercase[:8]:  # go across a row ;)
+        for i in string.ascii_uppercase[:10]:  # go across a row ;)
             key = self.ds[i+str(header_row)].value
             # do a look up to make sure the column name is a valid key, and use the valid key instead
             valid = False
@@ -242,7 +250,8 @@ class AdminDetails(object):
         :return: A dictionary with the following keys:
             'MASSREF file', 'Sheet name', 'Set name', 'Set type', 'Set identifier', 'Calibrated',
             'Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)',
-            'u_drift', 'Density (kg/m3)', 'u_density (kg/m3)', 'Expansion coeff (ppm/degC)', 'Num weights', 'Vol (mL)'
+            'u_drift', 'Density (kg/m3)', 'u_density (kg/m3)', 'Expansion coeff (ppm/degC)', 'Num weights', 'Vol (mL)',
+            'centre height': 'Centre Height (mm)', 'u_height': 'u_height (mm)'
         """
         std_sheet = massrefwb[sheet]
         all_stds = {'MASSREF file': self.massref_path, 'Sheet name': sheet, "Set type": set_ID,
@@ -252,7 +261,8 @@ class AdminDetails(object):
         # use parsing of nominal values to determine last non-empty row
         for key in [
             'Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)',
-            'u_drift', 'Density (kg/m3)', 'u_density (kg/m3)', 'Expansion coeff (ppm/degC)'
+            'u_drift', 'Density (kg/m3)', 'u_density (kg/m3)', 'Expansion coeff (ppm/degC)',
+            'Centre Height (mm)', 'u_height (mm)'
         ]:
             all_stds[key] = []
 
@@ -308,6 +318,20 @@ class AdminDetails(object):
                             f"Please ensure u_drift is in column N of the appropriate MASSREF file.")
                 all_stds['Expansion coeff (ppm/degC)'].append(None)
 
+            # allow height information to be missing
+            try:
+                all_stds['Centre Height (mm)'].append(float(std_sheet[f'K{start_row + i}'].value))
+            except TypeError:
+                log.warning(f"No Centre Height data found in the {set_ID} mass set. "
+                            f"Please check column K of the appropriate MASSREF file is 'Centre Height (mm)'.")
+                all_stds['Centre Height (mm)'].append(None)
+            try:
+                all_stds['u_height (mm)'].append(float(std_sheet[f'L{start_row + i}'].value))
+            except TypeError:
+                log.warning(f"No Centre Height uncertainty data found in the {set_ID} mass set. "
+                            f"Please check column L of the appropriate MASSREF file has the heading 'u_height (mm)'.")
+                all_stds['u_height (mm)'].append(None)
+
             i += 1
 
         if i < 1:
@@ -337,6 +361,7 @@ def add_volumes(wt_dict: dict) -> None:
     :param wt_dict: weight set dictionary with keys as per :meth:`.load_set_from_massref` and :meth:`.load_client_set`.
     """
     vols = []
+    u_vols = []
     for i in range(wt_dict['Num weights']):
         try:
             m = float(wt_dict['Nominal (g)'][i])
@@ -345,5 +370,16 @@ def add_volumes(wt_dict: dict) -> None:
             vols.append(vol)
         except TypeError:
             vols += [None]
+        try:
+            m = float(wt_dict['Nominal (g)'][i])
+            d = float(wt_dict['Density (kg/m3)'][i])
+            u_d = float(wt_dict['u_density (kg/m3)'][i])
+            rel_unc_d = u_d/d
+            u_vol = rel_unc_d * 1000 * m / d
+            u_vols.append(u_vol)
+        except TypeError:
+            u_vols += [None]
 
     wt_dict['Vol (mL)'] = vols
+    wt_dict['Vol unc (mL)'] = u_vols
+

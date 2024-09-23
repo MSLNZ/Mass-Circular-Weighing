@@ -131,13 +131,13 @@ def test_parse_inputdata_to_matrices():
     assert fmc.check_design_matrix()
 
     for i in range(len(collated)):
-        assert fmc.differences[i] \
+        assert fmc.y_meas[i] \
                == collated['mass difference (g)'][i]
         assert fmc.uncerts[i] \
                == collated['balance uncertainty (' + MU_STR + 'g)'][i]
 
     for j in range(fmc.num_stds):
-        assert fmc.differences[len(collated) + j] \
+        assert fmc.y_meas[len(collated) + j] \
                == fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values']['mass values (g)'][j]
         assert fmc.uncerts[len(collated) + j] \
                == fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values']['std uncertainties (' + MU_STR + 'g)'][j]

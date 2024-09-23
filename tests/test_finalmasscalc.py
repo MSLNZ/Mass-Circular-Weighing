@@ -35,7 +35,7 @@ cfg.init_ref_mass_sets()
 # client_wt_ids = cfg.client_wt_IDs
 checks = filter_mass_set(cfg.all_checks, collated)
 
-fmc = FinalMassCalc(cfg.folder, cfg.client, cfg.all_client_wts, checks, cfg.all_stds, collated, nbc=True, corr=None)
+fmc = FinalMassCalc(cfg.folder, cfg.client, cfg.all_client_wts, checks, cfg.all_stds, collated, nbc=True, corr=cfg.correlations)
 
 
 def test_filter_masses():
@@ -140,7 +140,7 @@ def test_import_mass_lists():
     ]
 
     assert fmc.nbc == True
-    assert fmc.corr == None
+    assert fmc.corr.all() == np.identity(2).all()
 
     assert fmc.leastsq_meta =={'Number of observations': 98, 'Number of unknowns': 65, 'Degrees of freedom': 33}
 
@@ -150,7 +150,7 @@ def test_parse_inputdata_to_matrices():
     assert fmc.check_design_matrix()
 
     for i in range(len(collated)):
-        assert fmc.differences[i] \
+        assert fmc.y_meas[i] \
                == collated['mass difference (g)'][i] \
                == check_fmc["2: Matrix Least Squares Analysis"]["Input data with least squares residuals"][i][2]
         assert fmc.uncerts[i] \
@@ -158,7 +158,7 @@ def test_parse_inputdata_to_matrices():
                == check_fmc["2: Matrix Least Squares Analysis"]["Input data with least squares residuals"][i][3]
 
     for j in range(fmc.num_stds):
-        assert fmc.differences[len(collated) + j] \
+        assert fmc.y_meas[len(collated) + j] \
                == fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values']['mass values (g)'][j] \
                == check_fmc["2: Matrix Least Squares Analysis"]["Input data with least squares residuals"][len(collated) + j][2]
         assert fmc.uncerts[len(collated) + j] \

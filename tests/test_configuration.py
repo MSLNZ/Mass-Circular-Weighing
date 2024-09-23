@@ -33,7 +33,7 @@ def test_no_admin_details():
     assert cfg.timed is False
     assert cfg.calc_true_mass is False
     assert cfg.correlations.shape[0] == cfg.correlations.shape[1]
-    assert cfg.correlations.all() == np.full(cfg.correlations.shape[0], None).all()
+    assert cfg.correlations.all() == np.identity(2).all()
 
     assert cfg.scheme is None
 
