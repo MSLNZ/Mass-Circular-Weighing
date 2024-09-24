@@ -13,7 +13,7 @@ from mass_circular_weighing.routine_classes.circ_weigh_class import CircWeigh
 from mass_circular_weighing.constants import IN_DEGREES_C
 from mass_circular_weighing.equip.ambient_fromdatabase import get_rh_p_during
 from mass_circular_weighing.equip.ambient_fromwebapp import get_t_rh_during
-from mass_circular_weighing.equip.vaisala_utils import AirDens2009
+from mass_circular_weighing.utils.airdens_calculator import AirDens2009
 
 
 def to_lst(jsonroot, save_folder, cfg=None):

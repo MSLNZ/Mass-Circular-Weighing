@@ -6,15 +6,15 @@ from msl.io import read
 from openpyxl import Workbook
 
 
-folder = r'I:\MSL\Private\Mass\Commercial Calibrations\2023\AX107H testing\100 g overnight'
-json_file = r'MassStds_100_MAMB.json'
+folder = r'I:\MSL\Private\Mass\Commercial Calibrations\2024\1466_ThermoFisher'
+json_file = r'ThermoFisherScientificNZLimited_50.json'
 wb = Workbook()
 
 
 for flist in os.walk(folder):                   # traverse all folders and subfolders
     if 'backups' not in flist[0]:               # unless they are called 'backups'
         for fname in flist[2]:                  # iterate through the files
-            if '.json' in fname:  # and 'repeatability' not in fname:  # select only json files from weighings
+            if 'ThermoFisherScientificNZLimited_50.json' in fname:  # and 'repeatability' not in fname:  # select only json files from weighings
                 file_to_read = os.path.join(flist[0], fname)
                 print(f'Reading {file_to_read}')
                 code=file_to_read.split('_')[2].strip('.json')
@@ -44,10 +44,10 @@ for flist in os.walk(folder):                   # traverse all folders and subfo
                                         int(run_no), cycle+1,
                                         cyc_val[0][0], cyc_val[0][1],
                                         cyc_val[1][0], cyc_val[1][1],
-                                        # cyc_val[2][0], cyc_val[2][1],
+                                        cyc_val[2][0], cyc_val[2][1],
                                         # cyc_val[3][0], cyc_val[3][1],
                                     ]
                                 )
 
 
-wb.save(os.path.join(folder, "CollatedData_100.xlsx"))
+wb.save(os.path.join(folder, "CollatedData_50.xlsx"))
