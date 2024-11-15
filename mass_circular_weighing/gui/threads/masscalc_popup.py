@@ -8,6 +8,7 @@ from msl.qt import Qt, QtWidgets, Button, Signal, Slot, utils
 from msl.qt.threading import Thread, Worker
 
 from ...constants import SIGMA_STR, MU_STR, NBC
+from ...utils import greg_format
 from ...routine_classes.final_mass_calc_class import FinalMassCalc, filter_mass_set
 from ...routines.report_results import export_results_summary
 from .prompt_thread import PromptThread
@@ -71,8 +72,10 @@ class DiffsTable(QtWidgets.QTableWidget):
             self.cellWidget(i, 2).setText(str(data['Run #'][i]))
             self.cellWidget(i, 3).setText(str(data['+ weight group'][i]))
             self.cellWidget(i, 4).setText(str(data['- weight group'][i]))
-            self.cellWidget(i, 5).setText(str("{:+.9f}".format(data['mass difference (g)'][i])))
+            self.cellWidget(i, 5).setText(greg_format(data['mass difference (g)'][i]))
+            self.cellWidget(i, 5).setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.cellWidget(i, 6).setText(str("{:+.3f}".format(data['residual (' + MU_STR + 'g)'][i])))
+            self.cellWidget(i, 6).setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.cellWidget(i, 7).setText(str(data['Acceptance met?'][i]))
             self.cellWidget(i, 8).setText(str(data['balance uncertainty (' + MU_STR + 'g)'][i]))
             if data['Acceptance met?'][i]:
@@ -98,7 +101,7 @@ class DiffsTable(QtWidgets.QTableWidget):
                 inputdata.resize(dlen + 1)
                 inputdata[-1:]['+ weight group'] = self.cellWidget(i, 3).text()
                 inputdata[-1:]['- weight group'] = self.cellWidget(i, 4).text()
-                inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 5).text()
+                inputdata[-1:]['mass difference (g)'] = self.cellWidget(i, 5).text().replace(" ", "")
                 inputdata[-1:]['balance uncertainty (' + MU_STR + 'g)'] = self.cellWidget(i, 8).text()
 
         return inputdata
@@ -123,7 +126,7 @@ class MassValuesTable(QtWidgets.QTableWidget):
         super(MassValuesTable, self).__init__()
         self.header = [
             "Nominal (g)", "Weight ID", "Set ID",
-            "Mass value (g)", "Uncertainty (µg)", "95% CI", "Cov", "Reference value (g)",
+            "Mass value (g)", "Uncertainty (µg)", "95% CI", "Cov", "Reference value (g)", "Shift (" + MU_STR + 'g)'
         ]
         self.setColumnCount(len(self.header))
         self.setHorizontalHeaderLabels(self.header)
@@ -146,7 +149,15 @@ class MassValuesTable(QtWidgets.QTableWidget):
         self.make_rows(lend)
         for i in range(lend):
             for j, item in enumerate(data[i]):
-                self.cellWidget(i, j).setText(str(item))
+                if j == 3:
+                    self.cellWidget(i, j).setText(greg_format(item))
+                elif j == 7:
+                    self.cellWidget(i, j).setText(greg_format(item))
+                else:
+                    self.cellWidget(i, j).setText(str(item))
+                if j > 2:
+                    self.cellWidget(i, j).setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
         self.resizeColumnsToContents()
 
 
@@ -238,7 +249,7 @@ class MassCalcThread(Thread):
         rhpanel_layout.addWidget(report_values)
         rhpanel.setLayout(rhpanel_layout)
 
-        splitter = QtWidgets.QSplitter(orientation=Qt.Vertical)
+        splitter = QtWidgets.QSplitter(orientation=Qt.Horizontal)
         splitter.addWidget(lhpanel)
         splitter.addWidget(rhpanel)
         splitter.setStretchFactor(0, self.inputdata_table.columnCount())

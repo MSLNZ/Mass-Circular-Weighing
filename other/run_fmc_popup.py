@@ -23,7 +23,7 @@ from mass_circular_weighing.gui.threads.masscalc_popup import *
 # admin = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\tests\samples\admin_TP009.xlsx'
 # admin = r'I:\MSL\Private\Mass\Recal_2020\D6\D6_python\MassStdsD6_Admin_dens.xlsx'
 # admin = r"I:\MSL\Private\Mass\Recal_2020\AX10005\Rebecca's analysis\MassStds_Admin.xlsx"
-admin = r'C:\Users\r.hawke\OneDrive - Callaghan Innovation\Desktop\1462_Pressure\PressureStandards_Admin - RJH.xlsx'
+admin = r"C:\Users\r.hawke\OneDrive - Callaghan Innovation\Desktop\1462_Pressure\PressureStandards_Admin.xlsx"
 cfg = Configuration(admin)
 print(cfg.correlations)
 cfg.init_ref_mass_sets()
@@ -43,8 +43,8 @@ schemetable.load_scheme(cfg.scheme[0], cfg.scheme[1])
 collated_data = collate_all_weighings(schemetable, cfg)
 # print(collated_data)
 """We can change the balance uncertainty here if desired"""
-for i in range(60):
-    collated_data['balance uncertainty ('+MU_STR+'g)'][i] = 15000
+# for i in range(60):
+#     collated_data['balance uncertainty ('+MU_STR+'g)'][i] = 15000
 
 # Display Final Mass Calculation window with calculation done
 fmc = MassCalcThread()
