@@ -9,15 +9,8 @@ from ..log import log
 from ..constants import REL_UNC, DELTA_STR, SUFFIX, MU_STR
 
 
-def num_to_eng_format(num) -> str:
-    """Format a mass value as a string in engineering format, where the smallest unit is µg"""
-    for key, val in SUFFIX.items():
-        renum = num/val
-        if abs(renum) < 1000:
-            if key == 'ng':
-                return "{} {}".format(round(renum/1000, 3), MU_STR+'g')
-            eng_num = "{} {}".format(round(renum, 3), key)
-            return eng_num
+def g_to_microg(num):
+    return round(num*1e6, 3)
 
 
 def filter_mass_set(masses: dict, inputdata: np.asarray) -> dict:
@@ -511,7 +504,7 @@ class FinalMassCalc(object):
         if self.std_uncert_b is None:
             self.cal_rel_unc()
 
-        summarytable = np.empty((self.num_unknowns, 8), object)
+        summarytable = np.empty((self.num_unknowns, 9), object)
         cov = 2
         for i in range(self.num_unknowns):
             summarytable[i, 1] = self.all_wts['Weight ID'][i]
@@ -519,22 +512,17 @@ class FinalMassCalc(object):
             if i < self.num_client_masses:
                 summarytable[i, 2] = 'Client'
                 summarytable[i, 7] = ""
+                summarytable[i, 8] = ""
             elif i >= self.num_client_masses + self.num_check_masses:
                 summarytable[i, 2] = 'Standard'
-                delta = self.b[i] - self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses]
-                summarytable[i, 7] = '{} g; {} {}'.format(
-                    self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses],
-                    DELTA_STR,
-                    num_to_eng_format(delta),
-                )
+                summarytable[i, 7] = self.std_masses['mass values (g)'][i - self.num_client_masses - self.num_check_masses]
+                delta = self.b[i] - summarytable[i, 7]
+                summarytable[i, 8] = g_to_microg(delta)
             else:
                 summarytable[i, 2] = 'Check'
+                summarytable[i, 7] = self.check_masses['mass values (g)'][i - self.num_client_masses]
                 delta = self.b[i] - self.check_masses['mass values (g)'][i - self.num_client_masses]
-                summarytable[i, 7] = '{} g; {} {}'.format(
-                    self.check_masses['mass values (g)'][i - self.num_client_masses],
-                    DELTA_STR,
-                    num_to_eng_format(delta),
-                )
+                summarytable[i, 8] = g_to_microg(delta)
 
             summarytable[i, 3] = np.round(self.b[i], 9)
             if self.b[i] >= 1:
@@ -550,7 +538,7 @@ class FinalMassCalc(object):
 
         log.info('Found least squares solution')
         log.debug('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (' + MU_STR + 'g), '
-                  '95% CI\n' + str(summarytable))
+                  '95% CI','Cov', "Reference value (g)", "Shift (" + MU_STR + 'g)\n' + str(summarytable))
 
         self.summarytable = summarytable
 
@@ -567,7 +555,7 @@ class FinalMassCalc(object):
                                     metadata={'headers':
                                                   ['Nominal (g)', 'Weight ID', 'Set ID',
                                                    'Mass value (g)', 'Uncertainty (' + MU_STR + 'g)', '95% CI', 'Cov',
-                                                   "Reference value (g)",
+                                                   "Reference value (g)", "Shift (" + MU_STR + 'g)'
                                                    ]})
 
     def save_to_json_file(self, filesavepath=None, folder=None, client=None):
