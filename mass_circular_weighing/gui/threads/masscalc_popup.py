@@ -45,7 +45,6 @@ class DiffsTable(QtWidgets.QTableWidget):
         for i in range(self.rowCount()):
             for j in range(self.columnCount()-1):
                 self.setCellWidget(i, j, QtWidgets.QLabel())
-                self.cellWidget(i, j).setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             self.setCellWidget(i, self.columnCount()-1, QtWidgets.QCheckBox())
             self.cellWidget(i, self.columnCount() - 1).stateChanged.connect(self.update_checkboxes)
 
@@ -76,6 +75,7 @@ class DiffsTable(QtWidgets.QTableWidget):
             self.cellWidget(i, 5).setText(greg_format(data['mass difference (g)'][i]))
             self.cellWidget(i, 5).setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.cellWidget(i, 6).setText(str("{:+.3f}".format(data['residual (' + MU_STR + 'g)'][i])))
+            self.cellWidget(i, 6).setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.cellWidget(i, 7).setText(str(data['Acceptance met?'][i]))
             self.cellWidget(i, 8).setText(str(data['balance uncertainty (' + MU_STR + 'g)'][i]))
             if data['Acceptance met?'][i]:
@@ -126,7 +126,7 @@ class MassValuesTable(QtWidgets.QTableWidget):
         super(MassValuesTable, self).__init__()
         self.header = [
             "Nominal (g)", "Weight ID", "Set ID",
-            "Mass value (g)", "Uncertainty (µg)", "95% CI", "Cov", "Reference value (g)",
+            "Mass value (g)", "Uncertainty (µg)", "95% CI", "Cov", "Reference value (g)", "Shift (" + MU_STR + 'g)'
         ]
         self.setColumnCount(len(self.header))
         self.setHorizontalHeaderLabels(self.header)
@@ -149,7 +149,15 @@ class MassValuesTable(QtWidgets.QTableWidget):
         self.make_rows(lend)
         for i in range(lend):
             for j, item in enumerate(data[i]):
-                self.cellWidget(i, j).setText(str(item))
+                if j == 3:
+                    self.cellWidget(i, j).setText(greg_format(item))
+                elif j == 7:
+                    self.cellWidget(i, j).setText(greg_format(item))
+                else:
+                    self.cellWidget(i, j).setText(str(item))
+                if j > 2:
+                    self.cellWidget(i, j).setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
         self.resizeColumnsToContents()
 
 
@@ -241,7 +249,7 @@ class MassCalcThread(Thread):
         rhpanel_layout.addWidget(report_values)
         rhpanel.setLayout(rhpanel_layout)
 
-        splitter = QtWidgets.QSplitter(orientation=Qt.Vertical)
+        splitter = QtWidgets.QSplitter(orientation=Qt.Horizontal)
         splitter.addWidget(lhpanel)
         splitter.addWidget(rhpanel)
         splitter.setStretchFactor(0, self.inputdata_table.columnCount())
