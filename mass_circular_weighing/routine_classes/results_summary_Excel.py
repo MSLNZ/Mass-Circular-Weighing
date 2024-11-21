@@ -16,17 +16,10 @@ from ..constants import FONTSIZE, IN_DEGREES_C
 from ..log import log
 
 
-def list_to_csstr(idlst):
-    idstr = ""
-    for id in idlst:
-        idstr += id + ", "
-    return idstr.strip(" ").strip(",")
-
-
 class ExcelSummaryWorkbook(object):
 
     def __init__(self, cfg):
-        """Collate all adminstrative information, weighing data and calculated values into one spreadsheet
+        """Collate all administrative information, weighing data and calculated values into one spreadsheet
 
         Parameters
         ----------
@@ -48,16 +41,17 @@ class ExcelSummaryWorkbook(object):
         self.collate_ambient = {'T' + IN_DEGREES_C: [], 'RH (%)': []}
 
     def format_scheme_file(self):
-        "Format the weighing scheme, as saved from the main gui"
+        """Format the weighing scheme, as saved from the main gui"""
         scheme_sheet = self.wb["Scheme"]
         for cell in scheme_sheet[1]:
             cell.font = Font(italic=True)
             cell.alignment = Alignment(horizontal='general', vertical='center', text_rotation=0, wrap_text=True,
                                        shrink_to_fit=False, indent=0)
-        scheme_sheet.column_dimensions["A"].width = 21
+
+        scheme_sheet.column_dimensions["A"].width = 30
 
     def save_array_to_sheet(self, data, sheet_name):
-        "Quick method to dump a NumPy array into an Excel sheet. Requires metadata of array to be column headers"
+        """Quick method to dump a NumPy array into an Excel sheet. Requires metadata of array to be column headers"""
         sheet = self.wb.create_sheet(sheet_name)
 
         header = data.metadata.get('metadata')['headers']
@@ -84,12 +78,14 @@ class ExcelSummaryWorkbook(object):
         insheet['A1'].font = Font(bold=True)
 
         # add custom number formatting
-        for i in range(4, insheet.max_row):
+        for i in range(4, insheet.max_row + 1):
             insheet["C" + str(i)].number_format = "0.000 000 000"
         insheet.column_dimensions["A"].width = 15
         insheet.column_dimensions["B"].width = 15
         insheet.column_dimensions["C"].width = 16
         insheet.column_dimensions["D"].width = 19
+        insheet.column_dimensions["F"].width = 19
+        insheet.column_dimensions["G"].width = 19
 
         # Save output to sheet
         outdata = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
@@ -102,7 +98,7 @@ class ExcelSummaryWorkbook(object):
         mls['A1'].font = Font(bold=True)
 
         cols = ["A", "B", "D", "E", "H"]
-        widths = [16, 11, 16, 16, 30]
+        widths = [16, 11, 18, 16, 18]
         for col, width in zip(cols, widths):
             mls.column_dimensions[col].width = width
 
@@ -110,14 +106,15 @@ class ExcelSummaryWorkbook(object):
         meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
         mls.append([])  # Makes a new empty row
         for key, value in meta.items():
-            mls.append([key, value])
+            mls.append([key, str(value)])
             cell = mls["A"+str(mls.max_row)]
             cell.alignment = Alignment(horizontal='general', vertical='center', text_rotation=0, wrap_text=True,
                                        shrink_to_fit=False, indent=0)
 
         # add custom number formatting
         for i in range(5, mls.max_row):
-            mls["D"+str(i)].number_format = "0.000 000 000"
+            mls["D" + str(i)].number_format = "0.000 000 000"
+            mls["H" + str(i)].number_format = "0.000 000 000"
 
     def add_weighing_dataset(self, se, cw_file,  nom, incl_datasets, cfg):
         """Adds relevant from each circular weighing for a given scheme entry
