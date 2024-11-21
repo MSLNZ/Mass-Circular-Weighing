@@ -134,6 +134,7 @@ class FinalMassCalc(object):
         self.b = None
         self.psi_bmeas = None
         self.std_uncert_b = None
+        self.covariances = None
 
         self.summarytable = None
 
@@ -212,7 +213,7 @@ class FinalMassCalc(object):
             for mass in grp1:
                 try:
                     i = self.all_wts['Weight ID'].index(mass)
-                    log.info(f'mass {mass} is in position {i}')
+                    log.debug(f'mass {mass} is in position {i}')
                     designmatrix[rowcounter, i] = 1
                 except IndexError:
                     log.error("Index error raised at mass {}".format(mass))
@@ -220,7 +221,7 @@ class FinalMassCalc(object):
             for mass in grp2:
                 try:
                     i = self.all_wts['Weight ID'].index(mass)
-                    log.info(f'mass {mass} is in position {i}')
+                    log.debug(f'mass {mass} is in position {i}')
                     designmatrix[rowcounter, i] = -1
                 except IndexError:
                     log.error("Index error raised at mass {}".format(mass))
@@ -495,6 +496,9 @@ class FinalMassCalc(object):
         # Add all the squared uncertainty components and square root them to get the final std uncertainty
         psi_b = self.psi_bmeas + psi_buoy + psi_mag
         self.std_uncert_b = np.sqrt(np.diag(psi_b))  # variances are in the diagonal components
+
+        # print(psi_b)
+        self.covariances = 10**-12*psi_b  # convert from ug to g
 
         # det_varcovar_bmeas = np.linalg.det(psi_bmeas)
         # det_varcovar_nbc = np.linalg.det(psi_nbc_hadamard)
