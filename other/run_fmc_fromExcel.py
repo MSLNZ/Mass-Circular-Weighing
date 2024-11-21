@@ -44,7 +44,7 @@ print(cfg.all_checks)
 print(cfg.all_stds)
 
 client_wts = filter_mass_set(cfg.all_client_wts, collated)
-checks = None  # filter_mass_set(cfg.all_checks, collated)
+checks = None  # filter_mass_set(cfg.all_checks, collated)  # need to change back to filter_mass_set for D1
 stds = filter_mass_set(cfg.all_stds, collated)
 
 fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts, checks, stds, collated, nbc=False, corr=cfg.correlations)
@@ -73,13 +73,6 @@ fmc.check_residuals()
 
 fmc.cal_rel_unc()
 fmc.make_summary_table()
-
-covariance = fmc.covariances[0, 1]
-print(covariance)
-variance = np.sqrt(fmc.covariances[0, 0] * fmc.covariances[1, 1])
-print(variance)
-corr_coeff = covariance/variance
-print(corr_coeff)
 
 fmc.add_data_to_root()
 fmc.save_to_json_file()
