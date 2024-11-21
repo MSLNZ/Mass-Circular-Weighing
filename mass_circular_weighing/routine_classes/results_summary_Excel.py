@@ -94,7 +94,7 @@ class ExcelSummaryWorkbook(object):
         mls = self.wb["MLS Output Data"]
         mls.insert_rows(0, 3)
         mls['A1'] = 'Mass values from Least Squares solution'
-        mls['A2'] = fmc_root['metadata'].metadata['Timestamp']
+        mls['A2'] = fmc_root.metadata['metadata']['Timestamp']
         mls['A1'].font = Font(bold=True)
 
         cols = ["A", "B", "D", "E", "H"]
@@ -103,7 +103,7 @@ class ExcelSummaryWorkbook(object):
             mls.column_dimensions[col].width = width
 
         # add metadata
-        meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
+        meta = fmc_root['2: Matrix Least Squares Analysis'].metadata['metadata']
         mls.append([])  # Makes a new empty row
         for key, value in meta.items():
             mls.append([key, str(value)])
