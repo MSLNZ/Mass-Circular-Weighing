@@ -528,7 +528,7 @@ class FinalMassCalc(object):
                 delta = self.b[i] - self.check_masses['mass values (g)'][i - self.num_client_masses]
                 summarytable[i, 8] = g_to_microg(delta)
 
-            summarytable[i, 3] = np.round(self.b[i], 9)
+            summarytable[i, 3] = np.round(self.b[i], 12)
             if self.b[i] >= 1:
                 nom = str(int(round(self.b[i], 0)))
             else:
