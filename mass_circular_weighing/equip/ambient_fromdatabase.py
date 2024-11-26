@@ -8,6 +8,9 @@ import sqlite3
 
 from ..log import log
 from ..constants import database_dir
+from ..utils import solve_quadratic_equation
+
+# TODO: update database paths - Vaisala will be local but milliK will be shared
 m_database_path = os.path.join(database_dir, 'Temperature_milliK.sqlite3')
 v_database_path = os.path.join(database_dir, 'Mass_Lab_Vaisala_PTU300.sqlite3')
 
@@ -73,8 +76,31 @@ def data(path, start=None, end=None, as_datetime=True, select='*'):
     return data
 
 
-def corrected_resistance(r):
-    """Hard-code calibration information for 2024 build-up on AX10005
+def corrected_resistance(r, ch: int = 1):
+    """Hard-code calibration information for 2024 build-up on AX1006/AX10005
+
+    Correction for resistance on channel 1 of milliK:
+    <milliK serial="391119.1" channel="1">
+            <report date="2020-02-07" number="Temperature/2020/887a">
+                <start_date>2020-02-05</start_date>
+                <end_date>2020-02-05</end_date>
+                <coverage_factor>2.0</coverage_factor>
+                <confidence>95%</confidence>
+                <resistance unit="Ohm" min="43" max="347">
+                    <!--
+                      The 'coefficients' element represents the polynomial coefficients
+                      c0, c1, c2, c3... to apply as the calibration equation. You can
+                      either separate the coefficients by a comma or a semi-colon.
+                      The calibration equation is
+                          x_corrected = x + dx
+                      where,
+                          dx = c0 + c1*x + c2*x^2 + c3*x^3 + ...
+                    -->
+                    <coefficients>4.315e-4, -1.825e-5, 5.672e-8</coefficients>
+                    <expanded_uncertainty>0.00031</expanded_uncertainty>
+                </resistance>
+            </report>
+        </milliK>
 
     Correction for resistance on channel 2 of milliK:
     <milliK serial="391119.1" channel="2">
@@ -113,16 +139,54 @@ def corrected_resistance(r):
     if not 43 <= r <= 347:
         log.error(f"Resistance calibration for {r} Ohms is out of calibration range!")
         return None
-    a0 = 3.374e-4  # Ohm
-    a1 = -1.807e-5
-    a2 = 5.162e-8  # per Ohm
-    dr = a0 + a1 * r + a2 * r ** 2
+
+    if ch == 1:
+        """Channel 1 for AX1006"""
+        a0 = 4.315e-4  # Ohm
+        a1 = -1.825e-5
+        a2 = 5.672e-8  # per Ohm
+
+        dr = a0 + a1 * r + a2 * r ** 2
+
+    elif ch == 2:
+        """Channel 2 for AX10005"""
+        a0 = 3.374e-4  # Ohm
+        a1 = -1.807e-5
+        a2 = 5.162e-8  # per Ohm
+
+        dr = a0 + a1 * r + a2 * r ** 2
+
+    else:
+        log.error("Unknown milliK channel; please use 1 or 2")
+        dr = 0
+
     return r + dr
 
 
-def apply_calibration_milliK(resistance):
+def apply_calibration_milliK(resistance, channel):
     """Convert corrected resistance to temperature
-    Hard-code calibration information for 2024 build-up on AX10005
+    Hard-code calibration information for 2024 build-up on AX1006 #AX10005
+    Conversion from resistance to temperature for 89/S4:
+    <PRT serial="89/S4" channel="1">
+        <report date="2018-07-26" number="Temperature/2018/743">
+            <start_date>2018-07-17</start_date>
+            <end_date>2018-07-18</end_date>
+            <coverage_factor>2.0</coverage_factor>
+            <confidence>95%</confidence>
+            <temperature unit="C" min="0" max="40">
+                <!--
+                  The 'coefficients' element represents the polynomial coefficients
+                  c0, c1, c2, c3... to apply as the calibration equation. You can
+                  either separate the coefficients by a comma or a semi-colon.
+                  The calibration equation is
+                      R(t)/R0 = 1 + At + Bt**2
+                -->
+                <coefficients>R0=100.0163, A=3.90991e-3, B=-5.891e-7</coefficients>
+                <expanded_uncertainty>0.0029</expanded_uncertainty>
+            </temperature>
+        </report>
+    </PRT>
+
 
     Conversion from resistance to temperature for SILM08_4:
     <PRT serial="SILM08_4" channel="2">
@@ -145,47 +209,41 @@ def apply_calibration_milliK(resistance):
     Parameters
     ----------
     resistance : :class:`float`
-        raw resistance value as read from milliK channel 1
+        raw resistance value as read from milliK channel
+    channel: :class:`int`
+        channel as integer 1 or 2
 
     Returns
     -------
     :class:`float` or None
         Calibrated temperature value, if between 0 and 40 deg C, or None.
     """
+    if channel == 1:
+        """Channel 1 for AX1006"""
+        print("Channel 1 for AX1006")
+        # Values for 89/S4 (updated 20/07/2023)
+        R0 = 99.983886    # raw reading at 0 deg C, in Ohms, from 18/01/2020
+        A = 0.00391354  # per degree C, from 2018/743
+        B = -5.978e-7   # per degree C squared, from 2018/743
+
+    elif channel == 2:
+        """Channel 2 for AX10005"""
+        print("Channel 2 for AX10005")
+        # Values for SILM08_4 (updated 8/10/2024)
+        R0 = 100.0171    # raw reading at 0 deg C, in Ohms
+        A = 0.00390996  # per degree C
+        B = -5.895e-7   # per degree C squared
+
+    else:
+        log.error("Unknown milliK channel; please use 1 or 2")
+        return None
+
     R = resistance  # raw reading in Ohms
-    corr_R = corrected_resistance(R)
+    corr_R = corrected_resistance(R, ch=channel)
     if not corr_R:
         return None
 
-    # Values for SILM08_4 (updated 8/5/24)
-    R0 = 100.01959    # raw reading at 0 deg C, in Ohms
-    corr_R0 = corrected_resistance(R0)
-
-    A = 0.00391  # per degree C
-    B = -5.90e-7   # per degree C squared
-
-    def solve_quadratic_equation(a, b, c):
-        """Use quadratic formula to solve for T
-        Equation of form a*T**2 + b*T + c = 0
-
-        Parameters
-        ----------
-        a : :class:`float`
-            coefficient of T**2
-        b : :class:`float`
-            coefficient of T
-        c : :class:`float`
-            constant
-
-        Returns
-        -------
-        temperature, T, in degrees C
-        """
-        bracket = b**2 - 4*a*c
-        T1 = (-b + np.sqrt(bracket))/(2*a)
-        T2 = (-b - np.sqrt(bracket))/(2*a)
-
-        return T1, T2
+    corr_R0 = corrected_resistance(R0, ch=channel)
 
     T1, T2 = solve_quadratic_equation(B, A, 1-corr_R/corr_R0)
     for T in [T1, T2]:
@@ -196,8 +254,8 @@ def apply_calibration_milliK(resistance):
     return None
 
 
-def get_cal_temp_now():
-    """Query the milliK database file for the latest resistance value from CH1, apply the calibration,
+def get_cal_temp_now(channel: int = 1):
+    """Query the milliK database file for the latest resistance value from CH1 or CH2, apply the calibration,
     and return the temperature value. If no data is available, the method returns None and logs a warning.
 
     Returns
@@ -207,10 +265,12 @@ def get_cal_temp_now():
     """
     start = datetime.now() - timedelta(minutes=1)
     end = datetime.now()
-    milliK_data = data(path=m_database_path, select='CH2_Ohm', as_datetime=True, start=start, end=end, )
+    select = 'CH' + str(channel) + '_Ohm'
+    milliK_data = data(path=m_database_path, select=select, as_datetime=True, start=start, end=end, )
+    # milliK_data = data(path=m_database_path, select='CH2_Ohm', as_datetime=True, start=start, end=end, )
     try:
         latest = milliK_data[-1][0]
-        return end.replace(microsecond=0).isoformat(sep=' '), apply_calibration_milliK(latest)
+        return end.replace(microsecond=0).isoformat(sep=' '), apply_calibration_milliK(latest, channel)
     except IndexError:
         log.error(
             f"No data available within the last minute. "
@@ -219,7 +279,7 @@ def get_cal_temp_now():
         return end.replace(microsecond=0).isoformat(sep=' '), None
 
 
-def get_cal_temp_during(start=None, end=None):
+def get_cal_temp_during(start=None, end=None, channel: int = 1):
     """Query the milliK database file for the resistance values from CH1 between start and end times, apply the
     calibration to each value, and return the list of temperature values.
     If no data is available, the method returns None and logs a warning.
@@ -228,16 +288,18 @@ def get_cal_temp_during(start=None, end=None):
     ----------
     start : datetime
     end : datetime
+    channel: int 1 or 2
 
     Returns
     -------
     :class:`numpy.ndarray` or :data:`None`
         List of calibrated temperature values, if between 0 and 40 deg C, or None.
     """
-    milliK_data = data(path=m_database_path, select='CH2_Ohm', as_datetime=True, start=start, end=end, )
+    select = 'CH' + str(channel) + '_Ohm'
+    milliK_data = data(path=m_database_path, select=select, as_datetime=True, start=start, end=end, )
     try:
         last_value = milliK_data[-1][0]
-        cal_temps = np.asarray([apply_calibration_milliK(i[0]) for i in milliK_data])
+        cal_temps = np.asarray([apply_calibration_milliK(i[0], channel) for i in milliK_data])
         return cal_temps
     except IndexError:
         log.error(
