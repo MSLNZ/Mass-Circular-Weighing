@@ -11,8 +11,8 @@ from msl.equipment import Config
 
 from mass_circular_weighing.routine_classes.circ_weigh_class import CircWeigh
 from mass_circular_weighing.constants import IN_DEGREES_C
-from mass_circular_weighing.equip.ambient_fromdatabase import get_rh_p_during
-from mass_circular_weighing.equip.ambient_fromwebapp import get_t_rh_during
+from mass_circular_weighing.equip.ambient_fromdatabase import get_rh_p_during, get_cal_temp_during
+# from mass_circular_weighing.equip.ambient_fromwebapp import get_t_rh_during
 from mass_circular_weighing.utils.airdens_calculator import AirDens2009
 
 
@@ -67,7 +67,7 @@ def to_lst(jsonroot, save_folder, cfg=None):
                     try:
                         corresponding_analysis_run = weighdata.name.replace("measurement", "analysis")
                         last_row_date = jsonroot[corresponding_analysis_run].metadata.get('Analysis Timestamp')
-                        enddatetime = datetime.strptime(last_row_date, "%d-%m-%Y %H:%M")
+                        enddatetime = datetime.strptime(last_row_date, "%d-%m-%Y %H:%M:%S")
                     except KeyError:  # this shouldn't happen because we've determined the dataset is complete...
                         print(f"No analysis available for {corresponding_analysis_run}! Moving to next dataset...")
 
@@ -78,23 +78,24 @@ def to_lst(jsonroot, save_folder, cfg=None):
                         if cycle == 0:
                             try:
                                 start_time = weighdata.metadata.get("Mmt Timestamp")
-                                startdatetime = datetime.strptime(start_time, "%d-%m-%Y %H:%M")
+                                startdatetime = datetime.strptime(start_time, "%d-%m-%Y %H:%M:%S")
 
                                 # temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
                                 # min_temp = float(temps[0])
                                 # max_temp = float(temps[1])
                                 # temp_range = float(temps[1]) - float(temps[0])
-                                """get mean temperature and humidity during weighing from Omega database"""
-                                all_temps, all_rh = get_t_rh_during("Mass 1", sensor="2", start=startdatetime, end=enddatetime)
+                                """get mean temperature during weighing from milliK database"""
+                                all_temps = get_cal_temp_during(start=startdatetime, end=enddatetime, channel=1)
                                 mean_temps = sum(all_temps) / len(all_temps)
                                 temp_range = max(all_temps) - min(all_temps)
                                 root[weighdata.name].add_metadata(**{"Mean T" + IN_DEGREES_C: str(mean_temps)})
                                 root[weighdata.name].add_metadata(**{"T range" + IN_DEGREES_C: str(temp_range)})
-                                mean_rhs = sum(all_rh) / len(all_rh)
-                                root[weighdata.name].add_metadata(**{"Mean RH (%)": str(mean_rhs)})
+
 
                                 """get P from Vaisala database"""
-                                rh, p = get_rh_p_during(start=startdatetime, end=enddatetime)
+                                all_rh, p = get_rh_p_during(start=startdatetime, end=enddatetime)
+                                mean_rhs = sum(all_rh) / len(all_rh)
+                                root[weighdata.name].add_metadata(**{"Mean RH (%)": str(mean_rhs)})
                                 mean_P = sum(p) / len(p)
                                 root[weighdata.name].add_metadata(**{"Pressure (hPa)": str(min(p)) + " to " + str(max(p))})
                                 root[weighdata.name].add_metadata(**{"Mean Pressure (hPa)": str(mean_P)})
@@ -116,6 +117,7 @@ def to_lst(jsonroot, save_folder, cfg=None):
 
                             except AttributeError:
                                 pass
+
                         bal_alias = weighdata.metadata.get("Balance")
 
                         sheet1.append(data_row)
@@ -146,7 +148,7 @@ def to_lst(jsonroot, save_folder, cfg=None):
 
 if __name__ == "__main__":
     cfg = Config(r"C:\MCW_Config\local_config.xml")
-    folder = r'I:\MSL\Private\Mass\Recal_2020\D6\original json and log files'  # folder of data
+    folder = r'C:\Users\r.hawke\OneDrive - Callaghan Innovation\Desktop\PostBIPMCheck\LSTconvert'  # folder of data
     # json_file = r'I:\MSL\Private\Mass\Recal_2020\D2\json_files_to_LST\MassStdsD2_200(DiscCheck2)_3-4-24.json'
     # json__root = read(json_file)
     # print(json__root)
