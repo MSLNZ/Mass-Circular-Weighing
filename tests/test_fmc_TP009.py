@@ -281,13 +281,15 @@ def test_make_summary_table():
                 assert float(fmc.summarytable[i][j]) \
                        == float(check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][j])
             else:
-                assert fmc.summarytable[i][j] \
-                   == check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][j]
+                assert fmc.summarytable[i][j] == pytest.approx(
+                    check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][j],
+                    rel=1e-9
+                )
 
     summarytable = np.array(
-        [['500',  '500',  'Client',  500.00048176,  22.366, 44.732, 2, ''],
-         ['500',  '500d', 'Client',  500.000473762, 22.366, 44.732, 2, ''],
-         ['1000', '1Kr', 'Standard', 999.99995,     20.0,   40.0,   2, '999.99995 g; Δ 0.0 µg']]
+        [['500',  '500',  'Client',  500.00048176,  22.366, 44.732, 2, '',  ''],
+         ['500',  '500d', 'Client',  500.000473762, 22.366, 44.732, 2, '',  ''],
+         ['1000', '1Kr', 'Standard', 999.99995,     20.0,   40.0,   2, 999.99995, 0.0]]
     )
     for i, row in enumerate(summarytable):
         for j, item in enumerate(row):

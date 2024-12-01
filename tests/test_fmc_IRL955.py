@@ -85,8 +85,8 @@ def test_example_1():
 
     fmc.add_data_to_root()
     summarytable = np.array(
-        [['1000', '1kx', 'Client', 1000.000201104, 31.631, 63.261, 2, ''],
-         ['1000', '1Kr', 'Standard', 1000.0, 10.0, 20.0, 2, '1000 g; Δ 0.0 µg']]
+        [['1000', '1kx', 'Client', 1000.000201104, 31.631, 63.261, 2, '',  ''],
+         ['1000', '1Kr', 'Standard', 1000.0, 10.0, 20.0, 2, 1000, 0.0]]
     )
     for i, row in enumerate(summarytable):
         for j, item in enumerate(row):
@@ -142,8 +142,8 @@ def test_example_2():
 
     fmc.add_data_to_root()
     summarytable = np.array(
-        [['1000', '1kx', 'Client', 1000.000201104, 30.043, 60.086, 2, ''],
-         ['1000', '1Kr', 'Standard', 1000.0, 0.01, 0.02, 2, '1000 g; Δ 0.0 µg']]
+        [['1000', '1kx', 'Client', 1000.000201104, 30.043, 60.086, 2, '',  ''],
+         ['1000', '1Kr', 'Standard', 1000.0, 0.01, 0.02, 2, 1000, 0.0]]
     )
     for i, row in enumerate(summarytable):
         for j, item in enumerate(row):
@@ -206,9 +206,9 @@ def test_example_3():
 
     fmc.add_data_to_root()
     summarytable = np.array(
-        [['1000', '1kx',  'Client',     1000.000559647, 558.409, 1116.819, 2, ''],
-         ['1000', '1kxd', 'Client',     1000.000559647, 558.409, 1116.819, 2, ''],
-         ['1000', '1Kr',  'Standard',   1000.0,         0.01,       0.02,  2, '1000 g; Δ 0.0 µg']]
+        [['1000', '1kx',  'Client',     1000.000559647, 558.409, 1116.819, 2, '',  ''],
+         ['1000', '1kxd', 'Client',     1000.000559647, 558.409, 1116.819, 2, '',  ''],
+         ['1000', '1Kr',  'Standard',   1000.0,         0.01,       0.02,  2, 1000, 0.0]]
     )
     for i, row in enumerate(summarytable):
         for j, item in enumerate(row):
@@ -280,8 +280,8 @@ def test_example_4():
 
     fmc.add_data_to_root()
     summarytable = np.array(
-        [['1000', '1kx', 'Client',   1000.0000048, 30.002, 60.003, 2, ''],
-         ['1000', '1Kr', 'Standard', 1000.0,        0.01,   0.02,  2, '1000 g; Δ 0.0 µg']]
+        [['1000', '1kx', 'Client',   1000.0000048, 30.002, 60.003, 2, '',  ''],
+         ['1000', '1Kr', 'Standard', 1000.0,        0.01,   0.02,  2, 1000, 0.0]]
     )
     for i, row in enumerate(summarytable):
         for j, item in enumerate(row):

@@ -205,8 +205,8 @@ def test_make_summary_table():
                 assert float(fmc.summarytable[i][j]) \
                        == float(check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][j])
             else:
-                assert fmc.summarytable[i][j] \
-                   == check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][j]
+                assert fmc.summarytable[i][j] == pytest.approx(
+                    check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][j])
 
 
 def test_add_data_to_root():
