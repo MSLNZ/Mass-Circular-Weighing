@@ -5,6 +5,7 @@ import os
 import io
 import string
 import numpy as np
+from time import time
 
 from openpyxl import load_workbook, Workbook
 
@@ -32,6 +33,13 @@ class AdminDetails(object):
 
         with open(path, "rb") as f:         # so that the file remains available to be edited after being read
             self.wb = load_workbook(f, data_only=True)
+            # save original file to backups folder
+            backup_folder = os.path.join(os.path.dirname(path), 'backups')
+            if not os.path.exists(backup_folder):
+                os.makedirs(backup_folder)
+            backup_file = os.path.basename(path).strip(".xlsx")+f"_backup{int(time()-1733104000)}.xlsx"
+            self.wb.save(os.path.join(backup_folder, backup_file))
+
         log.info(f"Found Admin file at {self.path}")
 
         self.ds = self.wb["Admin"]  # note that this will raise an error if the sheet Admin doesn't exist
