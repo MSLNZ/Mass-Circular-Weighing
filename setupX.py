@@ -144,7 +144,7 @@ install_requires = [
     'requests',  # for communicating with Omega loggers via a web app
     'xlwt',      # still used in three modules (could re-write to use openpyxl)
     'xlrd',      # used in SchemeTable (could re-write to use openpyxl)
-    'openpyxl',  # for reading and writing Excel files
+    'openpyxl>=3.1.5',  # for reading and writing Excel files. note version 3.1.2 caused issues
     'tabulate',  # for nice tables in LaTeX output
 ]
 # 'xlrd<2.0' is required in msl-io to open both .xls and .xlsx files
