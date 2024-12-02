@@ -4,7 +4,7 @@ import os
 import numpy as np
 from openpyxl.styles import Font, Alignment
 
-from msl.io import read_table
+from msl.io import read, read_table
 
 from mass_circular_weighing.configuration import Configuration
 from mass_circular_weighing.constants import MU_STR
@@ -80,7 +80,8 @@ fmc.save_to_json_file()
 # Export to Excel summary file
 xl = ExcelSummaryWorkbook(cfg)
 xl.format_scheme_file()
-xl.add_mls(fmc.finalmasscalc)
+fmc_root = read(fmc.filesavepath)  # the metadata parsing breaks if trying to use fmc.finalmasscalc directly
+xl.add_mls(fmc_root)
 
 # add air density data to inputdata sheet
 insheet = xl.wb["MLS Input Data"]

@@ -214,7 +214,7 @@ def test_save_to_excel():
     xl.add_mls(fmc_root)
     test_folder = os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc')
     test_client = 'hortres'
-    xl.save_workbook(test_folder, test_client + '_TPAppendixD.xlsx')
+    xl.save_workbook(test_folder, test_client + '_TPAppendixD')
 
 
 if __name__ == '__main__':
