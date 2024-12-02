@@ -2,8 +2,30 @@
 Release Notes
 =============
 
-Version 1.0.12.dev0 (in development)
+Version 2.0.0.dev0 (in development)
 ====================================
+
+* (PENDING) Major changes to ambient condition recording and integration
+
+* new (not backward compatible!) Admin file template to include correlations, and COM heights and uncertainties
+
+* extra functionality included for scale realisation:
+
+   * weight group volume calculation (uses temperature and expansion coefficient)
+   * air density calculation
+   * true mass and basis 8000 mass calculations
+   * correlations in final mass calculation
+   * uncertainties for air density and volumes of masses in final mass calculation
+
+* Changes to final mass calculation window:
+
+   * other.run_fmc_popup.py to open as standalone (using data in admin file to find all relevant files)
+   * horizontal splitter rather than vertical
+   * check weight shifts are in micrograms in own column
+   * mass differences use "Greg's format"
+
+* fixed tests, and added tests for buoyancy corrections, and uncertainty contributions from air density, volumes,
+  and heights of COMs.
 
 Version 1.0.11.AX10005 (09/05/2024)
 ===================================
@@ -25,7 +47,7 @@ Version 1.0.11 (09/02/2024)
 Version 1.0.10 (12/12/2023)
 ===========================
 
-* Initial incorporation of AX107H
+* Initial incorporation of AX107H (takes average of 5 readings spaced by 0.5 s)
 * Do internal self calibration defaults to False
 * Fix to parsing of weight IDs from MassRef
 
