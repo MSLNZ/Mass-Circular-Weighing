@@ -24,7 +24,7 @@ config_default = os.path.join(ROOT_DIR, r'utils\default_config.xml')
 
 mass_folder = 'M:'
 
-database_dir = r'M:\AmbMonDatabases'
+database_dir = r'M:\AirDensityDatabases'
 
 commercial_folder = r'M:\Commercial Calibrations'
 year = date.today().strftime("%Y")
