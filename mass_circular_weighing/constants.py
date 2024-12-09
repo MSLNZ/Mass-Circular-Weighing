@@ -15,23 +15,23 @@ SUFFIX = {'ng': 1e-9, 'µg': 1e-6, 'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
 DEGREE_SIGN = '°'           # \xb0
 IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 
-NBC = True                  #
+NBC = True                  # no buoyancy correction so use REL_UNC
 REL_UNC = 0.03              # relative uncertainty in ppm for no buoyancy correction: typically 0.03 or 0.1
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 admin_default = os.path.join(ROOT_DIR, r'utils\default_admin.xlsx')
 config_default = os.path.join(ROOT_DIR, r'utils\default_config.xml')
 
-database_dir = r'C:\AX10005_TRHP'
+mass_folder = 'M:'
 
-save_folder_default = r'G:\My Drive'
+database_dir = r'M:\AmbMonDatabases'
 
-i_drive_folder = r'I:\MSL\Private\Mass\Commercial Calibrations'
+commercial_folder = r'M:\Commercial Calibrations'
 year = date.today().strftime("%Y")
-commercial_folder = os.path.join(i_drive_folder, year)
+commercial_year_folder = os.path.join(commercial_folder, year)
+save_folder_default = os.path.join(commercial_year_folder, 'DEFAULT_SAVE_FOLDER')
+
 local_backup = os.path.join(r'C:\CircularWeighingData', year)
-mass_folder = r'I:\MSL\Private\Mass'
-mydrive = r'G:\My Drive'
 
 job_default = "J00000"
 client_default = "Client"
