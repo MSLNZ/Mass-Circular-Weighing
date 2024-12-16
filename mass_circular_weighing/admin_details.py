@@ -322,7 +322,7 @@ class AdminDetails(object):
             try:    # allow expansion coeff to be missing
                 all_stds['Expansion coeff (ppm/degC)'].append(float(expans))
             except TypeError:
-                log.warning(f"No Expansion coefficient data found in the {set_ID} mass set. "
+                log.debug(f"No Expansion coefficient data found in the {set_ID} mass set. "
                             f"Please ensure u_drift is in column N of the appropriate MASSREF file.")
                 all_stds['Expansion coeff (ppm/degC)'].append(None)
 
@@ -330,13 +330,13 @@ class AdminDetails(object):
             try:
                 all_stds['Centre Height (mm)'].append(float(std_sheet[f'K{start_row + i}'].value))
             except TypeError:
-                log.warning(f"No Centre Height data found in the {set_ID} mass set. "
+                log.debug(f"No Centre Height data found in the {set_ID} mass set. "
                             f"Please check column K of the appropriate MASSREF file is 'Centre Height (mm)'.")
                 all_stds['Centre Height (mm)'].append(None)
             try:
                 all_stds['u_height (mm)'].append(float(std_sheet[f'L{start_row + i}'].value))
             except TypeError:
-                log.warning(f"No Centre Height uncertainty data found in the {set_ID} mass set. "
+                log.debug(f"No Centre Height uncertainty data found in the {set_ID} mass set. "
                             f"Please check column L of the appropriate MASSREF file has the heading 'u_height (mm)'.")
                 all_stds['u_height (mm)'].append(None)
 
