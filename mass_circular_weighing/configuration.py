@@ -88,8 +88,11 @@ class Configuration(AdminDetails):
         """
         mode = self.equipment[alias].user_defined['weighing_mode']
         bal = self.bal_class[mode](self.equipment[alias], **kwargs)
-        log.debug('Connection information for balance:'
-                  '\nBalance mode: {} \nEquip record: {} \nBalance instance: {}'.format(mode, self.equipment[alias], bal))
+        log.debug(
+            'Connection information for balance:'
+            '\nBalance mode: {} \nEquip record: {} \nBalance instance: {}'.format(
+               mode, self.equipment[alias], bal)
+        )
 
         if "aw" in mode:
             bal.handler = self.get_handler_record(bal_alias=alias)
@@ -97,17 +100,17 @@ class Configuration(AdminDetails):
 
         bal._ambient_details = self.get_ambientlogger_info(bal_alias=alias)
 
-        if 'vaisala' in bal.ambient_details['Type'].lower():
-            vai_record = self.equipment.get(bal.ambient_details['Alias'])
-            if not vai_record:
-                raise ValueError('No equipment record for {}'.format(bal.ambient_details['Alias']))
-            bal._ambient_instance = Vaisala(vai_record)
-            bal._ambient_details["Manufacturer"] = vai_record.manufacturer
-            bal._ambient_details["Model"] = vai_record.model
-            bal._ambient_details["Serial"] = vai_record.serial
-
-        elif "omega" in bal.ambient_details['Type'].lower():
-            bal._ambient_instance = "OMEGA"
+        # if 'vaisala' in bal.ambient_details['Type'].lower():
+        #     vai_record = self.equipment.get(bal.ambient_details['Alias'])
+        #     if not vai_record:
+        #         raise ValueError('No equipment record for {}'.format(bal.ambient_details['Alias']))
+        #     bal._ambient_instance = Vaisala(vai_record)
+        #     bal._ambient_details["Manufacturer"] = vai_record.manufacturer
+        #     bal._ambient_details["Model"] = vai_record.model
+        #     bal._ambient_details["Serial"] = vai_record.serial
+        #
+        # elif "omega" in bal.ambient_details['Type'].lower():
+        #     bal._ambient_instance = "OMEGA"
 
         return bal, mode
 
@@ -129,13 +132,13 @@ class Configuration(AdminDetails):
         return record
 
     def get_ambientlogger_info(self, bal_alias):
-        """Gets information about Vaisala or OMEGA logger for ambient measurements
+        """Gets information about Vaisala/milliK or OMEGA logger for ambient measurements
 
         Parameters
         ----------
         bal_alias : str
             alias for balance in config.xml file where entry is present in Ambient monitoring column in balance register.
-                If balance uses a Vaisala, entry must be the alias for the Vaisala as in the config.xml file
+                If balance uses a Vaisala/milliK, entry must be the alias for the Vaisala as in the config.xml file
                 If balance uses an OMEGA logger, entry must be of format ithx_name, sensor (see LabEnviron64)
                 (e.g. 'mass 1, sensor 1' or 'mass 2, sensor 1', or 'temperature 1, sensor 2' etc)
 
@@ -156,19 +159,22 @@ class Configuration(AdminDetails):
 
         ambient_logger = self.equipment[bal_alias].user_defined['ambient_monitoring']
 
-        if 'vaisala' in ambient_logger.lower():
-            ambient_details["Type"] = "Vaisala"
-            ambient_details['Alias'] = ambient_logger
-
-        elif 'builddown' in ambient_logger.lower():
-            ambient_details["Type"] = "BuildDown"
-            ambient_details['Alias'] = ambient_logger
-
-        elif 'sensor' in ambient_logger.lower():
+        if 'sensor' in ambient_logger.lower():
             ambient_details["Type"] = "OMEGA"
             omega_details = ambient_logger.split(", sensor ")
             ambient_details['Alias'] = omega_details[0]      # the ithx_name
             ambient_details['Sensor'] = int(omega_details[1])
+
+        # elif 'vaisala' in ambient_logger.lower():
+        #     ambient_details["Type"] = "Vaisala"
+        #     ambient_details['Alias'] = ambient_logger
+
+        elif 'ch' in ambient_logger.lower():
+            ambient_details["Type"] = "Vaisala & milliK Databases"
+            ambient_details['Alias'] = ambient_logger
+            serial_numbers = ambient_logger.split("-")
+            ambient_details['milliK'] = serial_numbers[0]
+            ambient_details['Vaisala'] = serial_numbers[1]
 
         else:
             log.error("Ambient monitoring device not recognised")

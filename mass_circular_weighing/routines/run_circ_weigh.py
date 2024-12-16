@@ -152,7 +152,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
 
     log.info(f"Weighing starting at {metadata['Mmt Timestamp']}")
 
-    ambient_pre = check_ambient_pre(bal.ambient_instance, bal.ambient_details, bal.mode)
+    ambient_pre = check_ambient_pre(bal.ambient_details, bal.mode)
     if not ambient_pre:
         log.info('Measurement not started due to unsuitable ambient conditions')
         return False

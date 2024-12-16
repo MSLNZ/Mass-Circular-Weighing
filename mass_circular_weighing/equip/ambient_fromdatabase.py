@@ -10,9 +10,8 @@ from ..log import log
 from ..constants import database_dir
 from ..utils import solve_quadratic_equation
 
-# TODO: update database paths - Vaisala will be local but milliK will be shared
+# TODO: update database paths - Vaisala can be local but milliK will be shared
 m_database_path = os.path.join(database_dir, 'Temperature_milliK.sqlite3')
-v_database_path = os.path.join(database_dir, 'Mass_Lab_Vaisala_PTU300.sqlite3')
 
 
 def data(path, start=None, end=None, as_datetime=True, select='*'):
@@ -309,10 +308,15 @@ def get_cal_temp_during(start=None, end=None, channel: int = 1):
         return None
 
 
-def get_rh_p_now():
+def get_rh_p_now(vaisala_sn):
     """Query the Vaisala database file for the latest humidity and pressure values.
     Note that these values are corrected before being saved to the database as of 12/12/2023
     If no data is available, the method returns a tuple of Nones and logs a warning.
+
+    Parameters
+    ----------
+    vaisala_sn : str
+        serial number of Vaisala device
 
     Returns
     -------
@@ -321,6 +325,7 @@ def get_rh_p_now():
     """
     start = datetime.now() - timedelta(minutes=1)
     end = datetime.now()
+    v_database_path = os.path.join(database_dir, f'Mass_Lab_Vaisala_{vaisala_sn}.sqlite3')
     vaisala_data = data(path=v_database_path, select='humidity,pressure', as_datetime=True, start=start, end=end, )
     try:
         return vaisala_data[-1]
@@ -332,13 +337,15 @@ def get_rh_p_now():
         return None, None
 
 
-def get_rh_p_during(start=None, end=None):
+def get_rh_p_during(vaisala_sn, start=None, end=None):
     """Query the Vaisala database file for the humidity and pressure values between start and end times.
     Note that these values are corrected before being saved to the database as of 12/12/2023
     If no data is available, the method returns tuple of Nones and logs a warning.
 
     Parameters
     ----------
+    vaisala_sn : str
+            serial number of Vaisala device
     start : datetime
     end : datetime
 
@@ -347,6 +354,7 @@ def get_rh_p_during(start=None, end=None):
     tuple of :class:`numpy.ndarray` or :data:`None`
         The humidity and pressure values, or None.
     """
+    v_database_path = os.path.join(database_dir, f'Mass_Lab_Vaisala_{vaisala_sn}.sqlite3')
     vaisala_data = data(path=v_database_path, select='humidity,pressure', as_datetime=True, start=start, end=end, )
     try:
         humidities = np.asarray([a[0] for a in vaisala_data])
