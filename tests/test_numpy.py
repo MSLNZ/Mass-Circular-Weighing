@@ -62,7 +62,7 @@ def test_matrix_concatenation():
     b = np.identity(n+1)
     with pytest.raises(ValueError) as err:
         np.concatenate([a, b], axis=1)
-    assert 'all the input array dimensions for the concatenation axis must match exactly' in str(err.value)
+    assert 'all the input array dimensions except for the concatenation axis must match exactly' in str(err.value)
 
 
 def test_times_vstack():

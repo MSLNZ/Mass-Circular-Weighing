@@ -176,6 +176,17 @@ class CircWeigh(object):
 
         return self.driftcoeffs
 
+    def w_T_drift(self, drift: str) -> np.ndarray:
+        """Create w_T matrix for the specified drift"""
+        w_T = np.zeros((self.num_wtgrps, self.num_wtgrps + self._driftorder[drift]))
+        for pos in range(self.num_wtgrps-1):
+            w_T[pos, pos] = 1
+            w_T[pos, pos + 1] = -1
+        w_T[self.num_wtgrps - 1, self.num_wtgrps - 1] = 1
+        w_T[self.num_wtgrps-1, 0] = -1
+
+        return w_T
+
     def item_diff(self, drift):
         """Calculates differences between sequential groups of weights in the circular weighing
 
@@ -192,12 +203,7 @@ class CircWeigh(object):
             keys are weight groups by position e.g. grp1 - grp2; grp2 - grp3 etc
             values are mass differences in set unit, with standard deviation in brackets
         """
-        w_T = np.zeros((self.num_wtgrps, self.num_wtgrps + self._driftorder[drift]))
-        for pos in range(self.num_wtgrps-1):
-            w_T[pos, pos] = 1
-            w_T[pos, pos + 1] = -1
-        w_T[self.num_wtgrps - 1, self.num_wtgrps - 1] = 1
-        w_T[self.num_wtgrps-1, 0] = -1
+        w_T = self.w_T_drift(drift)
 
         w = w_T.T
         diffab = np.dot(w_T, self.b[drift])

@@ -9,33 +9,19 @@ from ..log import log
 from ..constants import REL_UNC, DELTA_STR, SUFFIX, MU_STR
 
 
-def num_to_eng_format(num):
-    for key, val in SUFFIX.items():
-        renum = num/val
-        if abs(renum) < 1000:
-            eng_num = "{} {}".format(round(renum, 3), key)
-            return eng_num
-
-
 def g_to_microg(num):
     return round(num*1e6, 3)
 
 
-def filter_mass_set(masses, inputdata):
-    """Takes a set of masses and returns a copy with only the masses included in the data which will be
-    input into the final mass calculation.
+def filter_mass_set(masses: dict, inputdata: np.asarray) -> dict:
+    """Takes a dictionary of masses and returns a copy with only the masses included in inputdata which will be
+    used for the final mass calculation.
     Uses Set type key to determine which other keys are present in the masses dictionary.
 
-    Parameters
-    ----------
-    masses : dict
-        mass set as stored in the Configuration class object (from AdminDetails)
-    inputdata : numpy structured array
+    :param masses: mass set as stored in the Configuration class object (from AdminDetails)
+    :param inputdata: numpy structured array;
         use format np.asarray(<data>, dtype =[('+ weight group', object), ('- weight group', object),
                                 ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
-    Returns
-    -------
-    dict of only the masses which appear in inputdata
     """
     weightgroups = []
     for i in np.append(inputdata['+ weight group'], inputdata['- weight group']):
@@ -49,14 +35,16 @@ def filter_mass_set(masses, inputdata):
     masses_new = dict()
     for key, val in masses.items():
         masses_new[key] = val
+    to_append = ['Shape/Mark', 'Nominal (g)', 'Weight ID',
+                 'Expansion coeff (ppm/degC)', 'Vol (mL)', 'Vol unc (mL)',
+                 'Density (kg/m3)', 'u_density (kg/m3)',
+                 'Centre Height (mm)', 'u_height (mm)']
     if masses['Set type'] == 'Standard' or masses['Set type'] == 'Check':
-        to_append = ['Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)', 'u_drift']
+        to_append += ['mass values (g)', 'uncertainties (' + MU_STR + 'g)', 'u_cal', 'u_drift']
     elif masses['Set type'] == 'Client':
-        to_append = ['Weight ID', 'Nominal (g)', 'Shape/Mark', 'Container',
-                     'u_mag (mg)', 'Density (kg/m3)', 'u_density (kg/m3)']
+        to_append += ['Container', 'u_mag (mg)']
     else:
-        log.error("Mass Set type not recognised: must be 'std' or 'client'")
-        return None
+        raise ValueError("Mass Set type not recognised: must be 'std' or 'client'")
 
     for key in to_append:
         masses_new[key] = []
@@ -70,35 +58,37 @@ def filter_mass_set(masses, inputdata):
 
 
 class FinalMassCalc(object):
-    REL_UNC = REL_UNC
+    REL_UNC = REL_UNC       # relative uncertainty for not applying any buoyancy correction
+    BUOYANCY_CORR = False   # include buoyancy corrections; requires measured air density and volumes of weights
+    UNC_AIR_DENS = False    # include uncertainties in air density measurement
+    UNC_VOL = False         # include uncertainties in volume estimation
+    HEIGHT_CORR = False     # include corrections for differences in centre height of masses
+    UNC_HEIGHT = False      # include uncertainties in centre height measurement
+    TRUE_MASS = False       # work in true mass (rather than conventional mass)
+    EDIT_CORR_COEFFS = False    # allow manual entry of correlation coefficients
 
-    def __init__(self, folder, client, client_masses, check_masses, std_masses, inputdata, nbc=True, corr=None):
-        """Initialises the calculation of mass values using matrix least squares methods
+    def __init__(self, folder: str | os.PathLike, client :str, client_masses: dict, check_masses: dict | None,
+                 std_masses: dict, inputdata: np.asarray, nbc: bool = True, corr: np.array = np.identity(2)) -> None:
+        """Initialises the calculation of mass values using matrix least squares methods. The final calculation is saved
+        as a json file containing structured array of weight IDs, mass values, and uncertainties,
+        along with a record of the input data and other relevant information
 
-        Parameters
-        ----------
-        folder : url
-            folder in which to save json file with output data; ideally an absolute path
-        client : str
-            name of client
-        client_masses : dict
-            dict of client weights
+        :param folder: folder in which to save json file with output data; ideally an absolute path
+        :param client: name of client
+        :param client_masses: dict of client weights in inputdata
             Weight IDs are the strings used in the circular weighing scheme
-        check_masses : dict or None
-            dict of check weights as for std_masses, or None if no check weights are used
-        std_masses : dict
+        :param check_masses: dict of check weights in inputdata, as for std_masses, or None if no check weights are used
+        :param std_masses: dict of standard weights in inputdata with keys as specified in admin_details.py.
             keys: 'MASSREF file', 'Sheet name', 'Set name', 'Set type', 'Set identifier', 'Calibrated',
             'Shape/Mark', 'Nominal (g)', 'Weight ID', 'mass values (g)', 'u_cal', 'uncertainties (' + MU_STR + 'g)',
-            'u_drift'
-            Weight ID values must match those used in the circular weighing scheme
-        inputdata : numpy structured array
+            'u_drift', 'Density (kg/m3)', 'u_density (kg/m3)', 'Expansion coeff (ppm/degC)', 'Num weights', 'Vol (mL)',
+            'Centre Height (mm)', 'Std Uncert (mm)'
+            Weight ID values must match those used in the circular weighing scheme and inputdata
+        :param inputdata: numpy structured array of input data
             use format np.asarray(<data>, dtype =[('+ weight group', object), ('- weight group', object),
             ('mass difference (g)', 'float64'), ('balance uncertainty (ug)', 'float64')])
-
-        Returns
-        -------
-        json file containing structured array of weight IDs, mass values, and uncertainties,
-        along with a record of the input data and other relevant information
+        :param nbc: bool for whether to apply a default value for no buoyancy correction
+        :param corr: 2x2 matrix of correlations between two standards (or the identity matrix for no correlations)
         """
         self.folder = folder
         self.client = client
@@ -125,25 +115,31 @@ class FinalMassCalc(object):
         self.num_check_masses = None
         self.num_stds = None
         self.num_unknowns = None
+        self.all_wts = None
         self.allmassIDs = None
 
         self.num_obs = None
         self.leastsq_meta = {}
 
-        self.differences = np.empty(len(inputdata))
+        self.y = np.empty(len(inputdata))       # corrected mass differences
+        self.y_meas = np.empty(len(inputdata))  # apparent (measured) mass differences
         self.uncerts = np.empty(len(inputdata))
+        self.psi_y = None
 
         self.designmatrix = None
+        self.cmx1 = None
+        self.cnx1 = None
 
         self.inputdatares = None
         self.b = None
         self.psi_bmeas = None
         self.std_uncert_b = None
+        self.covariances = None
 
         self.summarytable = None
 
     def structure_jsonfile(self):
-        "Creates relevant groups in JSONWriter object"
+        """Creates relevant groups in the JSONWriter object"""
         mass_sets = self.finalmasscalc.require_group('1: Mass Sets')
         mass_sets.require_group('Client')
         mass_sets.require_group('Check')
@@ -175,7 +171,26 @@ class FinalMassCalc(object):
 
         self.num_unknowns = self.num_client_masses + self.num_check_masses + self.num_stds
         log.info('Number of unknowns = '+str(self.num_unknowns))
-        self.allmassIDs = np.append(np.append(self.client_wt_IDs, check_wt_IDs), self.std_masses['Weight ID'])
+
+        # combine relevant parts of weight sets into a mega dictionary
+        self.all_wts = ({'Weight ID': self.client_masses['Weight ID'], })
+        for k in ['Expansion coeff (ppm/degC)', 'Vol (mL)', 'Vol unc (mL)', 'Nominal (g)', 'Centre Height (mm)', 'u_height (mm)']:
+            try:
+                self.all_wts[k] = self.client_masses[k]
+            except KeyError:
+                log.warning(f"{k} key not found in client mass set dictionary")
+        for k, v in self.all_wts.items():
+            if self.check_masses:
+                self.all_wts[k] += self.check_masses[k]
+            self.all_wts[k] += self.std_masses[k]
+
+        self.all_wts['Set'] = ['Client']*self.num_client_masses
+        if self.check_masses:
+            self.all_wts['Set'] += ['Check'] * self.num_check_masses
+        self.all_wts['Set'] += ['Standard'] * self.num_stds
+
+        self.allmassIDs = self.all_wts['Weight ID']
+
         # note that stds are grouped last
         self.num_obs = len(self.inputdata) + self.num_stds
         self.leastsq_meta['Number of observations'] = self.num_obs
@@ -183,8 +198,9 @@ class FinalMassCalc(object):
         self.leastsq_meta['Degrees of freedom'] = self.num_obs - self.num_unknowns
 
     def parse_inputdata_to_matrices(self, ):
-        if self.allmassIDs is None:
+        if self.all_wts is None:
             self.import_mass_lists()
+
         # Create design matrix and collect relevant data into differences and uncerts arrays
         designmatrix = np.zeros((self.num_obs, self.num_unknowns))
         rowcounter = 0
@@ -194,29 +210,38 @@ class FinalMassCalc(object):
         for entry in self.inputdata:
             log.debug("{} {} {} {}".format(entry[0], entry[1], entry[2], entry[3]))
             grp1 = entry[0].split('+')
-            for m in range(len(grp1)):
+            for mass in grp1:
                 try:
-                    log.debug('mass ' + grp1[m] + ' is in position ' + str(np.where(self.allmassIDs == grp1[m])[0][0]))
-                    designmatrix[rowcounter, np.where(self.allmassIDs == grp1[m])] = 1
+                    i = self.all_wts['Weight ID'].index(mass)
+                    log.debug(f'mass {mass} is in position {i}')
+                    designmatrix[rowcounter, i] = 1
                 except IndexError:
-                    log.error("Index error raised at mass {}".format(grp1[m]))
+                    log.error("Index error raised at mass {}".format(mass))
             grp2 = entry[1].split('+')
-            for m in range(len(grp2)):
-                log.debug('mass ' + grp2[m] + ' is in position ' + str(np.where(self.allmassIDs == grp2[m])[0][0]))
-                designmatrix[rowcounter, np.where(self.allmassIDs == grp2[m])] = -1
-            self.differences[rowcounter] = entry[2]
+            for mass in grp2:
+                try:
+                    i = self.all_wts['Weight ID'].index(mass)
+                    log.debug(f'mass {mass} is in position {i}')
+                    designmatrix[rowcounter, i] = -1
+                except IndexError:
+                    log.error("Index error raised at mass {}".format(mass))
+            self.y_meas[rowcounter] = entry[2]
             self.uncerts[rowcounter] = entry[3]
             rowcounter += 1
         for std in self.std_masses['Weight ID']:
-            designmatrix[rowcounter, np.where(self.allmassIDs == std)] = 1
+            designmatrix[rowcounter, self.all_wts['Weight ID'].index(std)] = 1
             rowcounter += 1
 
-        self.differences = np.append(self.differences, self.std_masses['mass values (g)'])  # corresponds to Y, in g
+        self.y_meas = np.append(self.y_meas, self.std_masses['mass values (g)'])  # corresponds to Y, in g
         self.uncerts = np.append(self.uncerts, self.std_masses['uncertainties (' + MU_STR + 'g)'])  # balance uncertainties in ug
-        log.debug('differences:\n' + str(self.differences))
+        log.debug('differences:\n' + str(self.y_meas))
         log.debug('uncerts:\n' + str(self.uncerts))
 
         self.designmatrix = designmatrix
+
+        cmx1 = np.ones(self.num_client_masses + self.num_check_masses)  # from above, stds are added last
+        self.cmx1 = np.append(cmx1, np.zeros(self.num_stds))  # 1's for unknowns, 0's for reference stds
+        self.cnx1 = np.append(np.ones(len(self.inputdata)), np.zeros(self.num_stds))
 
     def check_design_matrix(self,):
         if self.designmatrix is None:
@@ -228,7 +253,7 @@ class FinalMassCalc(object):
             for r in range(self.num_obs):
                 sum += self.designmatrix[r, i] ** 2
             if not sum:
-                log.error(f"No comparisons in design matrix for {self.allmassIDs[i]}")
+                log.error(f"No comparisons in design matrix for {self.all_wts['Weight ID'][i]}")
                 error_tally += 1
 
         if error_tally > 0:
@@ -236,45 +261,174 @@ class FinalMassCalc(object):
 
         return True
 
+    def calc_buoyancy_corrections(self, air_densities: np.ndarray) -> np.ndarray:
+        """Calculate true mass differences by applying buoyancy corrections.
+        NOTE: mass volumes are not corrected for temperature during weighing.
+
+        :param air_densities:
+        :return: buoyancy correction in g
+        """
+        # NOTE: volumes are not corrected for temperature during weighing
+
+        a_d = np.append(air_densities, np.zeros(self.num_stds))
+        # print('v', self.all_wts['Vol (mL)'])
+        # print('xv', np.dot(self.designmatrix, self.all_wts['Vol (mL)']).T)
+        # buoyancy correction in mg
+        rho_x_v = (np.dot(self.designmatrix, self.all_wts['Vol (mL)']).T * a_d).T
+        # print('rho_x_v', rho_x_v)
+
+        tm_conv = - 0.00015*self.cnx1*self.y_meas
+
+        return tm_conv + rho_x_v/1000
+
+    def calc_height_corrections(self):
+        """Calculate corrections to mass differences given heights for centres of mass of the weights.
+
+        :return: correction in g, and the corresponding variance-covariance matrix in µg2
+        """
+        # height corr in mg
+        m = np.array(self.all_wts['Nominal (g)'])
+        z = np.array(self.all_wts['Centre Height (mm)'])
+        x_c = (self.designmatrix.T * self.cnx1).T
+        h_c = 0.3 * 1e-6 * np.dot(x_c, m * z)
+
+        u_z = np.array(self.all_wts['u_height (mm)'])
+        uuz = np.vstack(u_z) * np.hstack(u_z)
+        r_z = np.identity(self.num_unknowns)
+        psi_z = uuz * r_z
+        # print('\npsi_z', psi_z)
+
+        psi_z_contr = 9e-8 * np.dot(np.dot(x_c, m * psi_z * m.T), x_c.T)  # in µg2
+        # print('\npsi_z_contr', psi_z_contr)
+
+        return h_c/1000, psi_z_contr
+
+    def apply_corrections_to_mass_differences(self, air_densities: np.ndarray):
+        """Apply corrections to y_meas for buoyancy and COM heights,
+           if class variables BUOYANCY_CORR and HEIGHT_CORR are set to True respectively.
+
+        NOTE: call this method before :meth:'do_least_squares'
+
+        :param air_densities: numpy array of measured air densities
+        """
+        buoy_corr = np.zeros(len(self.y_meas))
+        if self.BUOYANCY_CORR:
+            buoy_corr = self.calc_buoyancy_corrections(air_densities)
+
+        height_corr = np.zeros(len(self.y_meas))
+
+        if self.HEIGHT_CORR:    # include corrections for differences in centre height of masses
+            height_corr = self.calc_height_corrections()[0]
+
+        self.y = self.y_meas + buoy_corr + height_corr
+
+    def cal_psi_y(self, unc_airdens: np.ndarray | None, air_densities: np.ndarray, rv: np.ndarray | None):
+        """Calculate optional contributions to variance-covariance matrix from air density, volume, and COM heights.
+        Select options by setting class variables UNC_AIR_DENS, UNC_VOL and/or UNC_HEIGHT to True.
+
+        NOTE: call this method before :meth:'do_least_squares'
+
+        :param unc_airdens: numpy array of uncertainties in measured air densities
+        :param air_densities: numpy array of measured air densities
+        :param rv: square correlation matrix for volumes, of size num_weights. Defaults to identity matrix.
+
+        :return:
+        """
+        # The 'psi' variables in this method are variance-covariance matrices
+        # U's are variances and R's are correlation coefficients
+        ad_contr = 0
+        vol_contr = 0
+        height_contr = 0
+
+        if self.UNC_AIR_DENS:  # include uncertainties in air density measurement
+            u_ad = np.append(unc_airdens, np.zeros(self.num_stds))
+            uua = np.vstack(u_ad) * np.hstack(u_ad)
+            # print('uua', uua)
+            ra = np.ones(len(uua))  # the air density measurements are fully correlated
+            psi_airdens = uua * ra
+            # print('psi_airdens', psi_airdens)
+            xv = np.dot(self.designmatrix, self.all_wts['Vol (mL)'])
+            # print('xv', xv)
+
+            ad_contr = (xv * psi_airdens).T * xv * 1e6  # factor of 1e6 for µg2
+            log.debug(f'Air density contribution to psi_y is {ad_contr}')
+            # print('\nvAcomp', ad_contr)  # should be square of size b or num unknowns
+
+        if self.UNC_VOL:   # include uncertainties in volume estimation
+            # The uncertainty in the buoyancy correction to a measured mass difference due to an
+            # uncertainty uV in the volume of a weight is ρa*uV, where the ambient air density ρa is assumed
+            # to be 1.2 kg m-3 for the purposes of the uncertainty calculation. TP9, p7, item 4
+            # print('Vol unc (mL)', self.all_wts['Vol unc (mL)'])
+            uuv = np.vstack(self.all_wts['Vol unc (mL)']) * np.hstack(self.all_wts['Vol unc (mL)'])
+            # print(uuv)
+
+            # Correlations of volume uncertainties are bespoke. They could be uncorrelated,
+            # or fully correlated for weights from the same set
+            if rv is None:
+                rv = np.identity(len(uuv))  # uncorrelated
+            # print('set', self.all_wts['Set'])
+            # print('rv', rv)
+            psi_vol = uuv * rv
+            # print('psi_vol', psi_vol)
+
+            # xv = np.dot(self.designmatrix, self.all_wts['Vol (mL)'])
+            # print('xv', xv)
+            a_d = np.append(air_densities, np.zeros(self.num_stds))
+            # print('air density vector', a_d)
+
+            xvxt = np.dot(np.dot(self.designmatrix, psi_vol), self.designmatrix.T)
+            vol_contr = (a_d * xvxt).T * a_d * 1e6  # factor of 1e6 for µg2
+            # print('\nvVcomp', vol_contr)
+            log.debug(f'Volume contribution to psi_y is {vol_contr}')  # should be square of size b or num unknowns
+
+        if self.UNC_HEIGHT:
+            height_contr = self.calc_height_corrections()[1]
+            log.debug(f'Height contribution to psi_y is {height_contr}')
+            # print('\nvZcomp', height_contr)
+
+        self.psi_y = ad_contr + vol_contr + height_contr
+
     def do_least_squares(self):
         if not self.check_design_matrix():
             log.error("Error in design matrix. Calculation aborted")
             return False
 
-        # Calculate least squares solution, following the mathcad example in Tech proc MSLT.M.001.008
+        if not self.y.any():  # no corrections applied
+            self.y = self.y_meas
+
+        # Calculate least squares solution, following the mathcad example in Tech proc MSLT.M.001
         x = self.designmatrix
         xT = self.designmatrix.T
 
         # Hadamard product: element-wise multiplication
         uumeas = np.vstack(self.uncerts) * np.hstack(self.uncerts)    # becomes square matrix dim num_obs
-
         rmeas = np.identity(self.num_obs)
-        if type(self.corr) == np.ndarray:                        # Add off-diagonal terms for correlations
-            for mass1 in self.std_masses['Weight ID']:
-                i = np.where(self.std_masses['Weight ID'] == mass1)
-                for mass2 in self.std_masses['Weight ID']:
-                    j = np.where(self.std_masses['Weight ID'] == mass2)
-                    rmeas[len(self.inputdata)+i[0], len(self.inputdata)+j[0]] = self.corr[i, j]
-            log.debug(f'rmeas matrix includes correlations for stds:\n{rmeas[:, len(self.inputdata)-self.num_obs:]}')
+        # Replace bottom right corner with correlation matrix (which may just be the identity matrix)
+        if self.corr is not None:
+            rmeas[-2:, -2:] = self.corr
+        log.info(f'rmeas matrix with correlations for stds if specified:\n{rmeas}')
 
-        psi_y_hadamard = np.zeros((self.num_obs, self.num_obs))       # Hadamard product is element-wise multiplication
-        for i in range(self.num_obs):
-            for j in range(self.num_obs):
-                if not rmeas[i, j] == 0:
-                    psi_y_hadamard[i, j] = uumeas[i, j] * rmeas[i, j]
+        psi_y_hadamard = uumeas * rmeas  # Hadamard product is element-wise multiplication
+        # print('covYmeas', psi_y_hadamard)
 
-        psi_y_inv = np.linalg.inv(psi_y_hadamard)
+        if self.psi_y is not None:    # psi_y already includes contributions from buoyancy and volume corrections
+            self.psi_y += psi_y_hadamard
+        else:             # psi_y not yet defined
+            self.psi_y = psi_y_hadamard
+        # print('fmc psi_y', self.psi_y)
+
+        psi_y_inv = np.linalg.inv(self.psi_y)
 
         psi_bmeas_inv = np.linalg.multi_dot([xT, psi_y_inv, x])
         self.psi_bmeas = np.linalg.inv(psi_bmeas_inv)
 
-        self.b = np.linalg.multi_dot([self.psi_bmeas, xT, psi_y_inv, self.differences])
-        log.debug('Mass values before corrections:\n'+str(self.b))
+        self.b = np.linalg.multi_dot([self.psi_bmeas, xT, psi_y_inv, self.y])
+        log.info('Mass values:\n'+str(self.b))
 
-        r0 = (self.differences - np.dot(x, self.b))*1e6               # residuals, converted from g to ug
+        r0 = (self.y - np.dot(x, self.b)) * 1e6               # residuals, converted from g to ug
         sum_residues_squared = np.dot(r0, r0)
         self.leastsq_meta['Sum of residues squared (' + MU_STR + 'g^2)'] = np.round(sum_residues_squared, 6)
-        log.debug('Residuals:\n'+str(np.round(r0, 4)))       # also save as column with input data for checking
+        log.info('Residuals:\n'+str(np.round(r0, 4)))       # also save as column with input data for checking
 
         inputdata = self.inputdata
         inputdatares = np.empty((self.num_obs, 5), dtype=object)
@@ -283,7 +437,7 @@ class FinalMassCalc(object):
         inputdatares[0:len(inputdata), 0] = inputdata['+ weight group']
         inputdatares[len(inputdata):, 0] = self.std_masses['Weight ID']
         inputdatares[0:len(inputdata), 1] = inputdata['- weight group']
-        inputdatares[:, 2] = self.differences
+        inputdatares[:, 2] = self.y
         inputdatares[:, 3] = self.uncerts
         inputdatares[:, 4] = np.round(r0, 3)
 
@@ -303,39 +457,32 @@ class FinalMassCalc(object):
         if flag:
             self.leastsq_meta['Residuals greater than 2 balance uncerts'] = flag
 
-    def cal_rel_unc(self, ):
+    def cal_rel_unc_nbc(self):
         if self.b is None:
             self.do_least_squares()
 
-        # Note: the 'psi' variables in this method are variance-covariance matrices
-
         ### Uncertainty due to buoyancy ###
-        psi_buoy = np.zeros((self.num_unknowns, self.num_unknowns))
         # uncertainty due to no buoyancy correction
-        if self.nbc:
-            cmx1 = np.ones(self.num_client_masses + self.num_check_masses)  # from above, stds are added last
-            cmx1 = np.append(cmx1, np.zeros(self.num_stds))  # 1's for unknowns, 0's for reference stds
+        reluncert = self.REL_UNC  # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1 (ppm)
+        unbc = reluncert * self.b * self.cmx1  # weighing uncertainty in ug as vector of length num_unknowns.
+        # Note: TP has * 1e-6 for ppm which would give the uncertainty in g
+        uunbc = np.vstack(unbc) * np.hstack(unbc)  # square matrix of dim num_obs
+        rnbc = np.identity(self.num_unknowns)
+        log.info(f'rnbc matrix (no correlations):\n{rnbc}')
 
-            reluncert = self.REL_UNC  # relative uncertainty in ppm for no buoyancy correction: typ 0.03 or 0.1 (ppm)
-            unbc = reluncert * self.b * cmx1  # weighing uncertainty in ug as vector of length num_unknowns.
-            # Note: TP has * 1e-6 for ppm which would give the uncertainty in g
-            uunbc = np.vstack(unbc) * np.hstack(unbc)  # square matrix of dim num_obs
-            rnbc = np.identity(self.num_unknowns)  # TODO: add off-diagonals for any correlations
-
-            # psi_nbc_hadamard = np.zeros((self.num_unknowns, self.num_unknowns))
-            for i in range(self.num_unknowns):  # Here the Hadamard product is taking the diagonal of the matrix
-                for j in range(self.num_unknowns):
-                    if not rnbc[i, j] == 0:
-                        psi_buoy[i, j] = uunbc[i, j] * rnbc[i, j]  # psi_nbc_hadamard in TP Mathcad calculation
-
-        # TODO: buoyancy correction (not currently implemented)
-        # The uncertainty in the buoyancy correction to a measured mass difference due to an
-        # uncertainty uV in the volume of a weight is ρa*uV, where the ambient air density ρa is assumed
-        # to be 1.2 kg m-3 for the purposes of the uncertainty calculation. TP9, p7, item 4
-        else:
-            reluncert = 0
+        # Here the Hadamard product is taking the diagonal of the matrix
+        psi_buoy = uunbc * rnbc  # psi_nbc_hadamard in TP Mathcad calculation  # square matrix of size num_unknowns
 
         self.leastsq_meta['Relative uncertainty for no buoyancy correction (ppm)'] = reluncert
+        return psi_buoy
+
+    def cal_rel_unc(self):
+        if self.nbc:
+            # get relative uncertainty due to no buoyancy correction
+            psi_buoy = self.cal_rel_unc_nbc()
+        else:
+            # psi_y already includes other uncertainties if necessary
+            psi_buoy = 0
 
         ### Uncertainty due to magnetic effects ###
         # magnetic uncertainty
@@ -348,8 +495,10 @@ class FinalMassCalc(object):
         ### Total uncertainty ###
         # Add all the squared uncertainty components and square root them to get the final std uncertainty
         psi_b = self.psi_bmeas + psi_buoy + psi_mag
-        self.std_uncert_b = np.sqrt(np.diag(psi_b))  # there should only be diagonal components anyway
-        # (TODO: check if valid with correlations)
+        self.std_uncert_b = np.sqrt(np.diag(psi_b))  # variances are in the diagonal components
+
+        # print(psi_b)
+        self.covariances = 10**-12*psi_b  # convert from ug to g
 
         # det_varcovar_bmeas = np.linalg.det(psi_bmeas)
         # det_varcovar_nbc = np.linalg.det(psi_nbc_hadamard)
@@ -362,7 +511,7 @@ class FinalMassCalc(object):
         summarytable = np.empty((self.num_unknowns, 9), object)
         cov = 2
         for i in range(self.num_unknowns):
-            summarytable[i, 1] = self.allmassIDs[i]
+            summarytable[i, 1] = self.all_wts['Weight ID'][i]
 
             if i < self.num_client_masses:
                 summarytable[i, 2] = 'Client'
@@ -375,11 +524,11 @@ class FinalMassCalc(object):
                 summarytable[i, 8] = g_to_microg(delta)
             else:
                 summarytable[i, 2] = 'Check'
-                delta = self.b[i] - self.check_masses['mass values (g)'][i - self.num_client_masses]
                 summarytable[i, 7] = self.check_masses['mass values (g)'][i - self.num_client_masses]
+                delta = self.b[i] - self.check_masses['mass values (g)'][i - self.num_client_masses]
                 summarytable[i, 8] = g_to_microg(delta)
 
-            summarytable[i, 3] = np.round(self.b[i], 9)
+            summarytable[i, 3] = np.round(self.b[i], 12)
             if self.b[i] >= 1:
                 nom = str(int(round(self.b[i], 0)))
             else:
@@ -392,8 +541,8 @@ class FinalMassCalc(object):
             summarytable[i, 6] = cov
 
         log.info('Found least squares solution')
-        log.debug('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (' + MU_STR + 'g), 95% CI\n' + str(
-            summarytable))
+        log.debug('Least squares solution:\nWeight ID, Set ID, Mass value (g), Uncertainty (' + MU_STR + 'g), '
+                  '95% CI','Cov', "Reference value (g)", "Shift (" + MU_STR + 'g)\n' + str(summarytable))
 
         self.summarytable = summarytable
 

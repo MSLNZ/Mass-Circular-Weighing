@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 import os
 
@@ -30,7 +31,9 @@ def test_no_admin_details():
     # Circular Weighing Analysis Parameters
     assert cfg.drift is None
     assert cfg.timed is False
-    assert cfg.correlations is None
+    assert cfg.calc_true_mass is False
+    assert cfg.correlations.shape[0] == cfg.correlations.shape[1]
+    assert cfg.correlations.all() == np.identity(2).all()
 
     assert cfg.scheme is None
 
@@ -51,9 +54,11 @@ def test_admin_details():
     assert len(cfg.client_wt_IDs) == cfg.ds['E13'].value == 25  # added weights to make a full set
 
     # Circular Weighing Analysis Parameters
-    assert cfg.drift is None
+    assert cfg.drift == 'linear drift'
     assert cfg.timed is False
-    assert cfg.correlations is None
+    assert cfg.calc_true_mass is True
+    assert cfg.correlations.shape[0] == cfg.correlations.shape[1]
+    assert cfg.correlations.all() == np.eye(cfg.correlations.shape[0]).all()
 
     assert cfg.scheme[0] == ['Weight groups', 'Nominal mass (g)', 'Balance alias', '# runs']
     assert cfg.scheme[1] == [

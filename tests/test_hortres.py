@@ -51,6 +51,8 @@ def test_filter_masses():
     for key, value in cfg.all_stds.items():
         if value is None:
             assert stds[key] is None
+        elif type(value) is int:
+            assert stds[key] == value
         else:
             assert len(stds[key]) == len(value)
             assert stds[key][0] == value[0]
@@ -61,6 +63,8 @@ def test_filter_masses():
     for key, value in cfg.all_client_wts.items():
         if value is None:
             assert stds[key] is None
+        elif type(value) is int:
+            assert stds[key] == value
         else:
             assert len(stds[key]) == len(value)
             assert stds[key][0] == value[0]
@@ -116,10 +120,10 @@ def test_import_mass_lists():
         for i in range(len(fmc.allmassIDs))
     ]
 
-    assert fmc.nbc == True
-    assert fmc.corr == None
+    assert fmc.nbc
+    assert fmc.corr is None
 
-    assert fmc.leastsq_meta =={'Number of observations': 25, 'Number of unknowns': 18, 'Degrees of freedom': 7}
+    assert fmc.leastsq_meta == {'Number of observations': 25, 'Number of unknowns': 18, 'Degrees of freedom': 7}
 
 
 def test_parse_inputdata_to_matrices():
@@ -127,13 +131,13 @@ def test_parse_inputdata_to_matrices():
     assert fmc.check_design_matrix()
 
     for i in range(len(collated)):
-        assert fmc.differences[i] \
+        assert fmc.y_meas[i] \
                == collated['mass difference (g)'][i]
         assert fmc.uncerts[i] \
                == collated['balance uncertainty (' + MU_STR + 'g)'][i]
 
     for j in range(fmc.num_stds):
-        assert fmc.differences[len(collated) + j] \
+        assert fmc.y_meas[len(collated) + j] \
                == fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values']['mass values (g)'][j]
         assert fmc.uncerts[len(collated) + j] \
                == fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values']['std uncertainties (' + MU_STR + 'g)'][j]
@@ -210,7 +214,7 @@ def test_save_to_excel():
     xl.add_mls(fmc_root)
     test_folder = os.path.join(ROOT_DIR, r'tests\samples\final_mass_calc')
     test_client = 'hortres'
-    xl.save_workbook(test_folder, test_client + '_TPAppendixD.xlsx')
+    xl.save_workbook(test_folder, test_client + '_TPAppendixD')
 
 
 if __name__ == '__main__':

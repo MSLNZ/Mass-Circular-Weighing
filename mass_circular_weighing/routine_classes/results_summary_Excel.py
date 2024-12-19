@@ -4,7 +4,8 @@ Called from routines.report_results.py
 """
 import os
 import string
-import json
+import numpy as np   # used by eval when loading residual std devs
+
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment
 
@@ -51,7 +52,7 @@ class ExcelSummaryWorkbook(object):
         scheme_sheet.column_dimensions["A"].width = 30
 
     def save_array_to_sheet(self, data, sheet_name):
-        "Quick method to dump a NumPy array into an Excel sheet. Requires metadata of array to be column headers"
+        """Quick method to dump a NumPy array into an Excel sheet. Requires metadata of array to be column headers"""
         sheet = self.wb.create_sheet(sheet_name)
 
         header = data.metadata.get('metadata')['headers']
@@ -67,7 +68,8 @@ class ExcelSummaryWorkbook(object):
 
     def add_mls(self, fmc_root):
         """Adds matrix least squares sections to summary file;
-        separates input and output data into two different sheets"""
+        separates input and output data into two different sheets.
+        Only seems to work with fmc_root when read from the finalmasscalc.json file using msl.io.read"""
 
         # Save input to sheet
         indata = fmc_root['2: Matrix Least Squares Analysis']["Input data with least squares residuals"]
@@ -84,6 +86,8 @@ class ExcelSummaryWorkbook(object):
         insheet.column_dimensions["B"].width = 15
         insheet.column_dimensions["C"].width = 16
         insheet.column_dimensions["D"].width = 19
+        insheet.column_dimensions["F"].width = 19
+        insheet.column_dimensions["G"].width = 19
 
         # Save output to sheet
         outdata = fmc_root['2: Matrix Least Squares Analysis']["Mass values from least squares solution"]
@@ -104,7 +108,7 @@ class ExcelSummaryWorkbook(object):
         meta = fmc_root['2: Matrix Least Squares Analysis']['metadata'].metadata
         mls.append([])  # Makes a new empty row
         for key, value in meta.items():
-            mls.append([key, value])
+            mls.append([key, str(value)])
             cell = mls["A"+str(mls.max_row)]
             cell.alignment = Alignment(horizontal='general', vertical='center', text_rotation=0, wrap_text=True,
                                        shrink_to_fit=False, indent=0)
@@ -162,8 +166,12 @@ class ExcelSummaryWorkbook(object):
                         temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
                         rhs = weighdata.metadata.get("RH (%)").split(" to ")
                     except AttributeError:
-                        temps = []
-                        rhs = []
+                        try:
+                            temps = weighdata.metadata["T range" + IN_DEGREES_C].split(" to ")
+                            rhs = weighdata.metadata["RH (%)"].split(" to ")
+                        except KeyError:
+                            temps = []
+                            rhs = []
 
                     if (str(float(nom)), se, dname[2]) in incl_datasets:
                         incl = 1
@@ -235,8 +243,8 @@ class ExcelSummaryWorkbook(object):
                         data_list.append(row[2])
 
                     drift = analysisdata.metadata.get("Selected drift")
-                    res_dict = json.loads(str(analysisdata.metadata.get("Residual std devs")).replace("'", '"'))
-                    res = res_dict.get(drift)
+                    res_dict = eval(analysisdata.metadata.get("Residual std devs").replace("'", '"'))
+                    res = res_dict[drift]
 
                     data_list += [
                         drift,
@@ -307,7 +315,7 @@ class ExcelSummaryWorkbook(object):
             sheet.append([])
             if not all_temps:
                 message = '<html>Please enter any known temperature values during weighing<br>' \
-                          'for {}, separated by a space</html>'.format(se)
+                          'for {}, separated by a space, ending {}</html>'.format(se, weighdata.metadata.get("Mmt Timestamp"))
                 pt.show('text', message, font=FONTSIZE, title='Ambient Monitoring')
                 reply = pt.wait_for_prompt_reply()
                 try:
@@ -317,7 +325,7 @@ class ExcelSummaryWorkbook(object):
                 sheet.append(["Temperatures:"] + temperatures)
             if not all_rh:
                 message = '<html>Please enter any known humidity values during weighing<br>' \
-                          'for {}, separated by a space</html>'.format(se)
+                          'for {}, separated by a space, ending {}</html>'.format(se, weighdata.metadata.get("Mmt Timestamp"))
                 pt.show('text', message, font=FONTSIZE, title='Ambient Monitoring')
                 reply = pt.wait_for_prompt_reply()
                 try:
@@ -363,7 +371,7 @@ class ExcelSummaryWorkbook(object):
             os.rename(xl_output_file, back_up_file)  # this moves the file and renames it
         # protect each sheet
         for sheet in self.wb.sheetnames:
-            self.wb[sheet].protection.set_password('Mass')
+            self.wb[sheet].protection.password = 'Mass'
         self.wb.active = self.wb['Admin']
         # save the new file
         self.wb.save(xl_output_file)

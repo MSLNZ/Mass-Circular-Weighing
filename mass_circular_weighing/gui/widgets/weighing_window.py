@@ -197,7 +197,7 @@ class WeighingWindow(QtWidgets.QWidget):
             self.resize(self.minimumSizeHint())
 
             # do a quick check on the ambient conditions
-            check_ambient_pre(self.bal.ambient_instance, self.bal.ambient_details, 'mde')
+            check_ambient_pre(self.bal.ambient_details, 'mde')
             super().show()
 
     def reset_balance_comms(self):
@@ -296,7 +296,7 @@ class WeighingWindow(QtWidgets.QWidget):
         wt.exec()  # rather than show; to make the pop-up blocking
         if wt.go:
             # do another quick check on the ambient conditions in case the server has gone down in the meantime
-            check_ambient_pre(self.bal.ambient_instance, self.bal.ambient_details, 'mde')
+            check_ambient_pre(self.bal.ambient_details, 'mde')
             self.start_weighing()
 
     def check_for_existing(self):
@@ -390,7 +390,7 @@ class WeighingWindow(QtWidgets.QWidget):
                 winsound.Beep(659, 200)
                 winsound.Beep(587, 300)
                 # do another quick check on the ambient conditions in case the server has gone down in the meantime
-                check_ambient_pre(self.bal.ambient_instance, self.bal.ambient_details, 'mde')
+                check_ambient_pre(self.bal.ambient_details, 'mde')
                 return
             # get next run id
             run_id = 'run_' + str(round(self.se_row_data['first run no.']+run, 0))

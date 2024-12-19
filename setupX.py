@@ -1,11 +1,12 @@
 import os
 import re
-import sys
 import subprocess
+import sys
+
 from setuptools import (
-    setup,
-    find_packages,
     Command,
+    find_packages,
+    setup,
 )
 
 
@@ -88,7 +89,7 @@ def read(filename):
 def fetch_init(key):
     # open the __init__.py file to determine the value instead of importing the package to get the value
     init_text = read('mass_circular_weighing/__init__.py')
-    return re.search(r'{}\s*=\s*(.*)'.format(key), init_text).group(1).strip('\'\"')
+    return re.search(rf'{key}\s*=\s*(.*)', init_text).group(1).strip('\'\"')
 
 
 def get_version():
@@ -98,7 +99,7 @@ def get_version():
 
     if 'develop' in sys.argv or ('egg_info' in sys.argv and '--egg-base' not in sys.argv):
         # then installing in editable (develop) mode
-        #   python setup.py develop
+        #   python setupX.py develop
         #   pip install -e .
         suffix = 'editable'
     else:
@@ -110,11 +111,11 @@ def get_version():
         except:
             try:
                 git_dir = os.path.join(file_dir, '.git')
-                with open(os.path.join(git_dir, 'HEAD'), mode='rt') as fp1:
+                with open(os.path.join(git_dir, 'HEAD')) as fp1:
                     line = fp1.readline().strip()
                     if line.startswith('ref:'):
                         _, ref_path = line.split()
-                        with open(os.path.join(git_dir, ref_path), mode='rt') as fp2:
+                        with open(os.path.join(git_dir, ref_path)) as fp2:
                             sha1 = fp2.readline().strip()
                     else:  # detached HEAD
                         sha1 = line
@@ -194,8 +195,8 @@ setup(
 if 'dev' in version and not version.endswith('editable'):
     # ensure that the value of __version__ is correct if installing the package from a non-release code base
     init_path = ''
-    if sys.argv[0] == 'setup.py' and 'install' in sys.argv and not {'--help', '-h'}.intersection(sys.argv):
-        # python setup.py install
+    if sys.argv[0] == 'setupX.py' and 'install' in sys.argv and not {'--help', '-h'}.intersection(sys.argv):
+        # python setupX.py install
         try:
             cmd = [sys.executable, '-c', 'import mass_circular_weighing as p; print(p.__file__)']
             output = subprocess.check_output(cmd, cwd=os.path.dirname(sys.executable))
@@ -210,4 +211,4 @@ if 'dev' in version and not version.endswith('editable'):
         with open(init_path, mode='r+') as fp:
             source = fp.read()
             fp.seek(0)
-            fp.write(re.sub(r'__version__\s*=.*', "__version__ = '{}'".format(version), source))
+            fp.write(re.sub(r'__version__\s*=.*', f"__version__ = '{version}'", source))

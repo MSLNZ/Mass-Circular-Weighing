@@ -12,11 +12,11 @@ sys.excepthook = excepthook
 
 from ..log import log
 from .. import __version__
-from ..routines.run_circ_weigh import analyse_all_weighings_in_file, check_existing_runs
+from ..routines.run_circ_weigh import check_existing_runs
+from ..routines.analyse_circ_weigh import analyse_all_weighings_in_file
 from ..routines.collate_data import collate_all_weighings
 from ..gui.widgets.housekeeping import Housekeeping
 from ..gui.widgets.scheme_table import SchemeTable
-from .threads.circweigh_popup import WeighingThread
 from .threads.masscalc_popup import MassCalcThread
 
 all_weighing_threads = []

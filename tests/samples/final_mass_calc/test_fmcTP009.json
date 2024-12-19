@@ -1,0 +1,67 @@
+#File created with: MSL JSONWriter version 1.0
+{
+  "metadata": {
+    "Program Version": "2.0.0.dev0",
+    "Timestamp": "2024-09-24 11:17",
+    "Client": "TP009"
+  },
+  "1: Mass Sets": {
+    "Client": {
+      "Number of masses": 2,
+      "Weight ID": ["500","500d","1Kr"]
+    },
+    "Check": {
+      "Number of masses": 0,
+      "Set identifier": "No check set"
+    },
+    "Standard": {
+      "Number of masses": 1,
+      "Set identifier": "r",
+      "Calibrated": "None",
+      "Weight ID": ["1Kr"],
+      "mass values": {
+        "dtype": [
+          ["Weight ID","object"],
+          ["Nominal (g)","float64"],
+          ["mass values (g)","float64"],
+          ["std uncertainties (\u00b5g)","float64"]
+        ],
+        "data": [
+          ["1Kr",1000.0,999.99995,20.0]
+        ]
+      }
+    }
+  },
+  "2: Matrix Least Squares Analysis": {
+    "metadata": {
+      "Number of observations": 5,
+      "Number of unknowns": 3,
+      "Degrees of freedom": 2,
+      "Sum of residues squared (\u00b5g^2)": 151.411699
+    },
+    "Input data with least squares residuals": {
+      "metadata": {
+        "headers": ["+ weight group","- weight group","mass difference (g)","balance uncertainty (\u00b5g)","residual (\u00b5g)"]
+      },
+      "dtype": "|O",
+      "data": [
+        ["1Kr","500+500d",-0.001010691272693006,20.0,-5.169],
+        ["500+500d","1Kr",0.0010003528882218996,20.0,-5.169],
+        ["500","500d",1.499775e-05,20.0,6.999],
+        ["500d","500",-9.9985e-07,20.0,6.999],
+        ["1Kr",null,999.99995,20.0,0.0]
+      ]
+    },
+    "Mass values from least squares solution": {
+      "metadata": {
+        "headers": ["Nominal (g)","Weight ID","Set ID","Mass value (g)","Uncertainty (\u00b5g)","95% CI","Cov","Reference value (g)"]
+      },
+      "dtype": "|O",
+      "data": [
+        ["500","500","Client",500.00048176,22.366,44.732,2,""],
+        ["500","500d","Client",500.000473762,22.366,44.732,2,""],
+        ["1000","1Kr","Standard",999.99995,20.0,40.0,2,"999.99995 g; \u0394 0.0 \u00b5g"]
+      ]
+    }
+  }
+}

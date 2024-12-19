@@ -1,4 +1,4 @@
-. _adminfile:
+.. _adminfile:
 
 The Admin File
 ==============

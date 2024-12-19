@@ -53,6 +53,9 @@ def test_filter_masses():
     for key, value in cfg.all_client_wts.items():
         if value is None:
             assert client_wts[key] is None
+        elif type(value) is int:
+            if key == 'Num weights':
+                assert client_wts[key] == 10
         else:
             assert len(client_wts[key]) == len(value)
             assert client_wts[key][0] == value[0]
@@ -137,7 +140,7 @@ def test_parse_inputdata_to_matrices():
     assert fmc.check_design_matrix()
 
     for i in range(len(collated)):
-        assert fmc.differences[i] \
+        assert fmc.y_meas[i] \
                == collated['mass difference (g)'][i] \
                == check_fmc["2: Matrix Least Squares Analysis"]["Input data with least squares residuals"][i][2]
         assert fmc.uncerts[i] \
@@ -145,7 +148,7 @@ def test_parse_inputdata_to_matrices():
                == check_fmc["2: Matrix Least Squares Analysis"]["Input data with least squares residuals"][i][3]
 
     for j in range(fmc.num_stds):
-        assert fmc.differences[len(collated) + j] \
+        assert fmc.y_meas[len(collated) + j] \
                == fmc.finalmasscalc['1: Mass Sets']['Standard']['mass values']['mass values (g)'][j] \
                == check_fmc["2: Matrix Least Squares Analysis"]["Input data with least squares residuals"][len(collated) + j][2]
         assert fmc.uncerts[len(collated) + j] \
@@ -195,8 +198,10 @@ def test_make_summary_table():
                 assert float(fmc.summarytable[i][j]) \
                        == float(check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][j])
             else:
-                assert fmc.summarytable[i][j] \
-                   == check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][j]
+                assert fmc.summarytable[i][j] == pytest.approx(
+                    check_fmc["2: Matrix Least Squares Analysis"]["Mass values from least squares solution"][i][j],
+                    rel=1e-9
+                )
 
 
 def test_add_data_to_root():

@@ -11,12 +11,11 @@ from ..equip import get_t_rh_now, get_t_rh_during
 from .ambient_fromdatabase import get_cal_temp_now, get_cal_temp_during, get_rh_p_now, get_rh_p_during
 
 
-def check_ambient_pre(ambient_instance, ambient_details, mode):
+def check_ambient_pre(ambient_details, mode):
     """Check ambient conditions meet quality criteria (in config.xml file) for commencing weighing
 
     Parameters
     ----------
-    ambient_instance : str "OMEGA" or Vaisala instance
     ambient_details : :class:`dict`
         dict of ambient monitor alias and limits on ambient conditions
     mode : str
@@ -28,12 +27,13 @@ def check_ambient_pre(ambient_instance, ambient_details, mode):
         dict of ambient conditions at start of weighing:
         {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
     """
+    date_start, t_start, rh_start, p_start = None, None, None, None
+
     if ambient_details["Type"] == "OMEGA":
         log.info(
             f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']} "
             f"sensor {ambient_details['Sensor']}"
         )
-        date_start, t_start, rh_start = None, None, None
         for i in range(10):  # in case the connection gets aborted by the software in the host machine
             date_start, t_start, rh_start = get_t_rh_now(str(ambient_details['Alias']), sensor=ambient_details['Sensor'])
             if t_start is not None:
@@ -54,17 +54,18 @@ def check_ambient_pre(ambient_instance, ambient_details, mode):
                 }
                 return ambient_pre
 
-    elif ambient_details["Type"] == "Vaisala":
-        log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
+    # elif ambient_details["Type"] == "Vaisala":
+    #     log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
+    #
+    #     ambient_instance.open_comms()
+    #     date_start, t_start, rh_start, p_start = ambient_instance.get_readings()
+    #     ambient_instance.close_comms()
 
-        ambient_instance.open_comms()
-        date_start, t_start, rh_start, p_start = ambient_instance.get_readings()
-        ambient_instance.close_comms()
-
-    elif ambient_details["Type"] == "BuildDown":
+    elif ambient_details["Type"] == "Vaisala & milliK Databases":
         log.info(f"COLLECTING AMBIENT CONDITIONS from databases for ambient_logger {ambient_details['Alias']}")
-        date_start, t_start = get_cal_temp_now()
-        rh_start, p_start = get_rh_p_now()
+        channel = int(ambient_details['milliK'][-1])
+        date_start, t_start = get_cal_temp_now(channel=channel)
+        rh_start, p_start = get_rh_p_now(ambient_details['Vaisala'])
 
     else:
         log.error("Unrecognised ambient monitoring sensor")
@@ -79,7 +80,7 @@ def check_ambient_pre(ambient_instance, ambient_details, mode):
         return False
 
     ambient_pre = {'Start time': date_start, 'T_pre'+IN_DEGREES_C: np.round(t_start, 2), 'RH_pre (%)': np.round(rh_start, 1), }
-    if ambient_details["Type"] == "Vaisala":
+    if p_start:
         ambient_pre["P_pre (hPa)"] = p_start
 
     log.info(f"Ambient conditions: Temperature{IN_DEGREES_C}: {ambient_pre['T_pre'+IN_DEGREES_C]}; "
@@ -100,7 +101,7 @@ def check_ambient_pre(ambient_instance, ambient_details, mode):
     return ambient_pre
 
 
-def check_ambient_post(ambient_pre, ambient_instance, ambient_details, mode):
+def check_ambient_post(ambient_pre, ambient_details, mode):
     """Check ambient conditions met quality criteria during weighing
 
     Parameters
@@ -108,7 +109,6 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details, mode):
     ambient_pre : :class:`dict`
         dict of ambient conditions at start of weighing:
         {'Start time': datetime object, 'T_pre'+IN_DEGREES_C: float and 'RH_pre (%)': float}
-    ambient_instance : str "OMEGA" or Vaisala instance
     ambient_details : :class:`dict`
         dict of ambient monitor alias and limits on ambient conditions
     mode : str
@@ -121,6 +121,7 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details, mode):
         dict has key-value pairs {'T_post'+IN_DEGREES_C: list of floats, 'RH_post (%)': list of floats, 'Ambient OK?': bool}
     """
     ambient_post = {}
+    t_data = None
     if ambient_details["Type"] == "OMEGA":
         log.info(
             f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']} "
@@ -157,24 +158,24 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details, mode):
 
                 return ambient_post
 
-    elif ambient_details["Type"] == "Vaisala":
-        log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
+    # elif ambient_details["Type"] == "Vaisala":
+    #     log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
+    #
+    #     ambient_instance.open_comms()
+    #     date_post, t, rh, p_post = ambient_instance.get_readings()
+    #     ambient_instance.close_comms()
+    #     t_data = [t]
+    #     rh_data = [rh]
 
-        ambient_instance.open_comms()
-        date_post, t, rh, p_post = ambient_instance.get_readings()
-        ambient_instance.close_comms()
-        t_data = [t]
-        rh_data = [rh]
-
-    elif ambient_details["Type"] == "BuildDown":
+    elif ambient_details["Type"] == "Vaisala & milliK Databases":
         log.info(f"COLLECTING AMBIENT CONDITIONS from databases for ambient_logger {ambient_details['Alias']}")
 
         # convert back to datetime object
         start = datetime.fromisoformat(ambient_pre['Start time'])
-
-        t_data = get_cal_temp_during(start=start)
-        rh_data, p_data = get_rh_p_during(start=start)
-        ambient_post["Pressure (hPa)"] = f'{min(p_data)} to {max(p_data)}'
+        channel = int(ambient_details['milliK'][-1])
+        t_data = get_cal_temp_during(channel=channel, start=start)
+        rh_data, p_data = get_rh_p_during(ambient_details['Vaisala'], start=start)
+        ambient_post["Pressure (hPa)"] = f'{round(min(p_data), 4)} to {round(max(p_data), 4)}'
 
     else:
         log.error("Unrecognised ambient monitoring sensor")
@@ -186,13 +187,17 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details, mode):
         ambient_post = {'Ambient OK?': None}
     else:
         t_data = np.append(t_data, ambient_pre['T_pre'+IN_DEGREES_C])
-        ambient_post['T' + IN_DEGREES_C] = str(round(min(t_data), 3)) + ' to ' + str(round(max(t_data), 3))
+        """        "Mean T (°C)": "19.64425066667399",
+        "T range (°C)": "0.0009749017653675196","""
+        ambient_post['T range' + IN_DEGREES_C] = str(round(min(t_data), 3)) + ' to ' + str(round(max(t_data), 3))
 
     if not rh_data[0]:
         ambient_post['RH_pre (%)'] = ambient_pre['RH_pre (%)']
         log.warning('Ambient humidity change during weighing not recorded')
         ambient_post = {'Ambient OK?': None}
     else:
+        # TODO : mean and range
+        """"Mean RH (%)": "46.22058978495216","""
         rh_data = np.append(rh_data, ambient_pre['RH_pre (%)'])
         ambient_post['RH (%)'] = str(round(min(rh_data), 1)) + ' to ' + str(round(max(rh_data), 1))
 
@@ -207,11 +212,15 @@ def check_ambient_post(ambient_pre, ambient_instance, ambient_details, mode):
             log.info('Ambient conditions OK during weighing')
             ambient_post['Ambient OK?'] = True
 
-    if ambient_details["Type"] == "Vaisala":
-        try:
-            ambient_post["Pressure (hPa)"] = f'{ambient_pre["P_pre (hPa)"]} to {p_post}'
-        except KeyError:
-            ambient_post["Pressure (hPa)"] = p_post
+    # if ambient_details["Type"] == "Vaisala":  # TODO: use the database function to get all the data
+    #     try:
+    #         """"Mean Pressure (hPa)": "1026.9751035971226","""
+    #         ambient_post["Pressure (hPa)"] = f'{ambient_pre["P_pre (hPa)"]} to {p_post}'
+    #     except KeyError:
+    #         ambient_post["Pressure (hPa)"] = p_post
+
+    # TODO: calculate air density (mean and range) if pressure data is available
+    """  "Mean air density (kg/m3)": "1.217619835973","""
 
     log.info('Ambient conditions during weighing:')
     for key, value in ambient_post.items():
