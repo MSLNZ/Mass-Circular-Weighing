@@ -2,12 +2,15 @@
 Release Notes
 =============
 
-Version 2.0.0.dev0 (in development)
+Version 2.0.1.dev0 (in development)
 ====================================
-
 * (PENDING) Major changes to ambient condition recording and integration
 
+Version 2.0.0 (10/12/2024)
+==========================
+
 * new (not backward compatible!) Admin file template to include correlations, and COM heights and uncertainties
+* new (not backward compatible!) links to the M: drive and new NUCs
 
 * extra functionality included for scale realisation:
 
