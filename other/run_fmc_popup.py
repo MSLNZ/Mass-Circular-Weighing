@@ -1,5 +1,5 @@
 """
-Run the circular weighing program for analysis without the gui
+Run the circular weighing program for analysis and then show the gui
 """
 import sys
 import os
@@ -23,7 +23,7 @@ from mass_circular_weighing.gui.threads.masscalc_popup import *
 # admin = r'C:\Users\r.hawke\PycharmProjects\Mass-Circular-Weighing\tests\samples\admin_TP009.xlsx'
 # admin = r'I:\MSL\Private\Mass\Recal_2020\D6\D6_python\MassStdsD6_Admin_dens.xlsx'
 # admin = r"I:\MSL\Private\Mass\Recal_2020\AX10005\Rebecca's analysis\MassStds_Admin.xlsx"
-admin = r"C:\Users\r.hawke\OneDrive - Callaghan Innovation\Desktop\1462_Pressure\PressureStandards_Admin.xlsx"
+admin = r"M:\Commercial Calibrations\2024\1490_NMC_rpt\MSL_Admin.xlsx"
 cfg = Configuration(admin)
 print(cfg.correlations)
 cfg.init_ref_mass_sets()

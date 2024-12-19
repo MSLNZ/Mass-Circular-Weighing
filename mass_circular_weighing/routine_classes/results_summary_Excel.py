@@ -4,7 +4,8 @@ Called from routines.report_results.py
 """
 import os
 import string
-import json
+import numpy as np   # used by eval when loading residual std devs
+
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment
 
@@ -165,8 +166,12 @@ class ExcelSummaryWorkbook(object):
                         temps = weighdata.metadata.get("T" + IN_DEGREES_C).split(" to ")
                         rhs = weighdata.metadata.get("RH (%)").split(" to ")
                     except AttributeError:
-                        temps = []
-                        rhs = []
+                        try:
+                            temps = weighdata.metadata["T range" + IN_DEGREES_C].split(" to ")
+                            rhs = weighdata.metadata["RH (%)"].split(" to ")
+                        except KeyError:
+                            temps = []
+                            rhs = []
 
                     if (str(float(nom)), se, dname[2]) in incl_datasets:
                         incl = 1
@@ -238,8 +243,8 @@ class ExcelSummaryWorkbook(object):
                         data_list.append(row[2])
 
                     drift = analysisdata.metadata.get("Selected drift")
-                    res_dict = json.loads(str(analysisdata.metadata.get("Residual std devs")).replace("'", '"'))
-                    res = res_dict.get(drift)
+                    res_dict = eval(analysisdata.metadata.get("Residual std devs").replace("'", '"'))
+                    res = res_dict[drift]
 
                     data_list += [
                         drift,
@@ -310,7 +315,7 @@ class ExcelSummaryWorkbook(object):
             sheet.append([])
             if not all_temps:
                 message = '<html>Please enter any known temperature values during weighing<br>' \
-                          'for {}, separated by a space</html>'.format(se)
+                          'for {}, separated by a space, ending {}</html>'.format(se, weighdata.metadata.get("Mmt Timestamp"))
                 pt.show('text', message, font=FONTSIZE, title='Ambient Monitoring')
                 reply = pt.wait_for_prompt_reply()
                 try:
@@ -320,7 +325,7 @@ class ExcelSummaryWorkbook(object):
                 sheet.append(["Temperatures:"] + temperatures)
             if not all_rh:
                 message = '<html>Please enter any known humidity values during weighing<br>' \
-                          'for {}, separated by a space</html>'.format(se)
+                          'for {}, separated by a space, ending {}</html>'.format(se, weighdata.metadata.get("Mmt Timestamp"))
                 pt.show('text', message, font=FONTSIZE, title='Ambient Monitoring')
                 reply = pt.wait_for_prompt_reply()
                 try:
