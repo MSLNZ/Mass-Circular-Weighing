@@ -371,7 +371,7 @@ class ExcelSummaryWorkbook(object):
             os.rename(xl_output_file, back_up_file)  # this moves the file and renames it
         # protect each sheet
         for sheet in self.wb.sheetnames:
-            self.wb[sheet].protection.set_password('Mass')
+            self.wb[sheet].protection.password = 'Mass'
         self.wb.active = self.wb['Admin']
         # save the new file
         self.wb.save(xl_output_file)
