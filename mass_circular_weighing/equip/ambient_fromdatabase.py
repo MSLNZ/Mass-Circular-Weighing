@@ -219,7 +219,7 @@ def apply_calibration_milliK(resistance, channel):
     """
     if channel == 1:
         """Channel 1 for AX1006"""
-        print("Channel 1 for AX1006")
+        log.debug("Channel 1 for AX1006")
         # Values for 89/S4 (updated 20/07/2023)
         R0 = 99.983886    # raw reading at 0 deg C, in Ohms, from 18/01/2020
         A = 0.00391354  # per degree C, from 2018/743
@@ -227,7 +227,7 @@ def apply_calibration_milliK(resistance, channel):
 
     elif channel == 2:
         """Channel 2 for AX10005"""
-        print("Channel 2 for AX10005")
+        log.debug("Channel 2 for AX10005")
         # Values for SILM08_4 (updated 8/10/2024)
         R0 = 100.0171    # raw reading at 0 deg C, in Ohms
         A = 0.00390996  # per degree C

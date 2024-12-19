@@ -63,7 +63,8 @@ def check_ambient_pre(ambient_details, mode):
 
     elif ambient_details["Type"] == "Vaisala & milliK Databases":
         log.info(f"COLLECTING AMBIENT CONDITIONS from databases for ambient_logger {ambient_details['Alias']}")
-        date_start, t_start = get_cal_temp_now(channel=ambient_details['milliK'][-1])
+        channel = int(ambient_details['milliK'][-1])
+        date_start, t_start = get_cal_temp_now(channel=channel)
         rh_start, p_start = get_rh_p_now(ambient_details['Vaisala'])
 
     else:
@@ -171,10 +172,10 @@ def check_ambient_post(ambient_pre, ambient_details, mode):
 
         # convert back to datetime object
         start = datetime.fromisoformat(ambient_pre['Start time'])
-
-        t_data = get_cal_temp_during(channel=ambient_details['milliK'][-1], start=start)
+        channel = int(ambient_details['milliK'][-1])
+        t_data = get_cal_temp_during(channel=channel, start=start)
         rh_data, p_data = get_rh_p_during(ambient_details['Vaisala'], start=start)
-        ambient_post["Pressure (hPa)"] = f'{min(p_data)} to {max(p_data)}'
+        ambient_post["Pressure (hPa)"] = f'{round(min(p_data), 4)} to {round(max(p_data), 4)}'
 
     else:
         log.error("Unrecognised ambient monitoring sensor")

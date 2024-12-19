@@ -73,7 +73,7 @@ class Configuration(AdminDetails):
 
     def get_bal_instance(self, alias, strict=True, **kwargs):
         """Selects balance class and returns balance instance.
-        Also adds the ambient monitor instance and/or details to the balance instance
+        Also adds the ambient monitor details to the balance instance
 
         Parameters
         ----------
@@ -171,7 +171,7 @@ class Configuration(AdminDetails):
 
         elif 'ch' in ambient_logger.lower():
             ambient_details["Type"] = "Vaisala & milliK Databases"
-            ambient_details['Alias'] = ambient_logger
+            ambient_details['Alias'] = ambient_logger  # e.g. of form 391119.1CH1-M2430306
             serial_numbers = ambient_logger.split("-")
             ambient_details['milliK'] = serial_numbers[0]
             ambient_details['Vaisala'] = serial_numbers[1]

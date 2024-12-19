@@ -107,7 +107,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
     ----------
     bal : :class:`Balance`
         balance instance, initialised using mass_circular_weighing.configuration using a balance alias.
-        the ambient logger info/instance is contained within the balance instance
+        the ambient logger info is contained within the balance instance
     se : str
         scheme entry
     root : :class:`root`
@@ -193,7 +193,7 @@ def do_circ_weighing(bal, se, root, url, run_id, callback1=None, callback2=None,
         break
 
     while not bal.want_abort:
-        ambient_post = check_ambient_post(ambient_pre, bal.ambient_instance, bal.ambient_details, bal.mode)
+        ambient_post = check_ambient_post(ambient_pre, bal.ambient_details, bal.mode)
         for key, value in ambient_post.items():
             metadata[key] = value
 
