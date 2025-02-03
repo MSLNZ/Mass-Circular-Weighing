@@ -202,6 +202,7 @@ class MettlerToledo(Balance):
                         return b
 
                 if max(readings) - min(readings) <= 2*self.resolution:
+                    log.info('Mass reading: ' + str(sum(readings)/len(readings)) + ' ' + str(self._unit))
                     return sum(readings)/len(readings)
                 else:
                     log.warning(f"First collected readings not self consistent: {readings}")

@@ -216,6 +216,7 @@ class Balance(object):
             log.info('Waiting for stable reading for '+mass)
             self.wait_for_elapse(self.stable_wait)
             reading = self.get_mass_instant()
+            log.info('Mass reading: ' + str(reading) + ' ' + str(self._unit))
             return reading
 
     def close_connection(self):

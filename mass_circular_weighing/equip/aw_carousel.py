@@ -713,6 +713,7 @@ class AWBalCarousel(MettlerToledo):
                     if max(readings) - min(readings) > 2.25*self.resolution:
                         log.warning("Readings differ by more than twice the balance resolution")
                         log.info("Readings recorded: {}".format(readings))
+                    log.info('Mass reading: ' + str(sum(readings)/len(readings)) + ' ' + str(self._unit))
                     return sum(readings)/len(readings)
 
                 time = perf_counter() - t0

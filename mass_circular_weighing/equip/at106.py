@@ -7,11 +7,11 @@ from time import perf_counter
 from msl.equipment import MSLTimeoutError
 from msl.qt import application
 
-from . import AWBalLinear
+from . import AWBalLinear, MettlerToledo
 from ..log import log
 
 
-class AT106(AWBalLinear):
+class AT106(AWBalLinear, MettlerToledo):
     def __init__(self, record, reset=False, ):
         """Initialise AT106 Mettler Toledo Balance,
         # with automatic weight loading in linear configuration,
@@ -257,6 +257,17 @@ class AT106(AWBalLinear):
                 return None
         else:
             return None
+
+    def get_mass_stable(self, mass):
+        """Reads mass from balance when reading is stable.  Returns the average of three readings,
+        ensuring a maximum deviation between readings of twice the balance resolution.
+
+        Returns
+        -------
+        float
+            mass in unit set for balance
+        """
+        return MettlerToledo.get_mass_stable(self, mass)
 
     def check_loading(self):
         """Tests each position involved in the automatic circular weighing procedure.
