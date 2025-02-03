@@ -2,9 +2,15 @@
 Release Notes
 =============
 
-Version 2.0.2.dev0 (in development)
+Version 2.0.3.dev0 (in development)
 ====================================
 * (PENDING) Major changes to ambient condition recording and integration
+
+Version 2.0.2 (04/02/2025)
+==========================
+* Updated copyright to 2025
+* Corrected final mass calculation for no buoyancy correction implementation (y_meas error)
+* Removed unnecessary print of correlations matrix
 
 Version 2.0.1 (03/02/2025)
 ==========================
