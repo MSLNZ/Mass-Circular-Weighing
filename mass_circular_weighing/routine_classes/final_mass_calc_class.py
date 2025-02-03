@@ -121,7 +121,7 @@ class FinalMassCalc(object):
         self.num_obs = None
         self.leastsq_meta = {}
 
-        self.y = np.empty(len(inputdata))       # corrected mass differences
+        self.y = np.zeros(len(inputdata))       # corrected mass differences
         self.y_meas = np.empty(len(inputdata))  # apparent (measured) mass differences
         self.uncerts = np.empty(len(inputdata))
         self.psi_y = None
@@ -393,7 +393,7 @@ class FinalMassCalc(object):
             log.error("Error in design matrix. Calculation aborted")
             return False
 
-        if not self.y.any():  # no corrections applied
+        if self.nbc:  # no corrections applied
             self.y = self.y_meas
 
         # Calculate least squares solution, following the mathcad example in Tech proc MSLT.M.001
