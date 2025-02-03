@@ -103,7 +103,7 @@ class AdminDetails(object):
         # correlations are included as a 2x2 matrix - if no values are found, the identity matrix is used
         try:
             self.correlations = np.array([[float(i.value) for i in j] for j in self.ds['I8:J9']])
-            print(self.correlations)
+            # print(self.correlations)
             log.info(f'Using matrix of correlations:\n{self.correlations}')
         except TypeError:
             self.correlations = np.identity(2)
