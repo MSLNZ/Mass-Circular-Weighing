@@ -2,9 +2,12 @@
 Release Notes
 =============
 
-Version 2.0.1.dev0 (in development)
+Version 2.0.2.dev0 (in development)
 ====================================
 * (PENDING) Major changes to ambient condition recording and integration
+
+Version 2.0.1 (03/02/2025)
+==========================
 * Reverted AT106 get_mass_stable to 3 readings without delay (MettlerToledo base class implementation)
 * Added print of mass value to log!
 
