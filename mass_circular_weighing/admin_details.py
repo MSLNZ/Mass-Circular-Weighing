@@ -59,7 +59,7 @@ class AdminDetails(object):
             log.warning(f"No client name specified. Defaulting to {self.client}.")
 
         # Job
-        self.job = str(self.ds['B4'].value)
+        self.job = self.ds['B4'].value
         if not self.job:
             self.job = job_default
             self.ds['B4'] = self.job

@@ -33,7 +33,7 @@ save_folder_default = os.path.join(commercial_year_folder, 'DEFAULT_SAVE_FOLDER'
 
 local_backup = os.path.join(r'C:\CircularWeighingData', year)
 
-job_default = "J00000"
+job_default = 100000
 client_default = "Client"
 client_wt_IDs_default = '1 2 5 10 20 50 100 200 500 1000 2000 5000 10000'.split()
 

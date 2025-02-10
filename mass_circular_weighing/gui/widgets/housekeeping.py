@@ -28,7 +28,7 @@ class Housekeeping(QtWidgets.QWidget):
         # self.edit_config_but = Button(text='Edit config file', left_click=self.edit_config)
 
         self.folder_io = label(save_folder_default)
-        self.job_io = label(job_default)
+        self.job_io = label(str(job_default))
         self.client_io = label(client_default)
         self.client_masses_io = label(', '.join(client_wt_IDs_default))
         self.stds = ['None']
@@ -95,7 +95,7 @@ class Housekeeping(QtWidgets.QWidget):
             self.cfg = Configuration(self.admin_io.textbox.text())
             self.config_lbl.setText(self.cfg.config_xml)
             self.folder_io.setText(self.cfg.folder)
-            self.job_io.setText(self.cfg.job)
+            self.job_io.setText(str(self.cfg.job))
             self.client_io.setText(self.cfg.client)
             self.client_masses_io.setText(', '.join(self.cfg.client_wt_IDs))
 
