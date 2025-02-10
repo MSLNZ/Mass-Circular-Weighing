@@ -2,9 +2,13 @@
 Release Notes
 =============
 
-Version 2.0.3.dev0 (in development)
+Version 2.0.4.dev0 (in development)
 ====================================
 * (PENDING) Major changes to ambient condition recording and integration
+
+Version 2.0.3 (10/02/2025)
+==========================
+* Fixed gui error raised when job/project number is an integer
 
 Version 2.0.2 (04/02/2025)
 ==========================
