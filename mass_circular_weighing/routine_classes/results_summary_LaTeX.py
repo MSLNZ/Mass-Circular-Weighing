@@ -38,12 +38,6 @@ def save_mls_excel(data, folder, client, sheet_name):
 
 
 class LaTexDoc(object):
-    def make_title(self, title):
-        self.fp.write(
-            '\\begin{document}\n'
-            '\\title{' + title.replace('_', " ") + '}\n'
-            '\\maketitle\n\n'
-        )
 
     def __init__(self, filename):
         #
@@ -61,6 +55,13 @@ class LaTexDoc(object):
         )
 
         self.collate_ambient = {'T'+IN_DEGREES_C: [], 'RH (%)': []}
+
+    def make_title(self, title):
+        self.fp.write(
+            '\\begin{document}\n'
+            '\\title{' + title.replace('_', " ") + '}\n'
+            '\\maketitle\n\n'
+        )
 
     def make_heading1(self, heading):
         # Insert a heading.
@@ -96,7 +97,7 @@ class LaTexDoc(object):
         self.fp.close()
 
     def init_report(self, job, client, operator, folder):
-        self.make_title(job + " for " + client)
+        self.make_title(f'{job} for {client}')
         self.fp.write(f"Operator: {operator} \\\\ \n")
         self.fp.write("Data files saved in \\url{" + folder + '} \n')
 
