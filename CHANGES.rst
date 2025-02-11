@@ -2,9 +2,13 @@
 Release Notes
 =============
 
-Version 2.0.4.dev0 (in development)
+Version 2.0.5.dev0 (in development)
 ====================================
 * (PENDING) Major changes to ambient condition recording and integration
+
+Version 2.0.4 (11/02/2025)
+==========================
+* Fixed LaTeX file export error raised when job/project number is an integer
 
 Version 2.0.3 (10/02/2025)
 ==========================
