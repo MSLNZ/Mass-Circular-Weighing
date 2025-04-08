@@ -8,7 +8,8 @@ from ..gui.threads.prompt_thread import PromptThread
 pt = PromptThread()
 
 from ..equip import get_t_rh_now, get_t_rh_during
-from .ambient_fromdatabase import get_cal_temp_now, get_cal_temp_during, get_rh_p_now, get_rh_p_during
+from .ambient_fromdatabase import (get_cal_temp_now, get_cal_temp_during,
+                                   get_rh_p_now, get_rh_p_during, get_p_rh_t_now, get_p_rh_t_during)
 
 
 def check_ambient_pre(ambient_details, mode):
@@ -66,6 +67,12 @@ def check_ambient_pre(ambient_details, mode):
         channel = int(ambient_details['milliK'][-1])
         date_start, t_start = get_cal_temp_now(channel=channel)
         rh_start, p_start = get_rh_p_now(ambient_details['Vaisala'])
+
+    elif ambient_details["Type"] == "Vaisala Indigo Database":
+        log.info(f"COLLECTING AMBIENT CONDITIONS from database for ambient_logger {ambient_details['Alias']}")
+        transmitter_sn = ambient_details['transmitter']
+        probe_sn = ambient_details['probe']
+        date_start, p_start, rh_start, t_start = get_p_rh_t_now(transmitter_sn, probe_sn)
 
     else:
         log.error("Unrecognised ambient monitoring sensor")
@@ -175,6 +182,15 @@ def check_ambient_post(ambient_pre, ambient_details, mode):
         channel = int(ambient_details['milliK'][-1])
         t_data = get_cal_temp_during(channel=channel, start=start)
         rh_data, p_data = get_rh_p_during(ambient_details['Vaisala'], start=start)
+        ambient_post["Pressure (hPa)"] = f'{round(min(p_data), 4)} to {round(max(p_data), 4)}'
+
+    elif ambient_details["Type"] == "Vaisala Indigo Database":
+        log.info(f"COLLECTING AMBIENT CONDITIONS from database for ambient_logger {ambient_details['Alias']}")
+        # convert back to datetime object
+        start = datetime.fromisoformat(ambient_pre['Start time'])
+        transmitter_sn = ambient_details['transmitter']
+        probe_sn = ambient_details['probe']
+        p_data, rh_data, t_data = get_p_rh_t_during(transmitter_sn, probe_sn, start=start)
         ambient_post["Pressure (hPa)"] = f'{round(min(p_data), 4)} to {round(max(p_data), 4)}'
 
     else:

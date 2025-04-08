@@ -176,6 +176,13 @@ class Configuration(AdminDetails):
             ambient_details['milliK'] = serial_numbers[0]
             ambient_details['Vaisala'] = serial_numbers[1]
 
+        elif 'w512' in ambient_logger.lower():
+            ambient_details["Type"] = "Vaisala Indigo Database"
+            ambient_details['Alias'] = ambient_logger  # e.g. of form 391119.1CH1-M2430306
+            serial_numbers = ambient_logger.split("-")
+            ambient_details['transmitter'] = serial_numbers[0]
+            ambient_details['probe'] = serial_numbers[1]
+
         else:
             log.error("Ambient monitoring device not recognised")
             return None
