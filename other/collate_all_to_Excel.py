@@ -9,7 +9,7 @@ from msl.io import read
 
 # from mass_circular_weighing.constants import MU_STR, SUFFIX
 
-folder = r'C:\Users\rebecca.hawke\Desktop\2021' # folder of data
+folder = r'M:\Commercial Calibrations\2025\UMX-5\Linearity' # folder of data
 
 summary = Workbook()                            # create new Excel doc
 runs = summary.active                           # get active sheet
@@ -36,18 +36,18 @@ for flist in os.walk(folder):                   # traverse all folders and subfo
                 for ds in jsonroot.datasets():
                     if 'measurement_run_1' in ds.name:
                         nom = ds.metadata['Nominal mass (g)']
-                if 150 < nom < 550:
-                    print(nom, file_to_read.strip("C:\\Users\\rebecca.hawke\\Desktop\\2021"))
+                if 0 < nom < 5.5:
+                    print(nom, file_to_read.strip(folder))
                     for ds in jsonroot.datasets():
                         if 'measurement_run_1' in ds.name:
                             bal = ds.metadata["Balance"]
-                            assert bal == "XPE505C"             # just in case any were on the old Sartorius
+                            # assert bal == "XPE505C"             # just in case any were on the old Sartorius
                         if 'analysis' in ds.name:
                             mmt = ds.name.replace('analysis', 'measurement')
                             mmt_ds = jsonroot[mmt]
                             date = mmt_ds.metadata["Mmt Timestamp"]
                             run_data = [
-                                file_to_read.strip("C:\\Users\\rebecca.hawke\\Desktop\\2021\\"),
+                                file_to_read.strip(folder),
                                 date,
                                 nom,
                                 ds.name.split("_")[-1]
@@ -62,7 +62,7 @@ for flist in os.walk(folder):                   # traverse all folders and subfo
                             mmt_ds = jsonroot[mmt]
                             date = mmt_ds.metadata["Mmt Timestamp"]
                             for r in ds.data:
-                                row = [file_to_read.strip("C:\\Users\\rebecca.hawke\\Desktop\\2021\\"), date]
+                                row = [file_to_read.strip(folder), date]
                                 for i in r:
                                     row.append(i)
                                 collated.append(row)
