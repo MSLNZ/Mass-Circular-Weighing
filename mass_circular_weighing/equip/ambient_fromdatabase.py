@@ -164,9 +164,9 @@ def corrected_resistance(r, ch: int = 1):
 
 def apply_calibration_milliK(resistance, channel):
     """Convert corrected resistance to temperature
-    Hard-code calibration information for 2024 build-up on AX1006 #AX10005
-    Conversion from resistance to temperature for 89/S4:
-    <PRT serial="89/S4" channel="1">
+    Hard-coded calibration information for AX1006
+    Conversion from resistance to temperature for SIL014G (89/S4 failed):
+    <PRT serial="SIL014G" channel="1">
         <report date="2018-07-26" number="Temperature/2018/743">
             <start_date>2018-07-17</start_date>
             <end_date>2018-07-18</end_date>
@@ -220,18 +220,18 @@ def apply_calibration_milliK(resistance, channel):
     if channel == 1:
         """Channel 1 for AX1006"""
         log.debug("Channel 1 for AX1006")
-        # Values for 89/S4 (updated 20/07/2023)
-        R0 = 99.983886    # raw reading at 0 deg C, in Ohms, from 18/01/2020
-        A = 0.00391354  # per degree C, from 2018/743
-        B = -5.978e-7   # per degree C squared, from 2018/743
+        # Values for SIL014G after 89/S4 failed (updated 15/04/2025)
+        R0 = 100.011    # raw reading at 0 deg C, in Ohms, from ice point 15/04/2025
+        A = 0.00390822  # per degree C, from Temperature/2025/407, 7 April 2025
+        B = -5.935e-7   # per degree C squared, from Temperature/2025/407, 7 April 2025
 
     elif channel == 2:
         """Channel 2 for AX10005"""
         log.debug("Channel 2 for AX10005")
-        # Values for SILM08_4 (updated 8/10/2024)
-        R0 = 100.0171    # raw reading at 0 deg C, in Ohms
-        A = 0.00390996  # per degree C
-        B = -5.895e-7   # per degree C squared
+        # Values for SILM08/4 (updated 15/04/2025)
+        R0 = 100.0172    # raw reading at 0 deg C, in Ohms, from ice point 15/04/2025
+        A = 0.00391035  # per degree C, from Temperature/2025/406, 7 April 2025
+        B = -5.986e-7   # per degree C squared, from Temperature/2025/406, 7 April 2025
 
     else:
         log.error("Unknown milliK channel; please use 1 or 2")
