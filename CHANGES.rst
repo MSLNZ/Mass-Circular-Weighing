@@ -2,9 +2,13 @@
 Release Notes
 =============
 
-Version 2.0.5.dev0 (in development)
+Version 2.0.6.dev0 (in development)
 ====================================
 * (PENDING) Major changes to ambient condition recording and integration
+
+Version 2.0.5 (15/04/2025)
+==========================
+* Updated PRT calibration coefficients and R0 values for AX1006 and AX10005
 
 Version 2.0.4 (11/02/2025)
 ==========================
