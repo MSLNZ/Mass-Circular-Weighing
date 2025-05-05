@@ -191,6 +191,9 @@ def check_ambient_post(ambient_pre, ambient_details, mode):
         transmitter_sn = ambient_details['transmitter']
         probe_sn = ambient_details['probe']
         p_data, rh_data, t_data = get_p_rh_t_during(transmitter_sn, probe_sn, start=start)
+        ambient_post["All Pressures (hPa)"] = p_data
+        ambient_post["All Temps"+IN_DEGREES_C] = t_data
+        ambient_post["All Humidities (%)"] = rh_data
         ambient_post["Pressure (hPa)"] = f'{round(min(p_data), 4)} to {round(max(p_data), 4)}'
 
     else:
