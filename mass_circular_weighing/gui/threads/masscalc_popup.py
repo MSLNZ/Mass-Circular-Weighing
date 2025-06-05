@@ -115,6 +115,7 @@ class DiffsTable(QtWidgets.QTableWidget):
             for row in range(self.rowCount()):
                 if self.cellWidget(row, self.columnCount() - 1).isChecked():
                     self.cellWidget(row, 9).setText(str("{:+.3f}".format(resids[i, 4])))
+                    self.cellWidget(row, 9).setAlignment(Qt.AlignRight | Qt.AlignVCenter)
                     i += 1
                 else:
                     self.cellWidget(row, 9).setText("")
