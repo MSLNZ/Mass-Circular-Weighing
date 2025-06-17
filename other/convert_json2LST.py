@@ -85,15 +85,18 @@ def to_lst(jsonroot, save_folder, cfg=None):
                                 # max_temp = float(temps[1])
                                 # temp_range = float(temps[1]) - float(temps[0])
                                 """get mean temperature during weighing from milliK database"""
-                                all_temps = get_cal_temp_during(start=startdatetime, end=enddatetime, channel=1)
+                                # all_temps = get_cal_temp_during(start=startdatetime, end=enddatetime, channel=1)
+                                all_temps = weighdata.metadata.get("All Temps" + IN_DEGREES_C)
                                 mean_temps = sum(all_temps) / len(all_temps)
                                 temp_range = max(all_temps) - min(all_temps)
                                 root[weighdata.name].add_metadata(**{"Mean T" + IN_DEGREES_C: str(mean_temps)})
                                 root[weighdata.name].add_metadata(**{"T range" + IN_DEGREES_C: str(temp_range)})
 
 
-                                """get P from Vaisala database"""
-                                all_rh, p = get_rh_p_during(start=startdatetime, end=enddatetime)
+                                # """get P from Vaisala database"""
+                                # all_rh, p = get_rh_p_during(start=startdatetime, end=enddatetime)
+                                p = weighdata.metadata.get("All Pressures (hPa)")
+                                all_rh = weighdata.metadata.get("All Humidities (%)")
                                 mean_rhs = sum(all_rh) / len(all_rh)
                                 root[weighdata.name].add_metadata(**{"Mean RH (%)": str(mean_rhs)})
                                 mean_P = sum(p) / len(p)
@@ -115,8 +118,11 @@ def to_lst(jsonroot, save_folder, cfg=None):
                                 data_row += padding  # ambient data must start in column F
                                 data_row += ambient_data
 
-                            except AttributeError:
-                                pass
+                            except AttributeError as e:
+                                print(e)
+
+                            except TypeError:
+                                ambient_data = ['04-03-2025 20250304', 0, 0, 0, ]
 
                         bal_alias = weighdata.metadata.get("Balance")
 
@@ -148,11 +154,11 @@ def to_lst(jsonroot, save_folder, cfg=None):
 
 if __name__ == "__main__":
     cfg = Config(r"C:\MCW_Config\local_config.xml")
-    folder = r'C:\Users\r.hawke\OneDrive - Callaghan Innovation\Desktop\PostBIPMCheck\LSTconvert'  # folder of data
-    # json_file = r'I:\MSL\Private\Mass\Recal_2020\D2\json_files_to_LST\MassStdsD2_200(DiscCheck2)_3-4-24.json'
+    folder = r'M:\Recal_2025_buildup\2025_06_09 June 9 Buoyancy'  # folder of data
+    # json_file = r'M:\Commercial Calibrations\2025\0003_Pressure\PressureStandards_500.json'
     # json__root = read(json_file)
     # print(json__root)
-
+    #
     # to_lst(jsonroot=json__root, save_folder=folder, cfg=cfg)
 
     for path, directories, files in os.walk(folder):
