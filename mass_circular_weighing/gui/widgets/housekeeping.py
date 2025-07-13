@@ -39,7 +39,7 @@ class Housekeeping(QtWidgets.QWidget):
 
         self.drift_io = label('auto select')
         self.timed_io = label('NO')
-        self.true_mass_bool = label('False')
+        self.ad_corr_bool = label('False')
         self.corr_io = label('None')
 
         self.cfg = None
@@ -69,7 +69,7 @@ class Housekeeping(QtWidgets.QWidget):
         formlayout = QtWidgets.QFormLayout()
         formlayout.addRow(label('Drift correction'), self.drift_io)
         formlayout.addRow(label('Use measurement times?'), self.timed_io)
-        formlayout.addRow(label('Calculate true mass?'), self.true_mass_bool)
+        formlayout.addRow(label('Do buoyancy corrections?'), self.ad_corr_bool)
         formlayout.addRow(label('Correlations between standards'), self.corr_io)
         self.optionsGroup.setLayout(formlayout)
 
@@ -104,7 +104,7 @@ class Housekeeping(QtWidgets.QWidget):
 
             self.drift_io.setText(self.cfg.drift_text)
             self.timed_io.setText(self.cfg.timed_text)
-            self.true_mass_bool.setText(str(self.cfg.calc_true_mass))
+            self.ad_corr_bool.setText(str(self.cfg.ad_corr))
             self.corr_io.setText(str(self.cfg.correlations))
 
         else:
