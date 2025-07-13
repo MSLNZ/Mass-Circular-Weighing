@@ -98,7 +98,7 @@ class AdminDetails(object):
         # Circular Weighing Analysis Parameters
         self.drift_text = self.ds['E7'].value
         self.timed_text = self.ds['E8'].value
-        self.calc_true_mass = self.ds['E9'].value
+        self.ad_corr = self.ds['E9'].value
 
         # correlations are included as a 2x2 matrix - if no values are found, the identity matrix is used
         try:
