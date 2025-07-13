@@ -37,7 +37,8 @@ def collate_all_weighings(schemetable, cfg):
                         ('Nominal (g)', float), ('Scheme entry', object), ('Run #', object),
                         ('+ weight group', object), ('- weight group', object),
                         ('mass difference (g)', 'float64'), ('balance uncertainty (' + MU_STR + 'g)', 'float64'),
-                        ('Acceptance met?', bool), ('residual (' + MU_STR + 'g)', 'float64')
+                        ('Acceptance met?', bool), ('residual (' + MU_STR + 'g)', 'float64'),
+                        ('Mean air density (kg/m3)', 'float64'), ("Stdev air density (kg/m3)", 'float64')
                     ]
                     )
 
@@ -66,6 +67,8 @@ def collate_all_weighings(schemetable, cfg):
                 data[-len(newdata):]['residual (' + MU_STR + 'g)'] = newdata[:]['residual (' + MU_STR + 'g)']
                 data[-len(newdata):]['balance uncertainty ('+MU_STR+'g)'] = newdata[:]['balance uncertainty ('+MU_STR+'g)']
                 data[-len(newdata):]['Acceptance met?'] = newdata[:]['Acceptance met?']
+                data[-len(newdata):]['Mean air density (kg/m3)'] = newdata[:]['Mean air density (kg/m3)']
+                data[-len(newdata):]['Stdev air density (kg/m3)'] = newdata[:]['Stdev air density (kg/m3)']
 
                 log.debug(f'Collated scheme entry {schemetable.cellWidget(row, 0).text()} from {url} ({mode} mode)')
 
@@ -131,6 +134,8 @@ def collate_a_data_from_json(url, scheme_entry):
                 collated['Stdev'].append(meta.metadata.get('Stdev for balance (' + MU_STR + 'g)'))
                 collated['Max stdev'].append(meta.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)'))
                 collated["Nominal mass (g)"].append(meta.metadata.get("Nominal mass (g)"))
+                collated["Mean air density (kg/m3)"] = meta.metadata.get("Mean air density (kg/m3)", default=None)
+                collated["Stdev air density (kg/m3)"] = meta.metadata.get("Stdev air density (kg/m3)", default=None)
 
                 bal_unit = dataset.metadata.get('Mass unit')
                 for i in range(dataset.shape[0]):
@@ -213,7 +218,8 @@ def collate_m_data_from_json(url, scheme_entry):
                          dtype=[('Nominal (g)', float), ('Scheme entry', object), ('Run #', object),
                                 ('+ weight group', object), ('- weight group', object),
                                 ('mass difference (g)', 'float64'), ('residual ('+MU_STR+'g)', 'float64'),
-                                ('balance uncertainty ('+MU_STR+'g)', 'float64'), ('Acceptance met?', bool)])
+                                ('balance uncertainty ('+MU_STR+'g)', 'float64'), ('Acceptance met?', bool),
+                                ('Mean air density (kg/m3)', 'float64'), ("Stdev air density (kg/m3)", 'float64')])
 
     root = read(url)
     try:
@@ -255,6 +261,8 @@ def collate_m_data_from_json(url, scheme_entry):
                 inputdata[i_len + row:]['Run #'] = dname[2]
                 inputdata[i_len + row:]['balance uncertainty ('+MU_STR+'g)'] = stdev
                 inputdata[i_len + row:]['Acceptance met?'] = ok
+                inputdata[i_len + row:]["Mean air density (kg/m3)"] = meta.metadata.get("Mean air density (kg/m3)", default=None)
+                inputdata[i_len + row:]["Stdev air density (kg/m3)"] = meta.metadata.get("Stdev air density (kg/m3)", default=None)
 
     return inputdata
 
