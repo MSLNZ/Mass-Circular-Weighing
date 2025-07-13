@@ -31,7 +31,7 @@ def test_no_admin_details():
     # Circular Weighing Analysis Parameters
     assert cfg.drift is None
     assert cfg.timed is False
-    assert cfg.calc_true_mass is False
+    assert cfg.ad_corr is False
     assert cfg.correlations.shape[0] == cfg.correlations.shape[1]
     assert cfg.correlations.all() == np.identity(2).all()
 
@@ -56,7 +56,7 @@ def test_admin_details():
     # Circular Weighing Analysis Parameters
     assert cfg.drift == 'linear drift'
     assert cfg.timed is False
-    assert cfg.calc_true_mass is True
+    assert cfg.ad_corr is True
     assert cfg.correlations.shape[0] == cfg.correlations.shape[1]
     assert cfg.correlations.all() == np.eye(cfg.correlations.shape[0]).all()
 
