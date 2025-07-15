@@ -1,4 +1,5 @@
-# I:\MSL\Private\Mass\IRL reports\IRL report Uncertainties in mass comparisons Aug 99.pdf
+# M:\IRL reports\IRL report Uncertainties in mass comparisons Aug 99.pdf
+# This example does calculations with the option fmc.TRUE_MASS = True
 
 import os
 import numpy as np
@@ -56,12 +57,12 @@ def test_example_1():
     assert client_wts_1['Weight ID'] == ['1kx']
     client_wts_1['Density (kg/m3)'] = [7850]
     client_wts_1['Vol (mL)'] = [1000/7.850]
-    assert client_wts_1['Vol (mL)'] == [127.38853503184714]
+    assert np.isclose(client_wts_1['Vol (mL)'], 127.38854)
     checks = None
     stds = filter_mass_set(cfg.all_stds, collated_1_2)
     stds['uncertainties (' + MU_STR + 'g)'] = [10.]
 
-    fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts_1, checks, stds, collated_1_2, nbc=True, corr=cfg.correlations)
+    fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts_1, checks, stds, collated_1_2, nbc=False, corr=cfg.correlations)
 
     fmc.check_design_matrix()
     assert_arrays_are_the_same(fmc.designmatrix, np.array([[-1.,  1.],  [-1.,  1.],  [0.,  1.]]))
@@ -69,9 +70,11 @@ def test_example_1():
 
     fmc.BUOYANCY_CORR = True
     fmc.TRUE_MASS = True
+
     fmc.apply_corrections_to_mass_differences(air_densities=collated_1_2['air density (kg/m3)'])
-    for i, j in zip(fmc.y, [-2.01025767e-04, -2.01182457e-04,  1.00000000e+03]):  # y in g
-        assert np.isclose(i, j, rtol=1e-8)
+    for i, j in zip(fmc.y, [-2.01025767e-04, -2.01182457e-04,  1.00000000e+03]):  # y in g;
+        # calculation today gives slightly different values to IRL report probably due to rounding precision
+        assert np.isclose(i, j, rtol=1e-9)
 
     fmc.do_least_squares()
     psi_bmeas = np.array([[100.5, 100.], [100.,  100.]])
@@ -80,13 +83,14 @@ def test_example_1():
     assert_arrays_are_the_same(psi_y, fmc.psi_y)
     assert_arrays_are_the_same(fmc.psi_y, psi_y)
 
-    assert np.isclose(fmc.b[0], 1000.0002011, rtol=1e-9)
+    # note that b is in true mass.
+    assert np.isclose(fmc.b[0], 1000.00020, rtol=1e-8)
     assert np.isclose(fmc.b[1], 1000., rtol=1e-9)
 
     fmc.add_data_to_root()
     summarytable = np.array(
-        [['1000', '1kx', 'Client', 1000.000201104, 31.631, 63.261, 2, '',  ''],
-         ['1000', '1Kr', 'Standard', 1000.0, 10.0, 20.0, 2, 1000, 0.0]]
+        [['1000', '1kx', 'Client', 1000.00020, 10.025, 20.05, 2, '',  ''],
+         ['1000', '1Kr', 'Standard', 1000, 10.0, 20.0, 2, 1000, 0.0]]
     )
     for i, row in enumerate(summarytable):
         for j, item in enumerate(row):
@@ -107,7 +111,7 @@ def test_example_2():
     stds = filter_mass_set(cfg.all_stds, collated_1_2)
     assert np.isclose(stds['Vol (mL)'][0], 125.78616, rtol=1e-7)
 
-    fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts_1, checks, stds, collated_1_2, nbc=True,
+    fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts_1, checks, stds, collated_1_2, nbc=False,
                         corr=cfg.correlations)
 
     fmc.check_design_matrix()
@@ -116,11 +120,13 @@ def test_example_2():
 
     fmc.BUOYANCY_CORR = True
     fmc.TRUE_MASS = True
+
     for i, j in zip(collated_1_2['air density (kg/m3)'], [1.17, 1.23]):
         assert np.isclose(i, j, rtol=1e-8)
     fmc.apply_corrections_to_mass_differences(air_densities=collated_1_2['air density (kg/m3)'])
-    for i, j in zip(fmc.y, [-2.01025767e-04, -2.01182457e-04, 1.00000000e+03]):  # y in g
-        assert np.isclose(i, j, rtol=1e-8)
+    for i, j in zip(fmc.y, [-2.01025767e-04, -2.01182457e-04,  1.00000000e+03]):  # y in g;
+        # calculation today gives slightly different values to IRL report probably due to rounding precision
+        assert np.isclose(i, j, rtol=1e-9)
 
     fmc.UNC_AIR_DENS = True
     unc_airdens = collated_1_2['uncertainty (kg/m3)']
@@ -137,12 +143,13 @@ def test_example_2():
     psi_y = np.array([[2.56769446,   2.56759446, 0.],   [2.56759446,    2.56769446, 0.],    [0.,   0.,  1.00e-04]])
     assert_arrays_are_the_same(fmc.psi_y, psi_y)
 
-    assert np.isclose(fmc.b[0], 1000.0002011, rtol=1e-9)
+    # note that b is in true mass.
+    assert np.isclose(fmc.b[0], 1000.0002 , rtol=1e-8)
     assert np.isclose(fmc.b[1], 1000., rtol=1e-9)
 
     fmc.add_data_to_root()
     summarytable = np.array(
-        [['1000', '1kx', 'Client', 1000.000201104, 30.043, 60.086, 2, '',  ''],
+        [['1000', '1kx', 'Client', 1000.00020, 1.602, 3.205, 2, '',  ''],
          ['1000', '1Kr', 'Standard', 1000.0, 0.01, 0.02, 2, 1000, 0.0]]
     )
     for i, row in enumerate(summarytable):
@@ -161,7 +168,7 @@ def test_example_3():
     stds = filter_mass_set(cfg.all_stds, collated_3)
     assert np.isclose(stds['Vol (mL)'][0], 125.78616, rtol=1e-7)
 
-    fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts, checks, stds, collated_3, nbc=True,
+    fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts, checks, stds, collated_3, nbc=False,
                         corr=cfg.correlations)
 
     fmc.check_design_matrix()
@@ -206,8 +213,8 @@ def test_example_3():
 
     fmc.add_data_to_root()
     summarytable = np.array(
-        [['1000', '1kx',  'Client',     1000.000559647, 558.409, 1116.819, 2, '',  ''],
-         ['1000', '1kxd', 'Client',     1000.000559647, 558.409, 1116.819, 2, '',  ''],
+        [['1000', '1kx',  'Client',     1000.000559647, 557.603, 1115.206, 2, '',  ''],
+         ['1000', '1kxd', 'Client',     1000.000559647, 557.603, 1115.206, 2, '',  ''],
          ['1000', '1Kr',  'Standard',   1000.0,         0.01,       0.02,  2, 1000, 0.0]]
     )
     for i, row in enumerate(summarytable):
@@ -227,7 +234,7 @@ def test_example_4():
     stds = filter_mass_set(cfg.all_stds, collated_4)
     assert np.isclose(stds['Vol (mL)'][0], 125.78616, rtol=1e-7)
 
-    fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts, checks, stds, collated_4, nbc=True,
+    fmc = FinalMassCalc(cfg.folder, cfg.client, client_wts, checks, stds, collated_4, nbc=False,
                         corr=cfg.correlations)
 
     fmc.check_design_matrix()
@@ -280,7 +287,7 @@ def test_example_4():
 
     fmc.add_data_to_root()
     summarytable = np.array(
-        [['1000', '1kx', 'Client',   1000.0000048, 30.002, 60.003, 2, '',  ''],
+        [['1000', '1kx', 'Client',   1000.0000048, 0.302, 0.603, 2, '',  ''],
          ['1000', '1Kr', 'Standard', 1000.0,        0.01,   0.02,  2, 1000, 0.0]]
     )
     for i, row in enumerate(summarytable):

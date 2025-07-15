@@ -241,6 +241,7 @@ def test_least_squares():
     )
     assert_arrays_are_the_same(psi_y, fmc.psi_y)  # psi_y with psi_y_meas
 
+    # note that these are true mass values
     b = [500.000481760, 500.000473762, 999.99995]
     for i in range(fmc.num_unknowns):
         assert fmc.b[i] == \
@@ -254,6 +255,13 @@ def test_least_squares():
         assert np.isclose(val, fmc.inputdatares[i][4])
         assert fmc.inputdatares[i][4] == \
                    check_fmc["2: Matrix Least Squares Analysis"]["Input data with least squares residuals"][i][4]
+
+    for i in range(3):
+        assert np.isclose(
+            fmc.convert_to_conventional_mass()[i],
+            np.array([500.000104892,  500.000096892, 1000.094227952])[i],
+            rtol=1e-9
+        )
 
 
 def test_check_residuals():
@@ -286,6 +294,7 @@ def test_make_summary_table():
                     rel=1e-9
                 )
 
+    # note that these are true mass values
     summarytable = np.array(
         [['500',  '500',  'Client',  500.00048176,  22.366, 44.732, 2, '',  ''],
          ['500',  '500d', 'Client',  500.000473762, 22.366, 44.732, 2, '',  ''],
