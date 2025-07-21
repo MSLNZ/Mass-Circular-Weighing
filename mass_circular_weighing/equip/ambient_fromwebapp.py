@@ -12,7 +12,7 @@ from ..log import log
 
 
 # Hardwire the address running the server
-host = 'AX1006-NUC'  # '172.16.31.199' is CISS33748 (NUC); '172.16.31.103' is CISS31653 (Laptop)
+host = 'AX1006-NUC'
 port = '1875'
 server_add = ":".join(['http://' + host, port])
 
