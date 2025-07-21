@@ -258,7 +258,7 @@ def test_least_squares():
 
     for i in range(3):
         assert np.isclose(
-            fmc.convert_to_conventional_mass()[i],
+            fmc.convert_to_conventional_mass(v=None, b=None)[i],
             np.array([500.000104892,  500.000096892, 1000.094227952])[i],
             rtol=1e-9
         )

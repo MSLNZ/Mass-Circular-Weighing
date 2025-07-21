@@ -269,17 +269,20 @@ class FinalMassCalc(object):
         :return: buoyancy correction in g
         """
         # NOTE: volumes are not corrected for temperature during weighing
-
-        a_d = np.append(air_densities, np.zeros(self.num_stds))
         # print('v', self.all_wts['Vol (mL)'])
         # print('xv', np.dot(self.designmatrix, self.all_wts['Vol (mL)']).T)
-        # buoyancy correction in mg
-        rho_x_v = (np.dot(self.designmatrix, self.all_wts['Vol (mL)']).T * a_d).T
-        # print('rho_x_v', rho_x_v)
-
-        tm_conv = - 0.00015*self.cnx1*self.y_meas
-
-        return tm_conv + rho_x_v/1000
+        if self.TRUE_MASS:
+            a_d = np.append(air_densities, np.zeros(self.num_stds))
+            # buoyancy correction in mg
+            rho_x_v = (np.dot(self.designmatrix, self.all_wts['Vol (mL)']).T * a_d).T
+            # print('rho_x_v', rho_x_v)
+            tm_conv = - 0.00015*self.cnx1*self.y_meas
+            return tm_conv + rho_x_v/1000
+        else:  # work in conventional mass -- doesn't seem right?
+            ad_0 = [ad - 1.2 for ad in air_densities]
+            a_d = np.append(ad_0, np.zeros(self.num_stds))
+            rho_x_v = (np.dot(self.designmatrix, self.all_wts['Vol (mL)']).T * a_d).T/1000
+            return rho_x_v/0.99985
 
     def calc_height_corrections(self):
         """Calculate corrections to mass differences given heights for centres of mass of the weights.
@@ -442,6 +445,34 @@ class FinalMassCalc(object):
         inputdatares[:, 4] = np.round(r0, 3)
 
         self.inputdatares = inputdatares
+
+    def calculate_true_mass(self, v: np.ndarray | None, b: np.ndarray | None) -> np.ndarray:
+        """Convert from conventional mass to true mass using the volume and mass values.
+
+        :param v: numpy array of volumes in mL
+        :param b: numpy array of conventional mass values in g
+        :return: numpy array of true mass values in g
+        """
+        if not v:
+            v = self.all_wts['Vol (mL)']
+        if not b:
+            b = self.b
+        b_true = np.multiply(b, 0.99985) + np.multiply(v, 1.2)/1000
+        return b_true
+
+    def convert_to_conventional_mass(self, v: np.ndarray | None, b: np.ndarray | None) -> np.ndarray:
+        """Convert from true mass to conventional mass using the volume and mass values.
+
+        :param v: numpy array of volumes in mL
+        :param b: numpy array of true mass values in g
+        :return: numpy array of conventional mass values in g
+        """
+        if not v:
+            v = self.all_wts['Vol (mL)']
+        if not b:
+            b = self.b
+        b_conv = (b - np.multiply(v, 1.2)/1000) / 0.99985
+        return b_conv
 
     def check_residuals(self):
         if self.inputdatares is None:
