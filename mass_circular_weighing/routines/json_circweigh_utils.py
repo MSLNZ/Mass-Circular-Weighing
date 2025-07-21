@@ -81,38 +81,48 @@ def save_data(root: JSONWriter, url: str, run_id: str, timestamp: datetime = dat
 
 
 def add_air_densities(root):
-    "Mean air density (kg/m3)"
+    """Calculate Mean air density (kg/m3) when given a json circular weighing data file with
+     "All Temps" + IN_DEGREES_C"
+     "All Humidities (%)" and
+     "All Pressures (hPa)"
 
+    :param root:
+    :return: root
+    """
     for weighdata in root.datasets():
         print(weighdata.name)
         if 'measurement' in weighdata.name:
+            if weighdata.metadata.get("Weighing complete"):
+                all_temps = weighdata.metadata.get("All Temps" + IN_DEGREES_C)
+                mean_temps = sum(all_temps) / len(all_temps)
+                temp_range = max(all_temps) - min(all_temps)
+                root[weighdata.name].add_metadata(**{"Mean T" + IN_DEGREES_C: str(mean_temps)})
+                root[weighdata.name].add_metadata(**{"T range" + IN_DEGREES_C: str(temp_range)})
 
-            all_temps = weighdata.metadata.get("All Temps" + IN_DEGREES_C)
-            mean_temps = sum(all_temps) / len(all_temps)
-            temp_range = max(all_temps) - min(all_temps)
-            root[weighdata.name].add_metadata(**{"Mean T" + IN_DEGREES_C: str(mean_temps)})
-            root[weighdata.name].add_metadata(**{"T range" + IN_DEGREES_C: str(temp_range)})
+                p = weighdata.metadata.get("All Pressures (hPa)")
+                all_rh = weighdata.metadata.get("All Humidities (%)")
+                mean_rhs = sum(all_rh) / len(all_rh)
+                root[weighdata.name].add_metadata(**{"Mean RH (%)": str(mean_rhs)})
+                mean_P = sum(p) / len(p)
+                root[weighdata.name].add_metadata(**{"Pressure (hPa)": str(min(p)) + " to " + str(max(p))})
+                root[weighdata.name].add_metadata(**{"Mean Pressure (hPa)": str(mean_P)})
 
-            p = weighdata.metadata.get("All Pressures (hPa)")
-            all_rh = weighdata.metadata.get("All Humidities (%)")
-            mean_rhs = sum(all_rh) / len(all_rh)
-            root[weighdata.name].add_metadata(**{"Mean RH (%)": str(mean_rhs)})
-            mean_P = sum(p) / len(p)
-            root[weighdata.name].add_metadata(**{"Pressure (hPa)": str(min(p)) + " to " + str(max(p))})
-            root[weighdata.name].add_metadata(**{"Mean Pressure (hPa)": str(mean_P)})
+                if len(p) == len(all_rh) == len(all_temps):
+                    all_airdens = []
+                    for i, t in enumerate(all_temps):
+                        all_airdens.append(AirDens2009(t, p[i], all_rh[i], 0.0004))
+                    root[weighdata.name].add_metadata(**{"All air density (kg/m3)": str(all_airdens)})
+                    airdens = sum(all_airdens) / len(all_airdens)
+                    ad_stdev = np.std(all_airdens, ddof=1)  # ddof=1 for sample standard deviation
+                    root[weighdata.name].add_metadata(**{"Stdev air density (kg/m3)": str(ad_stdev)})
+                else:
+                    airdens = AirDens2009(mean_temps, mean_P, mean_rhs, 0.0004)
+                    max_airdens = AirDens2009(min(all_temps), max(p), min(all_rh), 0.0004)
+                    min_airdens = AirDens2009(max(all_temps), min(p), max(all_rh), 0.0004)
+                    print(max_airdens, min_airdens)
+                    root[weighdata.name].add_metadata(**{"Stdev air density (kg/m3)": max_airdens - min_airdens})
 
-            if len(p) == len(all_rh) == len(all_temps):
-                all_airdens = []
-                for i, t in enumerate(all_temps):
-                    all_airdens.append(AirDens2009(t, p[i], all_rh[i], 0.0004))
-                root[weighdata.name].add_metadata(**{"All air density (kg/m3)": str(all_airdens)})
-                airdens = sum(all_airdens) / len(all_airdens)
-                ad_stdev = np.std(all_airdens, ddof=1)  # ddof=1 for sample standard deviation
-                root[weighdata.name].add_metadata(**{"Stdev air density (kg/m3)": str(ad_stdev)})
-            else:
-                airdens = AirDens2009(mean_temps, mean_P, mean_rhs, 0.0004)
-
-            root[weighdata.name].add_metadata(**{"Mean air density (kg/m3)": str(airdens)})
+                root[weighdata.name].add_metadata(**{"Mean air density (kg/m3)": airdens})
 
     return root
 

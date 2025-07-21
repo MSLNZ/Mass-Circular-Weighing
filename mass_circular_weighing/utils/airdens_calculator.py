@@ -53,7 +53,7 @@ def AirDens2009(Tc: float, Pmb: float, RhOrDewpoint: float, Xco2: float) -> floa
     """ Calculates air density using the BIPM equation 2007 (Picard, Metrologia 2008, 45, 149-155).
     This is based on the VBA code provided by Fung
     :param Tc:              Temperature in deg C
-    :param Pmb:            Pressure in mb (hPa)
+    :param Pmb:             Pressure in mb (hPa)
     :param RhOrDewpoint:    Relative humidity in percent or dewpoint °C
     :param Xco2:            Molar fraction of carbon dioxide (usually 0.0004)
     :return:                Calculated air density in kg/m3

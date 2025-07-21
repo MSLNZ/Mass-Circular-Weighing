@@ -1,3 +1,4 @@
+import os
 
 from msl.io import JSONWriter, read
 from msl.equipment import Config
@@ -7,8 +8,8 @@ from mass_circular_weighing.routines.analyse_circ_weigh import analyse_weighing_
 
 
 cfg = Config(r"C:\MCW_Config\local_config.xml")
-folder = r'M:\Recal_2025_buildup\2025_06_09 June 9 Buoyancy'  # folder of data
-url = r'M:\Recal_2025_buildup\2025_06_09 June 9 Buoyancy\MSL_100000.json'
+folder = r'C:\Users\r.hawke\OneDrive - Callaghan Innovation\Desktop\0003_Pressure'  # folder of data
+url = os.path.join(folder, 'PressureStandards_1000.json')
 
 json__root = read(url)
 json__root.read_only = False
