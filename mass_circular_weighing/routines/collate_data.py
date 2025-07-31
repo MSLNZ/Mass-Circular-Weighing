@@ -111,7 +111,7 @@ def collate_a_data_from_json(url, scheme_entry):
     wt_grps = scheme_entry.split()
     num_wt_grps = len(wt_grps)
     runs = ""
-    collated = {'Stdev': [], 'Max stdev': [], "Nominal mass (g)": []}
+    collated = {'Stdev': [], 'Max stdev': [], "Nominal mass (g)": [], "Mean air density (kg/m3)": [], "Stdev air density (kg/m3)": []}
     for grp in wt_grps:
         collated[grp] = []
 
@@ -134,8 +134,8 @@ def collate_a_data_from_json(url, scheme_entry):
                 collated['Stdev'].append(meta.metadata.get('Stdev for balance (' + MU_STR + 'g)'))
                 collated['Max stdev'].append(meta.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)'))
                 collated["Nominal mass (g)"].append(meta.metadata.get("Nominal mass (g)"))
-                collated["Mean air density (kg/m3)"] = meta.metadata.get("Mean air density (kg/m3)", default=None)
-                collated["Stdev air density (kg/m3)"] = meta.metadata.get("Stdev air density (kg/m3)", default=None)
+                collated["Mean air density (kg/m3)"].append(meta.metadata.get("Mean air density (kg/m3)", default=None))
+                collated["Stdev air density (kg/m3)"].append(meta.metadata.get("Stdev air density (kg/m3)", default=None))
 
                 bal_unit = dataset.metadata.get('Mass unit')
                 for i in range(dataset.shape[0]):
@@ -150,7 +150,8 @@ def collate_a_data_from_json(url, scheme_entry):
                          dtype=[('Nominal (g)', float), ('Scheme entry', object), ('Run #', object),
                                 ('+ weight group', object), ('- weight group', object),
                                 ('mass difference (g)', 'float64'), ('residual (' + MU_STR + 'g)', 'float64'),
-                                ('balance uncertainty (' + MU_STR + 'g)', 'float64'), ('Acceptance met?', object)])
+                                ('balance uncertainty (' + MU_STR + 'g)', 'float64'), ('Acceptance met?', object),
+                                ('Mean air density (kg/m3)', 'float64'), ("Stdev air density (kg/m3)", 'float64')])
 
     massdiff = np.empty(num_wt_grps)
     stdevs = np.empty(num_wt_grps)
@@ -172,11 +173,14 @@ def collate_a_data_from_json(url, scheme_entry):
     inputdata[:]['mass difference (g)'] = massdiff[:-1]
     inputdata[:]['residual (' + MU_STR + 'g)'] = stdevs[:-1] / SUFFIX['ug']
     inputdata[:]['Acceptance met?'] = acceptable[:-1]
+
     for row in range(num_wt_grps - 1):
         inputdata[row:]['Nominal (g)'] = collated["Nominal mass (g)"][0]
         inputdata[row:]['Scheme entry'] = scheme_entry
         inputdata[row:]['Run #'] = runs.strip("+")
         inputdata[row:]['balance uncertainty ('+MU_STR+'g)'] = collated['Stdev'][0]
+        inputdata[row:]['Mean air density (kg/m3)'] = collated["Mean air density (kg/m3)"][0]
+        inputdata[row:]["Stdev air density (kg/m3)"] = collated["Stdev air density (kg/m3)"][0]
 
     # add collated data to the json file
     col_meta = {
