@@ -366,3 +366,81 @@ def get_rh_p_during(vaisala_sn, start=None, end=None):
             f"Please check the Vaisala is logging to the database at {v_database_path}."
         )
         return None, None
+
+
+def get_p_rh_t_now(vaisala_transmitter_sn, probe_sn):
+    """Query the Vaisala database file for the latest pressure, humidity and temperature values.
+    Note that these are RAW values.
+    If no data is available, the method returns a tuple of Nones and logs a warning.
+
+    Parameters
+    ----------
+    vaisala_transmitter_sn : str
+        serial number of the Vaisala transmitter device containing the barometer
+    probe_sn : str
+        serial number of Vaisala probe for RH and T
+
+    Returns
+    -------
+    :class:`list` of :class:`float` or None
+        Tuple of the latest timestamp, pressure, humidity, and temperature values, or Nones.
+    """
+    start = datetime.now() - timedelta(minutes=1)
+    end = datetime.now()
+    select = f'P_{vaisala_transmitter_sn},RH_{probe_sn},T_{probe_sn}'
+    v_database_path = os.path.join(database_dir, f'VaisalaIndigo_{vaisala_transmitter_sn}.sqlite3')
+    vaisala_data = data(path=v_database_path, select=select, as_datetime=True, start=start, end=end, )
+    p_data, rh_data, t_data = apply_calibration_vaisala_indigo(
+        vaisala_transmitter_sn, probe_sn, vaisala_data[-1][0], vaisala_data[-1][1], vaisala_data[-1][2]
+    )
+    try:
+        return end.replace(microsecond=0).isoformat(sep=' '), p_data, rh_data, t_data
+    except IndexError:
+        log.error(
+            f"No data available within the last minute. "
+            f"Please check the Vaisala is logging to the database at {v_database_path}."
+        )
+        return None, None, None, None
+
+
+def get_p_rh_t_during(vaisala_transmitter_sn, probe_sn, start=None, end=None):
+    """Query the Vaisala database file for the pressure, humidity and temperature values between start and end times.
+    Note that these are RAW values.
+    If no data is available, the method returns tuple of Nones and logs a warning.
+
+    Parameters
+    ----------
+    vaisala_transmitter_sn : str
+        serial number of the Vaisala transmitter device containing the barometer
+    probe_sn : str
+        serial number of Vaisala probe for RH and T
+    start : datetime
+    end : datetime
+
+    Returns
+    -------
+    tuple of :class:`numpy.ndarray` or :data:`None`
+        The pressure, humidity, and temperature values, or Nones.
+    """
+    select = f'P_{vaisala_transmitter_sn},RH_{probe_sn},T_{probe_sn}'
+    v_database_path = os.path.join(database_dir, f'VaisalaIndigo_{vaisala_transmitter_sn}.sqlite3')
+    vaisala_data = data(path=v_database_path, select=select, as_datetime=True, start=start, end=end, )
+    try:
+        pressures = np.asarray([a[0] for a in vaisala_data])
+        humidities = np.asarray([a[1] for a in vaisala_data])
+        temperatures = np.asarray([a[2] for a in vaisala_data])
+        return apply_calibration_vaisala_indigo(vaisala_transmitter_sn, probe_sn, pressures, humidities, temperatures)
+    except IndexError:
+        log.error(
+            f"No data available between {start} and {end}. "
+            f"Please check the Vaisala is logging to the database at {v_database_path}."
+        )
+        return None, None, None
+
+
+def apply_calibration_vaisala_indigo(vaisala_transmitter_sn, probe_sn, p_data, rh_data, t_data):
+    transmitter_cal_file = f'M:\Equipment Register\equipment register schema entries\Vaisala_Indigo520_{vaisala_transmitter_sn}.xml'
+    probe_cal_file = f'M:\Equipment Register\equipment register schema entries\Vaisala_HMP9_{probe_sn}.xml'
+
+
+    return p_data, rh_data, t_data
