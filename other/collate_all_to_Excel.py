@@ -12,6 +12,7 @@ from msl.io import read
 # from mass_circular_weighing.constants import MU_STR, SUFFIX
 
 folder = r'M:\Commercial Calibrations'  #\2025\0011_Glycosyn'  #\UMX-5\Linearity'  # folder of data
+# folder = r'M:\Recal_2025_buildup'
 
 summary = Workbook()                            # create new Excel doc
 summary.iso_dates = True                        # store dates and times in the ISO8601 format
@@ -40,7 +41,7 @@ for flist in os.walk(folder):                   # traverse all folders and subfo
                 for ds in jsonroot.datasets():
                     if 'measurement_run_1' in ds.name:
                         nom = ds.metadata['Nominal mass (g)']
-                if 110 < nom < 550:
+                if 998 < nom < 10100:
                     # print(nom, file_to_read.strip(folder))
                     for ds in jsonroot.datasets():
                         if 'measurement_run_1' in ds.name:
@@ -87,9 +88,14 @@ for i in range(2, runs.max_row+1):
 collated.insert_cols(3, amount=1)
 collated['C1'] = "Mmt Time"
 for i in range(2, collated.max_row+1):
-    date_time = collated['B'+str(i)].value.split()
-    collated['B' + str(i)] = date_time[0].replace("-", "/")
-    collated['C' + str(i)] = date_time[1]
+    try:
+        date_time = datetime.strptime(collated['B'+str(i)].value, '%d-%m-%Y %H:%M:%S')
+    except ValueError as e:
+        print(e)
+        date_time = datetime.strptime(collated['B' + str(i)].value, '%d-%m-%Y %H:%M')
+        print(date_time)
+    collated['B' + str(i)] = date_time.date()
+    collated['C' + str(i)] = date_time.time()
 
 # save data to file
 summary.save(os.path.join(folder, "summary.xlsx"))
