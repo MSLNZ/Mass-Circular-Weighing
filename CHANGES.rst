@@ -2,9 +2,18 @@
 Release Notes
 =============
 
-Version 2.0.6.dev0 (in development)
+Version 2.0.7.dev0 (in development)
 ====================================
-* (PENDING) Major changes to ambient condition recording and integration
+* In progress; pending new calibration values for the milliK
+
+Version 2.1.0 (25/08/2025)
+==========================
+* Added Indigo database capability
+* Ambient condition recording now includes all pressures, temperatures and humidities where available
+* Fixed buoyancy calculation tests for true mass
+* Improved air density calculator
+* Improved format of MLS residuals in gui
+* Fixed some versions of msl- packages
 
 Version 2.0.5 (15/04/2025)
 ==========================

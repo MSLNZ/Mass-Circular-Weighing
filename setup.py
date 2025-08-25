@@ -99,7 +99,7 @@ def get_version():
 
     if 'develop' in sys.argv or ('egg_info' in sys.argv and '--egg-base' not in sys.argv):
         # then installing in editable (develop) mode
-        #   python setupX.py develop
+        #   python setup.py develop
         #   pip install -e .
         suffix = 'editable'
     else:
@@ -135,9 +135,9 @@ def get_version():
 
 # specify the packages that mass-circular-weighing depends on
 install_requires = [
-    'msl-equipment @ https://github.com/MSLNZ/msl-equipment/archive/main.tar.gz',
+    'msl-equipment @ https://github.com/MSLNZ/msl-equipment/archive/refs/tags/v0.2.0.tar.gz',
     'msl-qt @ https://github.com/MSLNZ/msl-qt/archive/main.tar.gz',
-    'msl-io @ https://github.com/MSLNZ/msl-io/archive/main.tar.gz',
+    'msl-io @ https://github.com/MSLNZ/msl-io/archive/refs/tags/v0.1.0.tar.gz',
     'msl-loadlib',  # used in Word file creation
     'msl-network',  # demo in services
     'PyQt5',     # if not already installed with msl-qt
@@ -195,8 +195,8 @@ setup(
 if 'dev' in version and not version.endswith('editable'):
     # ensure that the value of __version__ is correct if installing the package from a non-release code base
     init_path = ''
-    if sys.argv[0] == 'setupX.py' and 'install' in sys.argv and not {'--help', '-h'}.intersection(sys.argv):
-        # python setupX.py install
+    if sys.argv[0] == 'setup.py' and 'install' in sys.argv and not {'--help', '-h'}.intersection(sys.argv):
+        # python setup.py install
         try:
             cmd = [sys.executable, '-c', 'import mass_circular_weighing as p; print(p.__file__)']
             output = subprocess.check_output(cmd, cwd=os.path.dirname(sys.executable))
