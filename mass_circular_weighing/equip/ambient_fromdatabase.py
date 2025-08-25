@@ -141,17 +141,17 @@ def corrected_resistance(r, ch: int = 1):
 
     if ch == 1:
         """Channel 1 for AX1006"""
-        a0 = 4.315e-4  # Ohm
+        a0 = 4.315e-4  # Ohm to be changed
         a1 = -1.825e-5
-        a2 = 5.672e-8  # per Ohm
+        a2 = 5.672e-8  # per Ohm to be changed
 
         dr = a0 + a1 * r + a2 * r ** 2
 
     elif ch == 2:
         """Channel 2 for AX10005"""
-        a0 = 3.374e-4  # Ohm
+        a0 = 3.374e-4  # Ohm to be changed
         a1 = -1.807e-5
-        a2 = 5.162e-8  # per Ohm
+        a2 = 5.162e-8  # per Ohm to be changed
 
         dr = a0 + a1 * r + a2 * r ** 2
 
