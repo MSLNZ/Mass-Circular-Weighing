@@ -10,6 +10,7 @@ pt = PromptThread()
 from ..equip import get_t_rh_now, get_t_rh_during
 from .ambient_fromdatabase import (get_cal_temp_now, get_cal_temp_during,
                                    get_rh_p_now, get_rh_p_during, get_p_rh_t_now, get_p_rh_t_during)
+from ..utils.airdens_calculator import AirDens2009
 
 
 def check_ambient_pre(ambient_details, mode):
@@ -54,13 +55,6 @@ def check_ambient_pre(ambient_details, mode):
                     'RH_pre (%)': np.nan,
                 }
                 return ambient_pre
-
-    # elif ambient_details["Type"] == "Vaisala":
-    #     log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
-    #
-    #     ambient_instance.open_comms()
-    #     date_start, t_start, rh_start, p_start = ambient_instance.get_readings()
-    #     ambient_instance.close_comms()
 
     elif ambient_details["Type"] == "Vaisala & milliK Databases":
         log.info(f"COLLECTING AMBIENT CONDITIONS from databases for ambient_logger {ambient_details['Alias']}")
@@ -129,6 +123,8 @@ def check_ambient_post(ambient_pre, ambient_details, mode):
     """
     ambient_post = {}
     t_data = None
+    rh_data = None
+    p_data = None
     if ambient_details["Type"] == "OMEGA":
         log.info(
             f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']} "
@@ -165,24 +161,13 @@ def check_ambient_post(ambient_pre, ambient_details, mode):
 
                 return ambient_post
 
-    # elif ambient_details["Type"] == "Vaisala":
-    #     log.info(f"COLLECTING AMBIENT CONDITIONS from ambient_logger {ambient_details['Alias']}")
-    #
-    #     ambient_instance.open_comms()
-    #     date_post, t, rh, p_post = ambient_instance.get_readings()
-    #     ambient_instance.close_comms()
-    #     t_data = [t]
-    #     rh_data = [rh]
-
     elif ambient_details["Type"] == "Vaisala & milliK Databases":
         log.info(f"COLLECTING AMBIENT CONDITIONS from databases for ambient_logger {ambient_details['Alias']}")
-
         # convert back to datetime object
         start = datetime.fromisoformat(ambient_pre['Start time'])
         channel = int(ambient_details['milliK'][-1])
         t_data = get_cal_temp_during(channel=channel, start=start)
         rh_data, p_data = get_rh_p_during(ambient_details['Vaisala'], start=start)
-        ambient_post["Pressure (hPa)"] = f'{round(min(p_data), 4)} to {round(max(p_data), 4)}'
 
     elif ambient_details["Type"] == "Vaisala Indigo Database":
         log.info(f"COLLECTING AMBIENT CONDITIONS from database for ambient_logger {ambient_details['Alias']}")
@@ -191,34 +176,40 @@ def check_ambient_post(ambient_pre, ambient_details, mode):
         transmitter_sn = ambient_details['transmitter']
         probe_sn = ambient_details['probe']
         p_data, rh_data, t_data = get_p_rh_t_during(transmitter_sn, probe_sn, start=start)
-        ambient_post["All Pressures (hPa)"] = p_data
-        ambient_post["All Temps"+IN_DEGREES_C] = t_data
-        ambient_post["All Humidities (%)"] = rh_data
-        ambient_post["Pressure (hPa)"] = f'{round(min(p_data), 4)} to {round(max(p_data), 4)}'
 
     else:
         log.error("Unrecognised ambient monitoring sensor")
         return False
+
+    if p_data is not None:
+        ambient_post["All Pressures (hPa)"] = p_data
+        ambient_post["Pressure (hPa)"] = f'{round(min(p_data), 4)} to {round(max(p_data), 4)}'
+        mean_P = sum(p_data) / len(p_data)
+        ambient_post["Mean Pressure (hPa)"] = str(mean_P)
 
     if not t_data[0]:
         ambient_post['T_pre'+IN_DEGREES_C] = ambient_pre['T_pre'+IN_DEGREES_C]
         log.warning('Ambient temperature change during weighing not recorded')
         ambient_post = {'Ambient OK?': None}
     else:
-        t_data = np.append(t_data, ambient_pre['T_pre'+IN_DEGREES_C])
-        """        "Mean T (°C)": "19.64425066667399",
-        "T range (°C)": "0.0009749017653675196","""
+        # t_data = np.append(ambient_pre['T_pre'+IN_DEGREES_C], t_data)
+        ambient_post["All Temps"+IN_DEGREES_C] = t_data
         ambient_post['T range' + IN_DEGREES_C] = str(round(min(t_data), 3)) + ' to ' + str(round(max(t_data), 3))
+        mean_temps = sum(t_data) / len(t_data)
+        ambient_post["Mean T" + IN_DEGREES_C] = mean_temps
+        # temp_range = max(t_data) - min(t_data)
+        # ambient_post["T range" + IN_DEGREES_C] = temp_range
 
     if not rh_data[0]:
         ambient_post['RH_pre (%)'] = ambient_pre['RH_pre (%)']
         log.warning('Ambient humidity change during weighing not recorded')
         ambient_post = {'Ambient OK?': None}
     else:
-        # TODO : mean and range
-        """"Mean RH (%)": "46.22058978495216","""
-        rh_data = np.append(rh_data, ambient_pre['RH_pre (%)'])
+        # rh_data = np.append(ambient_pre['RH_pre (%)'], rh_data)
+        ambient_post["All Humidities (%)"] = rh_data
         ambient_post['RH (%)'] = str(round(min(rh_data), 1)) + ' to ' + str(round(max(rh_data), 1))
+        mean_rhs = sum(rh_data) / len(rh_data)
+        ambient_post["Mean RH (%)"] = str(mean_rhs)
 
     if t_data[0] and rh_data[0]:
         if (max(t_data) - min(t_data)) ** 2 > ambient_details['MAX_T_CHANGE']**2:
@@ -231,15 +222,23 @@ def check_ambient_post(ambient_pre, ambient_details, mode):
             log.info('Ambient conditions OK during weighing')
             ambient_post['Ambient OK?'] = True
 
-    # if ambient_details["Type"] == "Vaisala":  # TODO: use the database function to get all the data
-    #     try:
-    #         """"Mean Pressure (hPa)": "1026.9751035971226","""
-    #         ambient_post["Pressure (hPa)"] = f'{ambient_pre["P_pre (hPa)"]} to {p_post}'
-    #     except KeyError:
-    #         ambient_post["Pressure (hPa)"] = p_post
+        if p_data is not None:
+            if len(p_data) == len(rh_data) == len(t_data):
+                all_airdens = []
+                for i, t in enumerate(t_data):
+                    all_airdens.append(AirDens2009(t, p_data[i], rh_data[i], 0.0004))
+                ambient_post["All air density (kg/m3)"] = all_airdens
+                airdens = sum(all_airdens) / len(all_airdens)
+                ad_stdev = np.std(all_airdens, ddof=1)  # ddof=1 for sample standard deviation
+                ambient_post["Stdev air density (kg/m3)"] = ad_stdev
+            else:
+                airdens = AirDens2009(mean_temps, mean_P, mean_rhs, 0.0004)
+                max_airdens = AirDens2009(min(t_data), max(p_data), min(rh_data), 0.0004)
+                min_airdens = AirDens2009(max(t_data), min(p_data), max(rh_data), 0.0004)
+                print(max_airdens, min_airdens)
+                ambient_post["Stdev air density (kg/m3)"] = max_airdens - min_airdens
 
-    # TODO: calculate air density (mean and range) if pressure data is available
-    """  "Mean air density (kg/m3)": "1.217619835973","""
+            ambient_post["Mean air density (kg/m3)"] = airdens
 
     log.info('Ambient conditions during weighing:')
     for key, value in ambient_post.items():
