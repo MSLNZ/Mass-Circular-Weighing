@@ -80,9 +80,9 @@ def corrected_resistance(r, ch: int = 1):
 
     Correction for resistance on channel 1 of milliK:
     <milliK serial="391119.1" channel="1">
-            <report date="2020-02-07" number="Temperature/2020/887a">
-                <start_date>2020-02-05</start_date>
-                <end_date>2020-02-05</end_date>
+            <report date="2025-09-01" number="Temperature/2025/467">
+                <measurementStartDate>2025-08-25</measurementStartDate>
+                <measurementStopDate>2025-08-25</measurementStopDate>
                 <coverage_factor>2.0</coverage_factor>
                 <confidence>95%</confidence>
                 <resistance unit="Ohm" min="43" max="347">
@@ -95,17 +95,17 @@ def corrected_resistance(r, ch: int = 1):
                       where,
                           dx = c0 + c1*x + c2*x^2 + c3*x^3 + ...
                     -->
-                    <coefficients>4.315e-4, -1.825e-5, 5.672e-8</coefficients>
-                    <expanded_uncertainty>0.00031</expanded_uncertainty>
+                    <coefficients>0, -1.41543e-5, 0</coefficients>
+                    <expanded_uncertainty>0.00024</expanded_uncertainty>
                 </resistance>
             </report>
         </milliK>
 
     Correction for resistance on channel 2 of milliK:
     <milliK serial="391119.1" channel="2">
-            <report date="2020-02-07" number="Temperature/2020/887b">
-                <start_date>2020-02-05</start_date>
-                <end_date>2020-02-05</end_date>
+            <report date="2025-09-01" number="Temperature/2020/887b">
+                <start_date>2025-08-27</start_date>
+                <end_date>2025-08-27</end_date>
                 <coverage_factor>2.0</coverage_factor>
                 <confidence>95%</confidence>
                 <resistance unit="Ohm" min="43" max="347">
@@ -118,8 +118,8 @@ def corrected_resistance(r, ch: int = 1):
                       where,
                           dx = c0 + c1*x + c2*x^2 + c3*x^3 + ...
                     -->
-                    <coefficients>3.374e-4, -1.807e-5, 5.162e-8</coefficients>
-                    <expanded_uncertainty>0.00026</expanded_uncertainty>
+                    <coefficients>0, -1.38682e-5, 1.08563e-8</coefficients>
+                    <expanded_uncertainty>0.00011</expanded_uncertainty>
                 </resistance>
             </report>
         </milliK>
@@ -141,17 +141,17 @@ def corrected_resistance(r, ch: int = 1):
 
     if ch == 1:
         """Channel 1 for AX1006"""
-        a0 = 4.315e-4  # Ohm to be changed
-        a1 = -1.825e-5
-        a2 = 5.672e-8  # per Ohm to be changed
+        a0 = 0 #4.315e-4  # Ohm to be changed
+        a1 = -1.41543e-5 # -1.825e-5
+        a2 = 0 #5.672e-8  # per Ohm to be changed
 
         dr = a0 + a1 * r + a2 * r ** 2
 
     elif ch == 2:
         """Channel 2 for AX10005"""
-        a0 = 3.374e-4  # Ohm to be changed
-        a1 = -1.807e-5
-        a2 = 5.162e-8  # per Ohm to be changed
+        a0 = 0 # 3.374e-4  # Ohm to be changed
+        a1 = -1.38682e-5 # -1.807e-5
+        a2 = 1.08563e-8 # 5.162e-8  # per Ohm to be changed
 
         dr = a0 + a1 * r + a2 * r ** 2
 
