@@ -9,8 +9,6 @@ from ...log import log
 from ...constants import save_folder_default, job_default, client_default, client_wt_IDs_default
 from ...configuration import Configuration
 from .browse import Browse, label
-# from ..threads.configedit_thread import ConfigEditorThread
-# cfe = ConfigEditorThread()
 
 
 class Housekeeping(QtWidgets.QWidget):
@@ -51,7 +49,7 @@ class Housekeeping(QtWidgets.QWidget):
 
         # config_box = self.arrange_config_box()
         formlayout.addRow('Admin file (.xlsx)', label(""))
-        formlayout.setWidget(1, 2, self.admin_io) #0, 2, config_box)
+        formlayout.setWidget(1, QtWidgets.QFormLayout.SpanningRole, self.admin_io) #0, 2, config_box)
         formlayout.addRow('Config file', self.config_lbl)
         # could add revised config editor back in here if needed
         formlayout.addRow('Folder for saving data', self.folder_io)
@@ -109,12 +107,6 @@ class Housekeeping(QtWidgets.QWidget):
 
         else:
             log.error('File does not exist at {!r}'.format(filepath))
-
-    # def edit_config(self):
-    #     cfe.show(self.cfg)
-    #     newconfig = cfe.wait_for_prompt_reply()
-    #     self.cfg.config_xml = newconfig
-    #     self.config_lbl.setText(f'Config file: {self.cfg.config_xml}')
 
     def initialise_cfg(self):
         """Set and log values for configuration variables; initialise next phase of calibration"""
