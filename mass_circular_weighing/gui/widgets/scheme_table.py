@@ -1,12 +1,13 @@
 """
 A tabular display of the weighing scheme, which can import (by drag-n-drop) and export (to xlsx) Excel files.
 """
-import xlrd
+import numpy as np
 import openpyxl
 import os
 import string
 
 from msl.qt import QtWidgets, QtCore, utils, prompt, Signal, Slot
+from msl.io import read_table
 
 from ...log import log
 
@@ -111,7 +112,12 @@ class SchemeTable(QtWidgets.QTableWidget):
     @Slot(list, list)
     def load_scheme(self, header=None, rows=None):
         if header is None:
-            header, rows = read_excel_scheme(self.scheme_path)
+            log.info(f'Loading scheme from {self.scheme_path}')
+            dataset = read_table(self.scheme_path, sheet="Scheme")
+            header = dataset.metadata.header
+            rows = dataset
+        else:
+            rows = np.array(rows)
 
         index_map = {}
         for col_name in {'weight', 'nominal', 'balance', 'runs', }:
@@ -123,17 +129,33 @@ class SchemeTable(QtWidgets.QTableWidget):
             log.error(f"Unable to create weighing scheme from {self.scheme_path}")
             return
 
-        self.make_rows(len(rows))
-        for i, row in enumerate(rows):
-            se = row[index_map['weight']]
-            self.cellWidget(i, 0).setText(str(se))
-            nom = row[index_map['nominal']]
-            self.cellWidget(i, 1).setText(str(nom))
-            self.cellWidget(i, 2).setCurrentIndex(self.cellWidget(i, 2).findText(row[index_map['balance']]))
-            self.cellWidget(i, 3).setValue(int(row[index_map['runs']]))
+        if rows.ndim==1:  # only one
+            self.make_rows(1)
+        else:
+            self.make_rows(len(rows))
 
-            self.check_good_runs_in_file.emit(i)
+        if rows.ndim==1:
+            se = rows[index_map['weight']]
+            print('se', index_map['weight'], rows[index_map['weight']])
+            self.cellWidget(0, 0).setText(str(se))
+            nom = rows[index_map['nominal']]
+            self.cellWidget(0, 1).setText(str(nom))
+            self.cellWidget(0, 2).setCurrentIndex(self.cellWidget(i, 2).findText(rows[index_map['balance']]))
+            self.cellWidget(0, 3).setValue(int(rows[index_map['runs']]))
+
+            self.check_good_runs_in_file.emit(1)
             # updates status of number of collected runs
+        else:
+            for i, row in enumerate(rows):
+                se = row[index_map['weight']]
+                self.cellWidget(i, 0).setText(str(se))
+                nom = row[index_map['nominal']]
+                self.cellWidget(i, 1).setText(str(nom))
+                self.cellWidget(i, 2).setCurrentIndex(self.cellWidget(i, 2).findText(row[index_map['balance']]))
+                self.cellWidget(i, 3).setValue(int(row[index_map['runs']]))
+
+                self.check_good_runs_in_file.emit(i)
+                # updates status of number of collected runs
 
         if self.scheme_path:
             log.info(f'Scheme loaded from {self.scheme_path}')
@@ -222,44 +244,3 @@ class SchemeTable(QtWidgets.QTableWidget):
 
         except AttributeError:
             log.error('Incomplete data in selected row')
-
-
-def read_excel_scheme(path):
-    """Read an Excel file containing a weighing scheme."""
-    _book = xlrd.open_workbook(path, on_demand=True)
-
-    names = _book.sheet_names()
-    if len(names) > 1:
-        sheet_name = prompt.item('Please select which Sheet you wish to use:', names)
-    else:
-        sheet_name = names[0]
-
-    try:
-        sheet = _book.sheet_by_name(sheet_name)
-    except xlrd.XLRDError:
-        sheet = None
-
-    if sheet is None:
-        raise IOError('There is no Sheet named {!r} in {}'.format(sheet_name, path))
-
-    header = [val for val in sheet.row_values(0)]
-    rows = [[_cell_convert(sheet.cell(r, c)) for c in range(sheet.ncols)] for r in range(1, sheet.nrows)]
-    log.debug('Loading Sheet <{}> in {!r}'.format(sheet_name, path))
-    return header, rows
-
-
-def _cell_convert(cell):
-    """Convert an Excel cell to the appropriate value and data type"""
-    t = cell.ctype
-    if t == xlrd.XL_CELL_NUMBER or t == xlrd.XL_CELL_BOOLEAN:
-        if int(cell.value) == cell.value:
-            return '{}'.format(int(cell.value))
-        else:
-            return '{}'.format(cell.value)
-    elif t == xlrd.XL_CELL_ERROR:
-        return xlrd.error_text_from_code[cell.value]
-    else:
-        return cell.value.strip()
-
-
-

@@ -3,7 +3,6 @@ Results summary in LaTeX format
 Called from routines.report_results.py
 """
 import os
-import xlwt
 from tabulate import tabulate
 
 from msl.io import read
@@ -19,22 +18,6 @@ def list_to_csstr(idlst):
         idstr += id + ", "
     return idstr.strip(" ").strip(",")
 
-
-def save_mls_excel(data, folder, client, sheet_name):
-    header = data.metadata.get('metadata')['headers']
-    path = os.path.join(folder, client + '_' + sheet_name + '.xls')
-    workbook = xlwt.Workbook()
-    sheet = workbook.add_sheet(sheet_name)
-
-    for j, text in enumerate(header):
-        sheet.write(0, j, text)
-
-    for row in range(len(data)):
-        for col in range(len(data[row])):
-            sheet.write(row + 1, col, data[row][col])
-
-    workbook.save(path)
-    log.info('Data saved to {} in {}'.format(sheet_name, path))
 
 
 class LaTexDoc(object):
