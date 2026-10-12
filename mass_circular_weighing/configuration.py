@@ -4,15 +4,12 @@ This file must include a working link to a configuration file, config.xml.
 Configuration loads and stores connection information for all balances in the config.xml file, including weight handlers,
 as well as ambient logger details and acceptance criteria for each balance.
 """
-import os
-
-from msl.equipment import Config, utils
+from msl.equipment import Config
 from msl.io import read_table
 
 from .equip import Balance, MettlerToledo, AWBalCarousel, AWBalLinear, AT106
-from .equip import Vaisala
 
-from .constants import MU_STR
+from .constants import MU_STR, EXCL
 from .log import log
 from .admin_details import AdminDetails
 
@@ -31,25 +28,7 @@ class Configuration(AdminDetails):
         super().__init__(adminxlsx)
 
         self.cfg = Config(self.config_xml)      # loads cfg file
-
-        try:
-            self.db = self.cfg.database()       # loads database
-        except ValueError as e:                 # can't find the named sheet
-            log.debug(e)
-            # update root with name of the computer running this Python script
-            root = self.cfg.root
-            root.find('connections/connection/sheet').text = os.environ['COMPUTERNAME']
-
-            # save config to the folder specified in AdminDetails
-            new_config = os.path.join(self.folder, self.job + '_config.xml')
-            with open(new_config, mode='w', encoding='utf-8') as fp:
-                fp.write(utils.convert_to_xml_string(root))
-            self.config_xml = new_config
-
-            self.cfg = Config(self.config_xml)  # reload cfg file
-            self.db = self.cfg.database()       # loads database
-
-        self.equipment = self.db.equipment      # loads subset of database with equipment being used
+        self.equipment = self.cfg.equipment      # loads subset of database with equipment being used
 
         self.bal_class = {
             'mde': Balance,
@@ -60,16 +39,16 @@ class Configuration(AdminDetails):
             'aw_d': Balance,
         }
 
-        self.bal_list = []
+        self.bal_list = []  # TODO use msl.equipment find method
         # NOTE: This script only adds Mettler Toledo or Sartorius balances to the drop-down list
-        for alias, equip in self.equipment.items():
+        for equip in self.equipment:
             if "mettler" in equip.manufacturer.lower():
-                self.bal_list.append(alias)
+                self.bal_list.append(equip.alias)
             if "sartorius" in equip.manufacturer.lower():
-                self.bal_list.append(alias)
+                self.bal_list.append(equip.alias)
 
-        self.EXCL = float(self.cfg.root.find('acceptance_criteria/EXCL').text)
-        # criterion for excluding a single weighing within an automatic weighing sequence, default set arbitrarily at 3
+        self.EXCL = float(EXCL)  #TODO # self.cfg.root.find('acceptance_criteria/EXCL').text)
+        # criterion for excluding a single weighing within an automatic weighing sequence, default set arbitrarily at 1.5
 
     def get_bal_instance(self, alias, strict=True, **kwargs):
         """Selects balance class and returns balance instance.
@@ -99,18 +78,6 @@ class Configuration(AdminDetails):
             bal.identify_handler()
 
         bal._ambient_details = self.get_ambientlogger_info(bal_alias=alias)
-
-        # if 'vaisala' in bal.ambient_details['Type'].lower():
-        #     vai_record = self.equipment.get(bal.ambient_details['Alias'])
-        #     if not vai_record:
-        #         raise ValueError('No equipment record for {}'.format(bal.ambient_details['Alias']))
-        #     bal._ambient_instance = Vaisala(vai_record)
-        #     bal._ambient_details["Manufacturer"] = vai_record.manufacturer
-        #     bal._ambient_details["Model"] = vai_record.model
-        #     bal._ambient_details["Serial"] = vai_record.serial
-        #
-        # elif "omega" in bal.ambient_details['Type'].lower():
-        #     bal._ambient_instance = "OMEGA"
 
         return bal, mode
 
@@ -164,10 +131,6 @@ class Configuration(AdminDetails):
             omega_details = ambient_logger.split(", sensor ")
             ambient_details['Alias'] = omega_details[0]      # the ithx_name
             ambient_details['Sensor'] = int(omega_details[1])
-
-        # elif 'vaisala' in ambient_logger.lower():
-        #     ambient_details["Type"] = "Vaisala"
-        #     ambient_details['Alias'] = ambient_logger
 
         elif 'ch' in ambient_logger.lower():
             ambient_details["Type"] = "Vaisala & milliK Databases"

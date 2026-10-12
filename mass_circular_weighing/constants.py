@@ -15,12 +15,14 @@ SUFFIX = {'ng': 1e-9, 'µg': 1e-6, 'ug': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3}
 DEGREE_SIGN = '°'           # \xb0
 IN_DEGREES_C = ' ('+DEGREE_SIGN+'C)'
 
+EXCL = 1.5
+
 NBC = True                  # no buoyancy correction so use REL_UNC
 REL_UNC = 0.03              # relative uncertainty in ppm for no buoyancy correction: typically 0.03 or 0.1
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 admin_default = os.path.join(ROOT_DIR, r'utils\default_admin.xlsx')
-config_default = os.path.join(ROOT_DIR, r'utils\default_config.xml')
+config_default = os.path.join(ROOT_DIR, r'equip\config.xml')
 
 mass_folder = 'M:'
 
