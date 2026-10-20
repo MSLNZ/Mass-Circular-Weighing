@@ -129,33 +129,16 @@ class SchemeTable(QtWidgets.QTableWidget):
             log.error(f"Unable to create weighing scheme from {self.scheme_path}")
             return
 
-        if rows.ndim==1:  # only one
-            self.make_rows(1)
-        else:
-            self.make_rows(len(rows))
+        self.make_rows(len(rows))
+        for i, row in enumerate(rows):
+            se = row[index_map['weight']]
+            self.cellWidget(i, 0).setText(str(se))
+            nom = row[index_map['nominal']]
+            self.cellWidget(i, 1).setText(str(nom))
+            self.cellWidget(i, 2).setCurrentIndex(self.cellWidget(i, 2).findText(row[index_map['balance']]))
+            self.cellWidget(i, 3).setValue(int(row[index_map['runs']]))
 
-        if rows.ndim==1:
-            se = rows[index_map['weight']]
-            print('se', index_map['weight'], rows[index_map['weight']])
-            self.cellWidget(0, 0).setText(str(se))
-            nom = rows[index_map['nominal']]
-            self.cellWidget(0, 1).setText(str(nom))
-            self.cellWidget(0, 2).setCurrentIndex(self.cellWidget(i, 2).findText(rows[index_map['balance']]))
-            self.cellWidget(0, 3).setValue(int(rows[index_map['runs']]))
-
-            self.check_good_runs_in_file.emit(1)
-            # updates status of number of collected runs
-        else:
-            for i, row in enumerate(rows):
-                se = row[index_map['weight']]
-                self.cellWidget(i, 0).setText(str(se))
-                nom = row[index_map['nominal']]
-                self.cellWidget(i, 1).setText(str(nom))
-                self.cellWidget(i, 2).setCurrentIndex(self.cellWidget(i, 2).findText(row[index_map['balance']]))
-                self.cellWidget(i, 3).setValue(int(row[index_map['runs']]))
-
-                self.check_good_runs_in_file.emit(i)
-                # updates status of number of collected runs
+            self.check_good_runs_in_file.emit(i) # updates status of number of collected runs
 
         if self.scheme_path:
             log.info(f'Scheme loaded from {self.scheme_path}')
