@@ -317,6 +317,7 @@ class FinalMassCalc(object):
         buoy_corr = np.zeros(len(self.y_meas))
         if self.BUOYANCY_CORR:
             buoy_corr = self.calc_buoyancy_corrections(air_densities)
+            # print('buoy_corr', buoy_corr)
 
         height_corr = np.zeros(len(self.y_meas))
 
@@ -413,7 +414,7 @@ class FinalMassCalc(object):
 
         psi_y_hadamard = uumeas * rmeas  # Hadamard product is element-wise multiplication
         # print('covYmeas', psi_y_hadamard)
-
+        # print('fmc psi_y', self.psi_y)
         if self.psi_y is not None:    # psi_y already includes contributions from buoyancy and volume corrections
             self.psi_y += psi_y_hadamard
         else:             # psi_y not yet defined

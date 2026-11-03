@@ -9,20 +9,20 @@ from ..log import log
 
 
 class AWBalLinear(AWBalCarousel):
-    def __init__(self, record, reset=False, ):
+    def __init__(self, equipment, reset=False, ):
         """Initialise Mettler Toledo Balance,
         with automatic weight loading in linear configuration,
         via computer interface.
 
         Parameters
         ----------
-        record : equipment record object
+        equipment : equipment record object
             get via Application(config).equipment[alias]
             Requires an MSL.equipment config.xml file
         reset : bool
             True if reset balance desired
         """
-        super().__init__(record, reset)
+        super().__init__(equipment, reset)
 
         # This balance class inherits many class variables from AWBalCarousel,
         # including self.handler, which can be used to store the Arduino info

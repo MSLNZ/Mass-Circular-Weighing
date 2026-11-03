@@ -13,22 +13,24 @@ from ..log import log
 from ..gui.threads.prompt_thread import PromptThread
 # prompt_thread = PromptThread()
 
+from . import get_specification
+
 
 class Balance(object):
 
     _suffix = SUFFIX
     _fontsize = FONTSIZE
 
-    def __init__(self, record):
+    def __init__(self, equipment):
         """Initialise a balance which does not have a computer interface
 
         Parameters
         ----------
-        record : equipment record object
+        equipment : equipment instance
             get via Application(config).equipment[alias]
             Requires an MSL.equipment config.xml file
         """
-        self.record = record
+        self.equipment = equipment
         self._ambient_instance = None
         self._ambient_details = None
         self._want_abort = False
@@ -40,18 +42,18 @@ class Balance(object):
 
         self._pt = PromptThread()
 
-        self._unit = record.user_defined['unit']
+        self._unit = get_specification(equipment, 'unit')
         if not self._unit:
             self.set_unit()
 
         try:
-            resolution = record.user_defined['resolution'].split()
+            resolution = get_specification(equipment, 'resolution').split()
             self._resolution = float(resolution[0])*SUFFIX[resolution[1]]/SUFFIX[self.unit]
         except:
             self._resolution = 0.000001
         self.dp = self.calc_dp()
 
-        self.stable_wait = record.user_defined['stable_wait']
+        self.stable_wait = int(get_specification(equipment, 'secsStableWait'))
         # wait time in seconds for balance reading to stabilise
 
     @property

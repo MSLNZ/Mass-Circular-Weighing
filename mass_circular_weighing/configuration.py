@@ -4,10 +4,9 @@ This file must include a working link to a configuration file, config.xml.
 Configuration loads and stores connection information for all balances in the config.xml file, including weight handlers,
 as well as ambient logger details and acceptance criteria for each balance.
 """
-from msl.equipment import Config
-from msl.io import read_table
+from msl.equipment import Config, Register, Table
 
-from .equip import Balance, MettlerToledo, AWBalCarousel, AWBalLinear, AT106
+from .equip import Balance, MettlerToledo, AWBalCarousel, AWBalLinear, AT106, get_specification
 
 from .constants import MU_STR, EXCL
 from .log import log
@@ -39,12 +38,9 @@ class Configuration(AdminDetails):
             'aw_d': Balance,
         }
 
-        self.bal_list = []  # TODO use msl.equipment find method
-        # NOTE: This script only adds Mettler Toledo or Sartorius balances to the drop-down list
+        self.bal_list = []
         for equip in self.equipment:
-            if "mettler" in equip.manufacturer.lower():
-                self.bal_list.append(equip.alias)
-            if "sartorius" in equip.manufacturer.lower():
+            if "Balance" in equip.keywords:
                 self.bal_list.append(equip.alias)
 
         self.EXCL = float(EXCL)  #TODO # self.cfg.root.find('acceptance_criteria/EXCL').text)
@@ -65,7 +61,7 @@ class Configuration(AdminDetails):
         -------
         Balance instance, mode
         """
-        mode = self.equipment[alias].user_defined['weighing_mode']
+        mode = get_specification(self.equipment[alias], 'mode')
         bal = self.bal_class[mode](self.equipment[alias], **kwargs)
         log.debug(
             'Connection information for balance:'
@@ -93,8 +89,8 @@ class Configuration(AdminDetails):
         EquipmentRecord
         """
 
-        handler_alias = self.equipment[bal_alias].user_defined['handler']
-        record = self.equipment.get(handler_alias)
+        handler_alias = get_specification(self.equipment[bal_alias], 'handler')
+        record = self.equipment[handler_alias]
 
         return record
 
@@ -124,7 +120,7 @@ class Configuration(AdminDetails):
             'MAX_RH_CHANGE': float(self.cfg.root.find('max_rh_change').text),
         }
 
-        ambient_logger = self.equipment[bal_alias].user_defined['ambient_monitoring']
+        ambient_logger = get_specification(self.equipment[bal_alias], 'ambientMonitoring')
 
         if 'sensor' in ambient_logger.lower():
             ambient_details["Type"] = "OMEGA"
@@ -168,42 +164,16 @@ class Configuration(AdminDetails):
                  'Stdev for balance (ug)': float,
                  }
         """
-        record = self.equipment.get(alias)
-        if not record:
-            raise ValueError('No equipment record')
-        man = record.manufacturer
-        model = record.model
-        serial = record.serial
+        table_element = self.equipment[alias].specified_requirements.find('table')
+        if table_element is None:
+            raise ValueError(f'{alias} does not have a <table> child element in <specifiedRequirements>')
 
-        path = self.cfg.root.find('acceptance_criteria/path').text
-        sheet = self.cfg.root.find('acceptance_criteria/sheet').text
-
-        dataset = read_table(path, sheet=sheet)
-        header = dataset.metadata.get('header')
-        data = dataset.data
-
-        index_map = {}
-        for col_name in {'model', 'manufacturer', 'serial',
-                         'load max', 'load min', 'acceptable', 'residuals'}:
-            for i, name in enumerate(header):
-                if col_name in name.lower():
-                    index_map[col_name] = i
-
-        store = []
-        for row in data:
-            if model == row[index_map['model']] \
-                and man == row[index_map['manufacturer']] \
-                    and str(serial) == str(row[index_map['serial']]):
-                store.append(row)
-
-        if not store:
-            raise ValueError('No acceptance criteria for balance')
-
-        for row in store:
-            if float(row[index_map['load min']]) <= nominal_mass <= float(row[index_map['load max']]):
+        accept_table = Table.from_xml(table_element)
+        for row in accept_table:
+            if float(row['Nom Load min']) <= nominal_mass <= float(row['Nom Load max']):
                 return {
-                    'Max stdev from CircWeigh ('+MU_STR+'g)': float(row[index_map['acceptable']]),
-                    'Stdev for balance ('+MU_STR+'g)': float(row[index_map['residuals']])/2,
+                    'Max stdev from CircWeigh ('+MU_STR+'g)': float(row['Max circweigh stdev']),
+                    'Stdev for balance ('+MU_STR+'g)': float(row['Bal stdev'])/2,
                 }
 
         raise ValueError('Nominal mass out of range of balance')

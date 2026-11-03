@@ -1,0 +1,33 @@
+[project]
+name = "mass-circular-weighing"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "msl-equipment",
+    "msl-io>=0.4.0",
+    "msl-qt",
+    "openpyxl>=3.1.5",
+    "pyside6>=6.12.0",
+    "requests>=2.34.2",
+    "tabulate>=0.10.0",  # for nice tables in LaTeX output
+]
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.uv.sources]
+msl-equipment = { git = "https://github.com/MSLNZ/msl-equipment.git" }
+msl-qt = { git = "https://github.com/MSLNZ/msl-qt.git" }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "sphinx>=9.1.0",
+    "sphinx-rtd-theme>=3.1.0",
+]
+
+[project.scripts]
+mcw-gui = "mass_circular_weighing.gui.gui:show_gui"
+poll-omega-logger = "mass_circular_weighing.utils.poll_omega_logger:poll_omega_logger"
+circweigh-gui = "mass_circular_weighing.utils.circweigh_subprocess:run_circweigh_popup"

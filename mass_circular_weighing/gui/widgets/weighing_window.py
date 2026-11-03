@@ -80,8 +80,8 @@ class WeighingWindow(QtWidgets.QWidget):
         status_layout.addRow(label('Cycle'), self.cycle)
         status_layout.addRow(label('Position'), self.position)
         status_layout.addRow(label('Reading'), self.reading)
-        status_layout.setWidget(6, 2, want_stop)
-        status_layout.setWidget(7, 2, self.logger)
+        status_layout.setWidget(6, QtWidgets.QFormLayout.SpanningRole, want_stop)
+        status_layout.setWidget(7, QtWidgets.QFormLayout.SpanningRole, self.logger)
         status.setLayout(status_layout)
 
         return status
@@ -273,6 +273,7 @@ class WeighingWindow(QtWidgets.QWidget):
 
     def start_weighing(self):
         self.bal.want_adjust = True if self.adjust_ch.checkState() else False
+        print("adjust?", self.bal.want_adjust)
         if self.bal.want_adjust:
             if self.nominal_mass.text() == "10":
                 log.warning("Cannot perform internal self-calibration at 10 g! Please ensure a 20 g mass is used.")
@@ -356,7 +357,7 @@ class WeighingWindow(QtWidgets.QWidget):
 
         metadata = {
             'Client': self.cfg.client,
-            'Balance': self.se_row_data['bal_alias'], 'Bal serial no.': self.bal.record.serial,
+            'Balance': self.se_row_data['bal_alias'], 'Bal serial no.': self.bal.equipment.serial,
             'Unit': self.bal.unit, 'Nominal mass (g)': float(self.se_row_data['nominal']),
         }
         for key, value in ac.items():

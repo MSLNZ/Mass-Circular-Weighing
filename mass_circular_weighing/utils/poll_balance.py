@@ -1,5 +1,5 @@
 """
-Test communications with a balance listed in default_config.xml
+Test communications with a balance listed in config.xml
 """
 import sys
 

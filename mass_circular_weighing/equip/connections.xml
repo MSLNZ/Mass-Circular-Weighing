@@ -1,7 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <connections>
+  <connection alias="AT106">
+    <id>MSLE.M.118</id>
+    <address>COM?::FT1IHWI0A</address>
+    <backend>MSL</backend>
+    <manufacturer>Mettler Toledo</manufacturer>
+    <model>AT106</model>
+    <serial>A908691</serial>
+    <properties>
+      <baud_rate>2400</baud_rate>
+      <parity>EVEN</parity>
+      <data_bits>7</data_bits>
+      <stop_bits>1</stop_bits>
+      <timeout>20</timeout>
+      <intcaltimeout>150</intcaltimeout>
+      <write_termination>\r\n</write_termination>
+    </properties>
+   </connection>
+  <connection alias="Arduino-AT106">
+    <id>MSLE.M.301</id>
+    <address>COM?::5573132313635190E1B1</address>
+    <backend>MSL</backend>
+    <manufacturer>Arduino</manufacturer>
+    <model>MEGA2560</model>
+    <serial>6E 75 6E 6B 77 6F 00 0C 0B</serial>
+    <properties>
+      <baud_rate>115200</baud_rate>
+      <parity>EVEN</parity>
+      <data_bits>7</data_bits>
+      <stop_bits>1</stop_bits>
+      <timeout>80</timeout>
+      <intcaltimeout>150</intcaltimeout>
+      <write_termination>\r\n</write_termination>
+    </properties>
+  </connection>
   <connection alias="UMX5">
-    <eid>MSLE.M.119</eid>
+    <id>MSLE.M.119</id>
     <address>COM?::FT2GODY6A</address>
     <backend>MSL</backend>
     <manufacturer>Mettler Toledo</manufacturer>
@@ -15,8 +49,70 @@
       <intcaltimeout>120</intcaltimeout>
     </properties>
   </connection>
+  <connection alias="AX10005">
+    <id>MSLE.M.120</id>
+    <address>COM?::FT2GZH2KA</address>
+    <backend>MSL</backend>
+    <manufacturer>Mettler Toledo</manufacturer>
+    <model>AX10005</model>
+    <serial>1126120945</serial>
+    <properties>
+      <baud_rate>2400</baud_rate>
+      <parity>EVEN</parity>
+      <data_bits>7</data_bits>
+      <stop_bits>1</stop_bits>
+      <timeout>60</timeout>
+      <intcaltimeout>120</intcaltimeout>
+    </properties>
+  </connection>
+  <connection alias="AX1006">
+    <id>MSLE.M.125</id>
+    <address>COM?::FT4QS5KRA</address>
+    <backend>MSL</backend>
+    <manufacturer>Mettler Toledo</manufacturer>
+    <model>AX1006</model>
+    <serial>B634932974</serial>
+    <properties>
+      <baud_rate>2400</baud_rate>
+      <parity>EVEN</parity>
+      <data_bits>7</data_bits>
+      <stop_bits>1</stop_bits>
+      <timeout>60</timeout>
+      <intcaltimeout>300</intcaltimeout>
+    </properties>
+  </connection>
+  <connection alias="XPR64002LC">
+    <id>MSLE.M.126</id>
+    <address>COM?::</address>
+    <backend>MSL</backend>
+    <manufacturer>Mettler Toledo</manufacturer>
+    <model>XPR64002LC</model>
+    <serial>B83535534</serial>
+    <properties>
+      <baud_rate>9600</baud_rate>
+      <data_bits>8</data_bits>
+      <stop_bits>1</stop_bits>
+      <timeout>20</timeout>
+      <intcaltimeout>60</intcaltimeout>
+    </properties>
+  </connection>
+  <connection alias="XPE604KMC">
+    <id>MSLE.M.127</id>
+    <address>COM?::</address>
+    <backend>MSL</backend>
+    <manufacturer>Mettler Toledo</manufacturer>
+    <model>XPE604KMC</model>
+    <serial>B815699149</serial>
+    <properties>
+      <baud_rate>9600</baud_rate>
+      <data_bits>8</data_bits>
+      <stop_bits>1</stop_bits>
+      <timeout>30</timeout>
+      <intcaltimeout>120</intcaltimeout>
+    </properties>
+  </connection>
   <connection alias="XPE505C">
-    <eid>MSLE.M.128</eid>
+    <id>MSLE.M.128</id>
     <address>COM?::FT2OEP7SA</address>
     <backend>MSL</backend>
     <manufacturer>Mettler Toledo</manufacturer>
@@ -31,4 +127,38 @@
       <intcaltimeout>300</intcaltimeout>
     </properties>
   </connection>
+  <connection alias="Arduino-XPE505C">
+    <id>MSLE.M.302</id>
+    <address>COM?::95730333238351F0A011</address>
+    <backend>MSL</backend>
+    <manufacturer>Arduino</manufacturer>
+    <model>MEGA2560</model>
+    <serial></serial>
+    <properties>
+      <baud_rate>115200</baud_rate>
+      <parity>EVEN</parity>
+      <data_bits>7</data_bits>
+      <stop_bits>1</stop_bits>
+      <timeout>80</timeout>
+      <intcaltimeout>150</intcaltimeout>
+      <write_termination>\r\n</write_termination>
+    </properties>
+  </connection>
+  <connection alias="AX107H">
+    <id>MSLE.M.129</id>
+    <address>COM?::FT6AHXQPA</address>
+    <backend>MSL</backend>
+    <manufacturer>Mettler Toledo</manufacturer>
+    <model>AX107H</model>
+    <serial>C321203761</serial>
+    <properties>
+      <baud_rate>2400</baud_rate>
+      <parity>EVEN</parity>
+      <data_bits>7</data_bits>
+      <stop_bits>1</stop_bits>
+      <timeout>60</timeout>
+      <intcaltimeout>300</intcaltimeout>
+    </properties>
+  </connection>
+
 </connections>

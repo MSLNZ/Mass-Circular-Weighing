@@ -12,20 +12,20 @@ from ..log import log
 
 
 class AT106(AWBalLinear, MettlerToledo):
-    def __init__(self, record, reset=False, ):
+    def __init__(self, equipment, reset=False, ):
         """Initialise AT106 Mettler Toledo Balance,
         # with automatic weight loading in linear configuration,
         via computer interface.
 
         Parameters
         ----------
-        record : equipment record object
+        equipment : equipment record object
             get via Application(config).equipment[alias]
             Requires an MSL.equipment config.xml file
         reset : bool
             True if reset balance desired
         """
-        super().__init__(record, reset)
+        super().__init__(equipment, reset)
         self.internal_weights = None  # options: 0, 1 or 2; each weight is 10 g
         self.cal_pos = 0
 

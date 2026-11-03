@@ -1,36 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
   <msl>
 
-    <!-- Specify all balances available for weighings. Details here must match the Balance register entries
+    <!-- Specify all balances available for weighings. Details here must match the Balance register entries -->
+    <equipment id="MSLE.M.118" alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
+    <equipment id="MSLE.M.119" alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
+    <equipment id="MSLE.M.120" alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
+    <equipment id="MSLE.M.125" alias="AX1006" manufacturer="Mettler Toledo" model="AX1006"/>
+    <equipment id="MSLE.M.126" alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
+    <equipment id="MSLE.M.127" alias="K_C" manufacturer="Mettler Toledo" model="XPE604KMC"/>
+    <equipment id="MSLE.M.128" alias="XPE505C" manufacturer="Mettler Toledo" model="XPE505C"/>
+    <equipment id="MSLE.M.129" alias="AX107H" manufacturer="Mettler Toledo" model="AX107H"/>
+
+    <!--
     <equipment alias="MDE-demo" manufacturer="Mettler Toledo" model="TEST_BAL"/>
     <equipment alias="AW-demo" manufacturer="Mettler Toledo" model="Test_AW"/>
-    <equipment alias="K_C" manufacturer="Mettler Toledo" model="XPE604KMC"/>
-    <equipment alias="LUCY" manufacturer="Mettler Toledo" model="XPR64002LC"/>
+
     <equipment alias="XPR32003" manufacturer="Mettler Toledo" model="XPR32003"/>
     <equipment alias="XPR5003S" manufacturer="Mettler Toledo" model="XPR5003S"/>
-    <equipment alias="AX10005" manufacturer="Mettler Toledo" model="AX10005"/>
-    <equipment alias="AX1006" manufacturer="Mettler Toledo" model="AX1006"/>
+
     <equipment alias="CCE605" manufacturer="Sartorius" model="CCE605"/>
     <equipment alias="CCE5003" manufacturer="Sartorius" model="CCE5003"/>
 
     <equipment alias="AB204-S" manufacturer="Mettler Toledo" model="AB204-S"/>
-    <equipment alias="AT106" manufacturer="Mettler Toledo" model="AT106"/>
-    <equipment alias="AX107H" manufacturer="Mettler Toledo" model="AX107H"/>
-    <equipment alias="XPR6U" manufacturer="Mettler Toledo" model="XPR6U"/> -->
-    <equipment eid="MSLE.M.119" alias="UMX5" manufacturer="Mettler Toledo" model="UMX5"/>
-    <equipment eid="MSLE.M.128" alias="XPE505C" manufacturer="Mettler Toledo" model="XPE505C"/>
-    <!--
-    <equipment alias="XPR32003" manufacturer="Mettler Toledo" model="XPR32003"/>
-    <equipment alias="XPR5003S" manufacturer="Mettler Toledo" model="XPR5003S"/>
+    <equipment alias="XPR6U" manufacturer="Mettler Toledo" model="XPR6U"/>
+    -->
 
-     Specify Arduino information
-    <equipment alias="Arduino-XPE505C" manufacturer="Arduino" model="MEGA2560" serial="6E 75 6E 6B 77 6F 00 10 12"/>
-    <equipment alias="Arduino-AT106" manufacturer="Arduino" model="MEGA2560" serial="6E 75 6E 6B 77 6F 00 0C 0B"/>
+    Specify Arduino information
+    <equipment id="MSLE.M.301" alias="Arduino-AT106" manufacturer="Arduino" model="MEGA2560" serial="6E 75 6E 6B 77 6F 00 0C 0B"/>
+    <equipment id="MSLE.M.302" alias="Arduino-XPE505C" manufacturer="Arduino" model="MEGA2560" serial="6E 75 6E 6B 77 6F 00 10 12"/>
 
      Specify Vaisala ambient monitoring equipment available for weighings.
-    <equipment alias="AX10005-Vaisala-K1510011" manufacturer="Vaisala" model="PTU303" serial="K1510011"/>
-    <equipment alias="AX1006-Vaisala-M2430306" manufacturer="Vaisala" model="PTU303" serial="M2430306"/>
-    -->
+    <equipment id="MSLE.M.231" alias="AX10005-Vaisala-K1510011" manufacturer="Vaisala" model="PTU303" serial="K1510011"/>
+    <equipment id="MSLE.M.232" alias="AX1006-Vaisala-M2430306" manufacturer="Vaisala" model="PTU303" serial="M2430306"/>
 
     <!-- Specify the limits for ambient conditions to begin weighing. -->
     <min_temp units="C">18.1</min_temp>
@@ -46,6 +47,6 @@
     <register>M:\Equipment Register</register>
 
     <!-- Specify the Connections.xml file to load connection records from. -->
-    <connection>./connections.xml</connection>
+    <connections>connections.xml</connections>
 
   </msl>

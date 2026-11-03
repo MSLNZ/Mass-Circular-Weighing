@@ -10,28 +10,29 @@ from msl.qt import application
 
 from ..log import log
 from .mettler import MettlerToledo, ERRORCODES
+from . import get_specification
 
 from ..gui.widgets import AllocatorDialog
 
 
 class AWBalCarousel(MettlerToledo):
 
-    def __init__(self, record, reset=False, ):
+    def __init__(self, equipment, reset=False, ):
         """Initialise Mettler Toledo Balance,
         with automatic weight loading in carousel configuration,
         via computer interface.
 
         Parameters
         ----------
-        record : equipment record object
+        equipment : equipment record object
             get via Application(config).equipment[alias]
             Requires an MSL.equipment config.xml file
         reset : bool
             True if reset balance desired
         """
-        super().__init__(record, reset)
+        super().__init__(equipment, reset)
 
-        self.num_pos = record.user_defined['pos']  # num_pos is the total number of available loading positions
+        self.num_pos = int(get_specification(equipment, 'numPos'))  # num_pos is the total number of available loading positions
         # num_pos should be 4 for the carousel balances
         self._weight_groups = None
 
@@ -72,21 +73,21 @@ class AWBalCarousel(MettlerToledo):
         h_str = self._query("IDENTIFY").strip("\r")
         h_list = h_str.split(", ")
 
-        if self.record.model == "AX10005":
+        if self.equipment.model == "AX10005":
             assert h_list[0] == "H10005"
             assert h_list[1] == "serial number #0003"
             assert h_list[-1][-5:] == "ready"
             self.handler = "H10005"
             return True
 
-        elif self.record.model == "AX1006":
+        elif self.equipment.model == "AX1006":
             assert h_list[0] == "H1006"
             assert h_list[1] == "serial number #0040"
             assert h_list[-1][-5:] == "ready"
             self.handler = "H1006"
             return True
 
-        elif self.record.model == "AX107H":
+        elif self.equipment.model == "AX107H":
             assert h_list[0] == "H1006"
             assert h_list[1] == "serial number #0015"
             assert h_list[-1][-5:] == "ready"
@@ -299,7 +300,7 @@ class AWBalCarousel(MettlerToledo):
         return self._is_centred
 
     def internal_weight_control(self):
-        if self.record.model == "AX107H":
+        if self.equipment.model == "AX107H":
             # Lift both internal weights
             r = self._query("Y2 0").split()
             # Lower both internal weights
@@ -581,7 +582,7 @@ class AWBalCarousel(MettlerToledo):
         wait : Bool, optional
             If True, waits for stable wait time after lowering to panbraking and/or weighing positions
         """
-        if self.record.model == "AX10005":
+        if self.equipment.model == "AX10005":
             lower_options = {'top': 0, 'panbraking': 1, 'weighing': 2, 'calibration': 3}
         else:
             lower_options = {'top': 0, 'weighing': 1}

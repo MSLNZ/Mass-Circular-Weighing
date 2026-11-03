@@ -12,23 +12,23 @@ from .mdebalance import Balance
 
 
 class MettlerToledo(Balance):
-    def __init__(self, record, reset=False):
+    def __init__(self, equipment, reset=False):
         """Initialise Mettler Toledo Balance via computer interface
 
         Parameters
         ----------
-        record : equipment record object
+        equipment : equipment record object
             get via Application(config).equipment[alias]
             Requires an MSL.equipment config.xml file
         reset : bool
             True if reset balance desired
         """
-        super().__init__(record)
+        super().__init__(equipment)
 
         self.connection = None
         self.connect_bal(reset=reset)
 
-        self.intcaltimeout = self.record.connection.properties.get('intcaltimeout', 30)
+        self.intcaltimeout = self.equipment.connection.properties.get('intcaltimeout', 30)
 
     @property
     def mode(self):
@@ -42,7 +42,7 @@ class MettlerToledo(Balance):
         ok = True
         while ok:
             try:
-                self.connection = self.record.connect()
+                self.connection = self.equipment.connect()
                 self.connection.rstrip = True
 
                 if reset:
@@ -54,8 +54,8 @@ class MettlerToledo(Balance):
                     log.debug(f'...received {r}...')
                     if r == "ES":
                         break
-                assert str(self.record.serial) == str(self.get_serial()), \
-                    "Serial mismatch: expected " + str(self.record.serial) + " but received " + str(self.get_serial())
+                assert str(self.equipment.serial) == str(self.get_serial()), \
+                    "Serial mismatch: expected " + str(self.equipment.serial) + " but received " + str(self.get_serial())
                 # prints error if false
                 break
 
