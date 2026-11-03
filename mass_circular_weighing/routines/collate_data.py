@@ -55,9 +55,9 @@ def collate_all_weighings(schemetable, cfg):
                 newdata = collate_m_data_from_json(url, schemetable.cellWidget(row, 0).text())
             dlen = data.shape[0]
             if newdata is not None:
-                # log.debug(schemetable.cellWidget(row, 0).text(), newdata)
+                log.debug(schemetable.cellWidget(row, 0).text(), newdata)
                 ndlen = newdata.shape[0]
-                data.resize(dlen + ndlen)
+                data = np.resize(data, dlen + ndlen)
                 data[-len(newdata):]['Nominal (g)'] = newdata[:]['Nominal (g)']
                 data[-len(newdata):]['Scheme entry'] = newdata[:]['Scheme entry']
                 data[-len(newdata):]['Run #'] = newdata[:]['Run #']
@@ -134,8 +134,8 @@ def collate_a_data_from_json(url, scheme_entry):
                 collated['Stdev'].append(meta.metadata.get('Stdev for balance (' + MU_STR + 'g)'))
                 collated['Max stdev'].append(meta.metadata.get('Max stdev from CircWeigh ('+MU_STR+'g)'))
                 collated["Nominal mass (g)"].append(meta.metadata.get("Nominal mass (g)"))
-                collated["Mean air density (kg/m3)"].append(meta.metadata.get("Mean air density (kg/m3)", default=None))
-                collated["Stdev air density (kg/m3)"].append(meta.metadata.get("Stdev air density (kg/m3)", default=None))
+                collated["Mean air density (kg/m3)"].append(meta.metadata.get("Mean air density (kg/m3)", default=1.2))
+                collated["Stdev air density (kg/m3)"].append(meta.metadata.get("Stdev air density (kg/m3)", default=0))
 
                 bal_unit = dataset.metadata.get('Mass unit')
                 for i in range(dataset.shape[0]):
