@@ -4,7 +4,6 @@ Called from routines.report_results.py
 """
 import os
 import string
-import numpy as np   # used by eval when loading residual std devs
 
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment
@@ -56,7 +55,7 @@ class ExcelSummaryWorkbook(object):
         sheet = self.wb.create_sheet(sheet_name)
 
         header = data.metadata.get('metadata')['headers']
-        sheet.append(header)
+        sheet.append(list(header))
 
         for row in data:
             sheet.append(list(row))
